@@ -1,3 +1,13 @@
+from app.models import (
+    User,
+    Crop,
+    AgriculturalData,
+    WeatherData,
+    MarketPrice,
+    YieldPrediction,
+    PricePrediction,
+    CropRecommendation
+)
 from fastapi import FastAPI
 from sqlalchemy import text
 
