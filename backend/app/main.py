@@ -17,6 +17,7 @@ from app.routes.weather_data import router as weather_data_router
 from app.routes.market_price import router as market_price_router
 from app.routes.yield_prediction import router as yield_prediction_router
 from app.routes.price_prediction import router as price_prediction_router
+from app.routes.crop_recommendation import router as crop_recommendation_router
 
 app = FastAPI(
     title="Crop Yield & Market Price Prediction Portal",
@@ -29,7 +30,7 @@ app.include_router(weather_data_router)
 app.include_router(market_price_router)
 app.include_router(yield_prediction_router)
 app.include_router(price_prediction_router)
-
+app.include_router(crop_recommendation_router)
 
 @app.get("/")
 def root():
