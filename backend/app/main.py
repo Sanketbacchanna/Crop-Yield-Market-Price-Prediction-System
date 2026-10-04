@@ -13,6 +13,7 @@ from sqlalchemy import text
 from app.routes.crops import router as crops_router
 from app.database import engine
 from app.routes.agricultural_data import router as agricultural_data_router
+from app.routes.weather_data import router as weather_data_router
 
 app = FastAPI(
     title="Crop Yield & Market Price Prediction Portal",
@@ -21,6 +22,7 @@ app = FastAPI(
 
 app.include_router(crops_router)
 app.include_router(agricultural_data_router)
+app.include_router(weather_data_router)
 
 @app.get("/")
 def root():
