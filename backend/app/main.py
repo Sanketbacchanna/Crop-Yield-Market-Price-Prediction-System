@@ -10,7 +10,7 @@ from app.models import (
 )
 from fastapi import FastAPI
 from sqlalchemy import text
-
+from app.routes.crops import router as crops_router
 from app.database import engine
 
 app = FastAPI(
@@ -18,13 +18,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
+app.include_router(crops_router)
 
 @app.get("/")
 def root():
     return {
         "message": "Crop Yield & Market Price Prediction Portal API is running"
     }
-
 
 @app.get("/health")
 def health():
