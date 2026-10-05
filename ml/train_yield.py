@@ -1,74 +1,155 @@
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import joblib
+import os
 
-INPUT_FILE = "ml/datasets/Crop_Yield.csv"
-OUTPUT_FILE = "ml/datasets/Crop_Yield_Cleaned.csv"
+# ==========================================
+# 1. LOAD CLEANED DATASET
+# ==========================================
 
-# Load CSV WITHOUT assuming the first row is a header
-df = pd.read_csv(INPUT_FILE, header=None)
+file_path = "ml/datasets/Crop_Yield_Cleaned.csv"
 
-print("Original shape:", df.shape)
+df = pd.read_csv(file_path)
 
-# Assign proper column names
-df.columns = [
-    "state",
+print("Original dataset shape:", df.shape)
+
+# ==========================================
+# 2. SELECT ML FEATURES
+# ==========================================
+
+features = [
     "district",
     "crop",
     "crop_year",
     "season",
-    "field_1",
-    "area_unit",
-    "area",
-    "production_unit",
-    "yield"
+    "area"
 ]
 
-print("\n========== ORIGINAL DATA ==========")
-print(df.head())
+target = "yield"
 
-print("\nColumns:")
-print(df.columns.tolist())
+X = df[features]
+y = df[target]
 
-print("\nData types:")
-print(df.dtypes)
+print("\nFeatures:")
+print(X.head())
 
-# Convert numeric columns
-df["area"] = pd.to_numeric(df["area"], errors="coerce")
-df["yield"] = pd.to_numeric(df["yield"], errors="coerce")
+print("\nTarget:")
+print(y.head())
 
-# Remove rows where important values are missing
-df = df.dropna(subset=["area", "yield"])
+# ==========================================
+# 3. DEFINE COLUMNS
+# ==========================================
 
-# Clean text
-text_columns = [
-    "state",
+categorical_features = [
     "district",
     "crop",
     "crop_year",
-    "season",
-    "area_unit",
-    "production_unit"
+    "season"
 ]
 
-for column in text_columns:
-    df[column] = df[column].astype(str).str.strip()
+numeric_features = [
+    "area"
+]
 
-# Remove duplicates
-df = df.drop_duplicates()
+# ==========================================
+# 4. PREPROCESSING
+# ==========================================
 
-print("\n========== CLEANED DATA ==========")
-print("Rows:", len(df))
-print("Columns:", len(df.columns))
+preprocessor = ColumnTransformer(
+    transformers=[
+        (
+            "categorical",
+            OneHotEncoder(handle_unknown="ignore"),
+            categorical_features
+        ),
+        (
+            "numeric",
+            "passthrough",
+            numeric_features
+        )
+    ]
+)
 
-print("\nMissing values:")
-print(df.isnull().sum())
+# ==========================================
+# 5. RANDOM FOREST MODEL
+# ==========================================
 
-print("\nFirst 5 rows:")
-print(df.head())
+model = RandomForestRegressor(
+    n_estimators=200,
+    random_state=42
+)
 
-# Save
-df.to_csv(OUTPUT_FILE, index=False)
+# ==========================================
+# 6. CREATE PIPELINE
+# ==========================================
+
+pipeline = Pipeline(
+    steps=[
+        ("preprocessor", preprocessor),
+        ("model", model)
+    ]
+)
+
+# ==========================================
+# 7. TRAIN / TEST SPLIT
+# ==========================================
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.20,
+    random_state=42
+)
+
+print("\nTraining rows:", len(X_train))
+print("Testing rows:", len(X_test))
+
+# ==========================================
+# 8. TRAIN MODEL
+# ==========================================
+
+print("\nTraining Random Forest...")
+
+pipeline.fit(X_train, y_train)
+
+print("Training completed.")
+
+# ==========================================
+# 9. PREDICTION
+# ==========================================
+
+y_pred = pipeline.predict(X_test)
+
+# ==========================================
+# 10. EVALUATION
+# ==========================================
+
+mae = mean_absolute_error(y_test, y_pred)
+rmse = mean_squared_error(y_test, y_pred) ** 0.5
+r2 = r2_score(y_test, y_pred)
+
+print("\n========== MODEL RESULTS ==========")
+
+print("MAE :", mae)
+print("RMSE:", rmse)
+print("R2  :", r2)
+
+# ==========================================
+# 11. SAVE MODEL
+# ==========================================
+
+os.makedirs("ml/saved_models", exist_ok=True)
+
+model_path = "ml/saved_models/yield_model.pkl"
+
+joblib.dump(pipeline, model_path)
 
 print("\n===================================")
-print("Cleaned dataset created:")
-print(OUTPUT_FILE)
+print("Model saved successfully:")
+print(model_path)
 print("===================================")
