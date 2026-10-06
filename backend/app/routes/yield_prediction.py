@@ -17,13 +17,12 @@ router = APIRouter(
 @router.post("/")
 def create_yield_prediction(
     user_id: int,
-    crop_id: int,
     agricultural_id: int,
-    crop_year: str,
-    prediction_date: str,
     db: Session = Depends(get_db)
 ):
+    # ---------------------------------------------------------
     # 1. Get agricultural data
+    # ---------------------------------------------------------
     agricultural = db.query(AgriculturalData).filter(
         AgriculturalData.agricultural_id == agricultural_id
     ).first()
@@ -34,18 +33,9 @@ def create_yield_prediction(
             detail="Agricultural data not found"
         )
 
-    # 2. Get crop information
-    crop = db.query(Crop).filter(
-        Crop.crop_id == crop_id
-    ).first()
-
-    if not crop:
-        raise HTTPException(
-            status_code=404,
-            detail="Crop not found"
-        )
-
-    # 3. Check required ML fields
+    # ---------------------------------------------------------
+    # 2. Validate required agricultural information
+    # ---------------------------------------------------------
     if not agricultural.district:
         raise HTTPException(
             status_code=400,
@@ -64,50 +54,107 @@ def create_yield_prediction(
             detail="Cultivated area is missing in agricultural data"
         )
 
+    if not agricultural.crop_year:
+        raise HTTPException(
+            status_code=400,
+            detail="Crop year is missing in agricultural data"
+        )
+
+    if agricultural.crop_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Crop ID is missing in agricultural data"
+        )
+
+    # ---------------------------------------------------------
+    # 3. Get crop information
+    # ---------------------------------------------------------
+    crop = db.query(Crop).filter(
+        Crop.crop_id == agricultural.crop_id
+    ).first()
+
+    if not crop:
+        raise HTTPException(
+            status_code=404,
+            detail="Crop not found"
+        )
+
     if not crop.crop_name:
         raise HTTPException(
             status_code=400,
             detail="Crop name is missing"
         )
 
-    # 4. Predict yield using trained Random Forest model
+    # ---------------------------------------------------------
+    # 4. Prepare ML input
+    #
+    # Model was trained with:
+    # district
+    # crop
+    # crop_year
+    # season
+    # area
+    # ---------------------------------------------------------
+    district = agricultural.district
+    crop_name = crop.crop_name
+    crop_year = agricultural.crop_year
+    season = agricultural.season
+    area = float(agricultural.cultivated_area)
+
+    # ---------------------------------------------------------
+    # 5. Generate prediction using yield_model.pkl
+    # ---------------------------------------------------------
     predicted_yield = predict_yield(
-        district=agricultural.district,
-        crop=crop.crop_name,
+        district=district,
+        crop=crop_name,
         crop_year=crop_year,
-        season=agricultural.season,
-        area=float(agricultural.cultivated_area)
+        season=season,
+        area=area
     )
 
-    # 5. Save prediction in database
+    # ---------------------------------------------------------
+    # 6. Save prediction to database
+    # ---------------------------------------------------------
     prediction = YieldPrediction(
         user_id=user_id,
-        crop_id=crop_id,
+        crop_id=agricultural.crop_id,
         agricultural_id=agricultural_id,
         predicted_yield=predicted_yield,
         model_used="Random Forest",
-        prediction_date=prediction_date
+        prediction_date=None
     )
 
     db.add(prediction)
     db.commit()
     db.refresh(prediction)
 
-    # 6. Return prediction result
+    # ---------------------------------------------------------
+    # 7. Return prediction result
+    # ---------------------------------------------------------
     return {
         "message": "Yield prediction generated successfully",
+
         "prediction_id": prediction.prediction_id,
+
         "user_id": prediction.user_id,
-        "crop_id": prediction.crop_id,
-        "crop_name": crop.crop_name,
+
         "agricultural_id": prediction.agricultural_id,
-        "district": agricultural.district,
-        "season": agricultural.season,
-        "cultivated_area": float(agricultural.cultivated_area),
+
+        "crop_id": prediction.crop_id,
+
+        "crop_name": crop_name,
+
+        "district": district,
+
+        "season": season,
+
         "crop_year": crop_year,
+
+        "cultivated_area": area,
+
         "predicted_yield": float(predicted_yield),
-        "model_used": prediction.model_used,
-        "prediction_date": prediction.prediction_date
+
+        "model_used": prediction.model_used
     }
 
 
