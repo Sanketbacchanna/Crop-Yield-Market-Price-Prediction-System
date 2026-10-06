@@ -25,7 +25,22 @@ class CropRecommendation(Base):
         index=True
     )
 
-    predicted_yield = Column(DECIMAL(10, 0), nullable=True)
-    forecast_price = Column(DECIMAL(10, 0), nullable=True)
-    recommendation_rank = Column(Integer, nullable=True)
-    recommendation_date = Column(DateTime, nullable=True)
+    predicted_yield = Column(
+        DECIMAL(10, 0),
+        nullable=True
+    )
+
+    forecast_price = Column(
+        DECIMAL(10, 0),
+        nullable=True
+    )
+
+    recommendation_rank = Column(
+        Integer,
+        nullable=True
+    )
+
+    recommendation_date = Column(
+        DateTime,
+        nullable=True
+    )
