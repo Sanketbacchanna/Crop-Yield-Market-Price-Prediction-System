@@ -83,74 +83,11 @@ The main objectives of this project are:
                          ┌──────────────────────┐
                          │       MySQL DB       │
                          └──────────────────────┘
+
+
 ---
-```text
 
-🚀 Main Features
-1. 👤 User Management
 
-Farmers can be registered and their information can be stored in the database.
 
-User information is associated with:
 
-User ID
-Personal information
-Agricultural records
-Predictions
-Recommendations
-2. 🌱 Crop Management
 
-The system maintains crop information such as:
-
-Crop ID
-Crop Name
-Crop Type
-Season
-Soil Type
-
-Example:
-
-Crop ID: 1
-Crop Name: Rice
-Crop Type: Cereal
-Season: Kharif
-Soil Type: Clayey
-3. 🌾 Agricultural Data
-
-Agricultural information is stored for each farming record.
-
-Example:
-
-State: Karnataka
-District: Bidar
-Season: Kharif
-Crop: Rice
-Cultivated Area: 5 Hectares
-Soil Type: Clayey
-Crop Year: 2001-02
-
-This information is used as input for Machine Learning predictions.
-
-🤖 Machine Learning
-Yield Prediction
-
-The project uses a Random Forest Regression model for crop yield prediction.
-
-Training Dataset
-
-The cleaned dataset contains approximately:
-
-Rows: 3125
-Columns: 10
-
-Important features include:
-
-district
-crop
-crop_year
-season
-area
-
-Target:
-
-yield
