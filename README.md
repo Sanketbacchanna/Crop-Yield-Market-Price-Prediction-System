@@ -83,6 +83,8 @@ The main objectives of this project are:
                          ┌──────────────────────┐
                          │       MySQL DB       │
                          └──────────────────────┘
+---
+
 
 🚀 Main Features
 1. 👤 User Management
