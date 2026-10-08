@@ -83,11 +83,3 @@ The main objectives of this project are:
                          ┌──────────────────────┐
                          │       MySQL DB       │
                          └──────────────────────┘
-
-
----
-
-
-
-
-
