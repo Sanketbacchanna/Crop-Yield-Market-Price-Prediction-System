@@ -59,6 +59,9 @@ User information is associated with:
 - Agricultural records
 - Predictions
 - Recommendations
+
+---
+
 2. 🌱 Crop Management
 
 The system maintains crop information such as:
