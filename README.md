@@ -54,11 +54,11 @@ Farmers can be registered and their information can be stored in the database.
 
 User information is associated with:
 
-User ID
-Personal information
-Agricultural records
-Predictions
-Recommendations
+- User ID
+- Personal information
+- Agricultural records
+- Predictions
+- Recommendations
 2. 🌱 Crop Management
 
 The system maintains crop information such as:
