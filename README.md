@@ -79,6 +79,9 @@ Crop Name: Rice
 Crop Type: Cereal
 Season: Kharif
 Soil Type: Clayey
+
+---
+
 3. 🌾 Agricultural Data
 
 Agricultural information is stored for each farming record.
@@ -94,6 +97,9 @@ Soil Type: Clayey
 Crop Year: 2001-02
 
 This information is used as input for Machine Learning predictions.
+
+---
+
 ## 🏗️ System Architecture
 
 ```text
