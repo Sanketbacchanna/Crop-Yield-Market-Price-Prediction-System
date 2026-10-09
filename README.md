@@ -66,11 +66,11 @@ User information is associated with:
 
 The system maintains crop information such as:
 
-Crop ID
-Crop Name
-Crop Type
-Season
-Soil Type
+- Crop ID
+- Crop Name
+- Crop Type
+- Season
+- Soil Type
 
 Example:
 
