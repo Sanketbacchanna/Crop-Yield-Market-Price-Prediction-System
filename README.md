@@ -47,6 +47,50 @@ The main objectives of this project are:
 
 ---
 
+## 🚀 Main Features
+1. 👤 User Management
+
+Farmers can be registered and their information can be stored in the database.
+
+User information is associated with:
+
+User ID
+Personal information
+Agricultural records
+Predictions
+Recommendations
+2. 🌱 Crop Management
+
+The system maintains crop information such as:
+
+Crop ID
+Crop Name
+Crop Type
+Season
+Soil Type
+
+Example:
+
+Crop ID: 1
+Crop Name: Rice
+Crop Type: Cereal
+Season: Kharif
+Soil Type: Clayey
+3. 🌾 Agricultural Data
+
+Agricultural information is stored for each farming record.
+
+Example:
+
+State: Karnataka
+District: Bidar
+Season: Kharif
+Crop: Rice
+Cultivated Area: 5 Hectares
+Soil Type: Clayey
+Crop Year: 2001-02
+
+This information is used as input for Machine Learning predictions.
 ## 🏗️ System Architecture
 
 ```text
