@@ -100,6 +100,24 @@ This information is used as input for Machine Learning predictions.
 
 ---
 
+## 🤖 Machine Learning
+Yield Prediction
+The project uses a Random Forest Regression model for crop yield prediction.
+Training Dataset
+The cleaned dataset contains approximately:
+Rows: 3125
+Columns: 10
+
+Important features include:
+district
+crop
+crop_year
+season
+area
+
+Target:
+yield
+
 ## 🏗️ System Architecture
 
 ```text
