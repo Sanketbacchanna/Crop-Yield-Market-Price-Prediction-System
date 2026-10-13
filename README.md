@@ -71,7 +71,7 @@ The system combines crop-yield prediction, agricultural information, weather dat
 
 ## 🛠️ Technology Stack
 
-## Component & Technology
+**Component & Technology**
 
 Backend: Python, FastAPI
 Machine Learning: scikit-learn / compatible Python ML pipeline
