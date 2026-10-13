@@ -69,11 +69,11 @@ The system combines crop-yield prediction, agricultural information, weather dat
 
 - Supports interactive API testing through Swagger UI.
 
-🛠️ Technology Stack
+## 🛠️ Technology Stack
 
-Component
+## Component
 
-Technology
+## Technology
 
 Backend
 
