@@ -73,15 +73,15 @@ The system combines crop-yield prediction, agricultural information, weather dat
 
 **Component & Technology**
 
-Backend: Python, FastAPI
-Machine Learning: scikit-learn / compatible Python ML pipeline
-Database: MySQL
-ORM: SQLAlchemy
-API Testing: Swagger UI
-Yield Model: yield_model.pkl
-Data Processing: Pandas
-Weather Data: Karnataka weather CSV dataset
-Development Environment: Python virtual environment
+- Backend: Python, FastAPI
+- Machine Learning: scikit-learn / compatible Python ML pipeline
+- Database: MySQL
+- ORM: SQLAlchemy
+- API Testing: Swagger UI
+- Yield Model: yield_model.pkl
+- Data Processing: Pandas
+- Weather Data: Karnataka weather CSV dataset
+- Development Environment: Python virtual environment
 
 📂 Project Structure
 
