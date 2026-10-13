@@ -21,11 +21,11 @@ The system combines crop-yield prediction, agricultural information, weather dat
 
 **1. Crop Yield Prediction**
 
-Uses a trained machine-learning model saved as yield_model.pkl.
+- Uses a trained machine-learning model saved as yield_model.pkl.
 
-Uses agricultural information to support yield prediction.
+- Uses agricultural information to support yield prediction.
 
-Includes a crop-yield dataset for model development.
+- Includes a crop-yield dataset for model development.
 
 **2. Crop Recommendation**
 
