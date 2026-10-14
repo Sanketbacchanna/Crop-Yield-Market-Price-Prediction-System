@@ -83,13 +83,6 @@ The system combines crop-yield prediction, agricultural information, weather dat
 - Weather Data: Karnataka weather CSV dataset
 - Development Environment: Python virtual environment
 
-## 📂 Project Structure
-
-crop-prediction-portal/
-│
-
-
-Note: This structure highlights the main files identified during development. Your actual project may contain additional modules and files.
 
 ## ⚙️ Prerequisites
 
