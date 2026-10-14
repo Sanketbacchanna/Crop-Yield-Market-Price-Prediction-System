@@ -348,9 +348,9 @@ Model evaluation, monitoring, and periodic retraining.
 
 This project demonstrates the application of machine learning, agricultural datasets, REST API development, database management, and decision-support logic to an agricultural use case.
 
-👨‍💻 Author
+## 👨‍💻 Author
 
-Sanket Bacchanna
+**Sanket Bacchanna**
 
 MCA Student | Full Stack Developer
 
