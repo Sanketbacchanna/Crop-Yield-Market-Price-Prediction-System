@@ -187,47 +187,39 @@ Use Swagger UI to explore the registered endpoints and test supported requests.
 
 The following modules have been identified in the project:
 
-Module
+## Module  Purpose
 
-Purpose
+Price Prediction: Saves and retrieves market-price forecast records
 
-Price Prediction
+Crop Recommendation: Selects and ranks candidate crops using yield and price information
 
-Saves and retrieves market-price forecast records
+Yield Prediction: Uses the trained yield model for yield-related predictions
 
-Crop Recommendation
+The exact endpoints and parameters depend on the routes registered in **app/main.py.**
 
-Selects and ranks candidate crops using yield and price information
+**Example: Save a Price Record**
 
-Yield Prediction
-
-Uses the trained yield model for yield-related predictions
-
-The exact endpoints and parameters depend on the routes registered in app/main.py.
-
-Example: Save a Price Record
-
-POST /price-prediction/
+**POST /price-prediction/**
 
 Example query parameters:
 
-user_id=1
-crop_id=1
-forecast_price=2800
-model_used=Random Forest
-forecast_date=2026-10-10
+- user_id=1
+- crop_id=1
+- forecast_price=2800
+- model_used=Random Forest
+- forecast_date=2026-10-10
 
 This endpoint stores the supplied values. The example is illustrative and does not represent a verified market forecast.
 
-Example: Retrieve Price Records
+**Example: Retrieve Price Records**
 
-GET /price-prediction/
+**GET /price-prediction/**
 
 Returns the stored price-prediction records available through the endpoint.
 
-Example: Generate Crop Recommendations
+**Example: Generate Crop Recommendations**
 
-GET /crop-recommendation/recommend?user_id=1&agricultural_id=3
+**GET /crop-recommendation/recommend?user_id=1&agricultural_id=3**
 
 This example uses an existing project route. A successful recommendation requires suitable candidate crops and matching saved price records.
 
