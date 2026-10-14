@@ -229,21 +229,21 @@ The project uses MySQL to manage agricultural and prediction information.
 
 The database tables identified during development include:
 
-- user_table
+**- user_table**
 
-- crop_table
+**- crop_table**
 
-- agricultural_data_table
+**- agricultural_data_table**
 
-- market_price_table
+**- market_price_table**
 
-- price_prediction_table
+**- price_prediction_table**
 
-- crop_recommendation_table
+**- crop_recommendation_table**
 
-- yield_prediction_table
+**- yield_prediction_table**
 
-- weather_data_table
+**- weather_data_table**
 
 The exact columns and relationships are defined by the database schema and SQLAlchemy models.
 
@@ -253,7 +253,7 @@ Crop Yield Model
 
 The current trained model is stored at:
 
-ml/saved_models/yield_model.pkl
+**ml/saved_models/yield_model.pkl**
 
 The crop-yield dataset includes information such as:
 
@@ -273,7 +273,7 @@ The crop-yield dataset includes information such as:
 
 The existing model is intended for crop-yield prediction. It should not be used to predict market prices because yield and price are different prediction targets.
 
-Market-Price Forecasting — Planned Improvement
+**Market-Price Forecasting — Planned Improvement**
 
 The following work is still required to implement automated price forecasting:
 
@@ -289,7 +289,7 @@ The following work is still required to implement automated price forecasting:
 
 6.Generate price forecasts through a dedicated API endpoint.
 
-7.Store generated forecasts in price_prediction_table.
+7.Store generated forecasts in **price_prediction_table.**
 
 8.Integrate those forecasts into crop recommendation.
 
@@ -297,7 +297,7 @@ The following work is still required to implement automated price forecasting:
 
 The current recommendation logic combines normalized yield and price scores:
 
-Recommendation score = 0.5 × Yield score + 0.5 × Price score
+**Recommendation score = 0.5 × Yield score + 0.5 × Price score**
 
 Each score is normalized relative to the candidate crops being compared. A higher score indicates a better ranking under this formula.
 
