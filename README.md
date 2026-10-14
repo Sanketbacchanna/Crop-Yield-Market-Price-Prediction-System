@@ -229,21 +229,21 @@ The project uses MySQL to manage agricultural and prediction information.
 
 The database tables identified during development include:
 
-user_table
+- user_table
 
-crop_table
+- crop_table
 
-agricultural_data_table
+- agricultural_data_table
 
-market_price_table
+- market_price_table
 
-price_prediction_table
+- price_prediction_table
 
-crop_recommendation_table
+- crop_recommendation_table
 
-yield_prediction_table
+- yield_prediction_table
 
-weather_data_table
+- weather_data_table
 
 The exact columns and relationships are defined by the database schema and SQLAlchemy models.
 
@@ -257,19 +257,19 @@ ml/saved_models/yield_model.pkl
 
 The crop-yield dataset includes information such as:
 
-State and district
+- State and district
 
-Crop
+- Crop
 
-Crop year
+- Crop year
 
-Season
+- Season
 
-Area and area unit
+- Area and area unit
 
-Production unit and production
+- Production unit and production
 
-Yield
+- Yield
 
 The existing model is intended for crop-yield prediction. It should not be used to predict market prices because yield and price are different prediction targets.
 
@@ -277,21 +277,21 @@ Market-Price Forecasting — Planned Improvement
 
 The following work is still required to implement automated price forecasting:
 
-Obtain reliable historical crop market prices.
+1.Obtain reliable historical crop market prices.
 
-Clean and validate the data.
+2.Clean and validate the data.
 
-Select suitable input features and a forecast target.
+3.Select suitable input features and a forecast target.
 
-Train and evaluate a separate price-prediction model.
+4.Train and evaluate a separate price-prediction model.
 
-Save the trained model.
+5.Save the trained model.
 
-Generate price forecasts through a dedicated API endpoint.
+6.Generate price forecasts through a dedicated API endpoint.
 
-Store generated forecasts in price_prediction_table.
+7.Store generated forecasts in price_prediction_table.
 
-Integrate those forecasts into crop recommendation.
+8.Integrate those forecasts into crop recommendation.
 
 ## 📊 Recommendation Method
 
@@ -305,37 +305,37 @@ This score does not directly represent profit. Future versions could include cul
 
 ## 🔒 Security Considerations
 
-Do not upload API keys, database passwords, or secret tokens to GitHub.
+- Do not upload API keys, database passwords, or secret tokens to GitHub.
 
-Use environment variables for sensitive configuration.
+- Use environment variables for sensitive configuration.
 
-Validate API input parameters.
+- Validate API input parameters.
 
-Restrict access to user-specific prediction records.
+- Restrict access to user-specific prediction records.
 
-Use appropriate authentication and authorization before deploying the application publicly.
+- Use appropriate authentication and authorization before deploying the application publicly.
 
-Treat stored prices as forecasts only when their source and generation method are documented.
+- Treat stored prices as forecasts only when their source and generation method are documented.
 
 ## 🔮 Future Enhancements
 
-Automated market-price forecasting using historical market data.
+- Automated market-price forecasting using historical market data.
 
-Integration with a verified agricultural market-price API.
+- Integration with a verified agricultural market-price API.
 
-Crop profitability estimation.
+- Crop profitability estimation.
 
-Improved crop suitability analysis using soil and weather conditions.
+- Improved crop suitability analysis using soil and weather conditions.
 
-Weather-based crop recommendations.
+- Weather-based crop recommendations.
 
-Multilingual support for farmers.
+- Multilingual support for farmers.
 
-Prediction history and dashboard visualizations.
+- Prediction history and dashboard visualizations.
 
-User authentication and role-based access control.
+- User authentication and role-based access control.
 
-Model evaluation, monitoring, and periodic retraining.
+- Model evaluation, monitoring, and periodic retraining.
 
 ## 🎓 Academic Project
 
