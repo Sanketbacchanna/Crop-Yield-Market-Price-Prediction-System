@@ -87,31 +87,7 @@ The system combines crop-yield prediction, agricultural information, weather dat
 
 crop-prediction-portal/
 │
-├── backend/
-│   └── app/
-│       ├── main.py
-│       ├── database.py
-│       ├── models/
-│       │   ├── price_prediction.py
-│       │   └── ...
-│       └── routers/
-│           ├── price_prediction.py
-│           ├── crop_recommendation.py
-│           └── ...
-│
-├── ml/
-│   ├── datasets/
-│   │   ├── Crop_Yield.csv
-│   │   ├── Crop_Yield_backup.csv
-│   │   ├── Crop_Yield_Cleaned.csv
-│   │   ├── karnataka_weather_2015_2026.csv
-│   │   └── Soil data.csv
-│   │
-│   └── saved_models/
-│       └── yield_model.pkl
-│
-├── .venv/
-└── README.md
+
 
 Note: This structure highlights the main files identified during development. Your actual project may contain additional modules and files.
 
