@@ -83,7 +83,7 @@ The system combines crop-yield prediction, agricultural information, weather dat
 - Weather Data: Karnataka weather CSV dataset
 - Development Environment: Python virtual environment
 
-📂 Project Structure
+## 📂 Project Structure
 
 crop-prediction-portal/
 │
@@ -115,7 +115,7 @@ crop-prediction-portal/
 
 Note: This structure highlights the main files identified during development. Your actual project may contain additional modules and files.
 
-⚙️ Prerequisites
+## ⚙️ Prerequisites
 
 Install or configure the following:
 
@@ -127,7 +127,7 @@ Visual Studio Code or another Python IDE.
 
 Git (optional, for version control).
 
-🚀 Installation and Setup
+## 🚀 Installation and Setup
 
 Step 1: Clone the Repository
 
@@ -182,7 +182,7 @@ OpenAPI JSON: http://127.0.0.1:8000/openapi.json
 
 Use Swagger UI to explore the registered endpoints and test supported requests.
 
-🔌 API Modules
+## 🔌 API Modules
 
 The following modules have been identified in the project:
 
@@ -230,7 +230,7 @@ GET /crop-recommendation/recommend?user_id=1&agricultural_id=3
 
 This example uses an existing project route. A successful recommendation requires suitable candidate crops and matching saved price records.
 
-🗄️ Database
+## 🗄️ Database
 
 The project uses MySQL to manage agricultural and prediction information.
 
@@ -254,7 +254,7 @@ weather_data_table
 
 The exact columns and relationships are defined by the database schema and SQLAlchemy models.
 
-🤖 Machine Learning
+## 🤖 Machine Learning
 
 Crop Yield Model
 
@@ -300,7 +300,7 @@ Store generated forecasts in price_prediction_table.
 
 Integrate those forecasts into crop recommendation.
 
-📊 Recommendation Method
+## 📊 Recommendation Method
 
 The current recommendation logic combines normalized yield and price scores:
 
@@ -310,7 +310,7 @@ Each score is normalized relative to the candidate crops being compared. A highe
 
 This score does not directly represent profit. Future versions could include cultivation cost, expected production, weather risks, and transportation costs to estimate profitability more realistically.
 
-🔒 Security Considerations
+## 🔒 Security Considerations
 
 Do not upload API keys, database passwords, or secret tokens to GitHub.
 
@@ -324,7 +324,7 @@ Use appropriate authentication and authorization before deploying the applicatio
 
 Treat stored prices as forecasts only when their source and generation method are documented.
 
-🔮 Future Enhancements
+## 🔮 Future Enhancements
 
 Automated market-price forecasting using historical market data.
 
@@ -344,7 +344,7 @@ User authentication and role-based access control.
 
 Model evaluation, monitoring, and periodic retraining.
 
-🎓 Academic Project
+## 🎓 Academic Project
 
 This project demonstrates the application of machine learning, agricultural datasets, REST API development, database management, and decision-support logic to an agricultural use case.
 
