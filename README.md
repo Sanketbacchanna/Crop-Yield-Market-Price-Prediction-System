@@ -129,7 +129,7 @@ Git (optional, for version control).
 
 ## 🚀 Installation and Setup
 
-Step 1: Clone the Repository
+**Step 1: Clone the Repository**
 
 If your project is hosted on GitHub:
 
@@ -138,47 +138,48 @@ cd crop-prediction-portal
 
 Alternatively, open your existing project directory.
 
-Step 2: Create and Activate a Virtual Environment
+**Step 2: Create and Activate a Virtual Environment**
 
 On Windows PowerShell:
 
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+**python -m venv .venv
+.\.venv\Scripts\Activate.ps1**
 
-Step 3: Install Dependencies
+**Step 3: Install Dependencies**
 
 If you have a requirements.txt file:
 
-pip install -r backend/requirements.txt
+**pip install -r backend/requirements.txt**
 
 Use the actual location of your requirements file if it is stored elsewhere.
 
-Step 4: Configure MySQL
+**Step 4: Configure MySQL**
 
 Create the project database in MySQL:
 
-CREATE DATABASE crop_yield;
+**CREATE DATABASE crop_yield;**
 
-Configure your database connection using the settings expected by backend/app/database.py.
+Configure your database connection using the settings expected by 
+**backend/app/database.py.**
 
 Keep database passwords and other credentials in environment variables or a local configuration file excluded from Git. Do not commit API keys or passwords.
 
-Step 5: Start the Backend
+**Step 5: Start the Backend**
 
 From the project root in PowerShell:
 
-$env:PYTHONPATH = "$PWD\backend"
-python -m uvicorn app.main:app --reload --app-dir backend
+**$env:PYTHONPATH = "$PWD\backend"
+python -m uvicorn app.main:app --reload --app-dir backend**
 
 If your current project setup already uses a different working directory or startup command, follow that configuration.
 
-Step 6: Open the API Documentation
+**Step 6: Open the API Documentation**
 
 After the server starts, open:
 
-Swagger UI: http://127.0.0.1:8000/docs
+**Swagger UI:** http://127.0.0.1:8000/docs
 
-OpenAPI JSON: http://127.0.0.1:8000/openapi.json
+**OpenAPI JSON:** http://127.0.0.1:8000/openapi.json
 
 Use Swagger UI to explore the registered endpoints and test supported requests.
 
