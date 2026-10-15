@@ -208,11 +208,11 @@ The database tables identified during development include:
 
 **- price_prediction_table**
 
-**- crop_recommendation_table**
+**crop_recommendation_table**
 
-**- yield_prediction_table**
+**yield_prediction_table**
 
-**- weather_data_table**
+**weather_data_table**
 
 The exact columns and relationships are defined by the database schema and SQLAlchemy models.
 
