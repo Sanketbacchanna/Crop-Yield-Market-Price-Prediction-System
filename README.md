@@ -202,9 +202,9 @@ The database tables identified during development include:
 
 **crop_table**
 
-**- agricultural_data_table**
+**agricultural_data_table**
 
-**- market_price_table**
+**market_price_table**
 
 **- price_prediction_table**
 
