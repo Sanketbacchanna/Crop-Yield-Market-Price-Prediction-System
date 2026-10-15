@@ -198,9 +198,9 @@ The project uses MySQL to manage agricultural and prediction information.
 
 The database tables identified during development include:
 
-**- user_table**
+**user_table**
 
-**- crop_table**
+**crop_table**
 
 **- agricultural_data_table**
 
