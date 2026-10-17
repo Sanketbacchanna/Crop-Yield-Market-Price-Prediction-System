@@ -1,0 +1,282 @@
+t,cmdty,market_id,market_name,state_id,state_name,district_id,district_name,variety,p_min,p_max,p_modal
+2024-01-31,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2800,3200,3000
+2024-01-31,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,3180,6740,5100
+2024-01-31,Rice,514,Malur,29,Karnataka,581,Kolar,Sona,4000,5500,5000
+2024-01-31,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4400,6000,5250
+2024-01-31,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3100,4300,3800
+2024-01-31,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2000,3000,2500
+2024-01-31,Rice,763,Hassan,29,Karnataka,574,Hassan,Other,4407,4407,4407
+2024-01-31,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-31,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5250
+2024-01-31,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2250
+2024-01-31,Rice,119,Gangavathi,29,Karnataka,560,Koppal,Broken Rice,2890,3010,3000
+2024-01-31,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6200,5400
+2024-01-30,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,8500,5300
+2024-01-30,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,3180,6460,5600
+2024-01-30,Rice,514,Malur,29,Karnataka,581,Kolar,Sona,3500,4500,4138
+2024-01-30,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4350,5500,4700
+2024-01-30,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3000,4200,3550
+2024-01-30,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2000,3000,2500
+2024-01-30,Rice,763,Hassan,29,Karnataka,574,Hassan,Other,3200,7800,5400
+2024-01-30,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,6000,6200,6100
+2024-01-30,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6700,7200,6950
+2024-01-30,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,3500,4200,3850
+2024-01-30,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-30,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2250
+2024-01-29,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5250
+2024-01-29,Rice,772,Bangarpet,29,Karnataka,581,Kolar,Sarbati Raw,5500,6000,5700
+2024-01-29,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4150,6000,5050
+2024-01-29,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3100,4050,3650
+2024-01-29,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,1800,2850,2400
+2024-01-29,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,6000,6200,6100
+2024-01-29,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6700,7200,6950
+2024-01-29,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,3500,4200,3850
+2024-01-29,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-29,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2250
+2024-01-29,Rice,119,Gangavathi,29,Karnataka,560,Koppal,Other,4400,4400,4400
+2024-01-29,Rice,119,Gangavathi,29,Karnataka,560,Koppal,Broken Rice,2950,2950,2950
+2024-01-29,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6000,5400
+2024-01-29,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2800,3250,3000
+2024-01-27,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6100,5300
+2024-01-27,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2800,3100,3000
+2024-01-27,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4100,6250,5200
+2024-01-27,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3000,4050,3600
+2024-01-27,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2100,2900,2450
+2024-01-26,Rice,763,Hassan,29,Karnataka,574,Hassan,Other,7045,7045,7045
+2024-01-25,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-25,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5300
+2024-01-25,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2250
+2024-01-25,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6000,5400
+2024-01-25,Rice,119,Gangavathi,29,Karnataka,560,Koppal,Broken Rice,1800,1800,1800
+2024-01-25,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,3180,9800,6600
+2024-01-25,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,6000,6200,6100
+2024-01-25,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6700,7200,6950
+2024-01-25,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,3500,4200,3850
+2024-01-25,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2700,3200,3000
+2024-01-24,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6000,5200
+2024-01-24,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,3180,5188,4600
+2024-01-24,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4150,6400,5120
+2024-01-24,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3200,4000,3650
+2024-01-24,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2100,3000,2650
+2024-01-24,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Fine,6100,7400,6300
+2024-01-24,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Broken Rice,2150,3150,2300
+2024-01-24,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Basumathi,6000,14500,8000
+2024-01-24,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,6000,6200,6100
+2024-01-24,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6700,7200,6950
+2024-01-24,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,3500,4200,3850
+2024-01-24,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-24,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5300
+2024-01-24,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2250
+2024-01-24,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2800,3200,3000
+2024-01-23,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2700,3100,3000
+2024-01-23,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,3800,5600,4782
+2024-01-23,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4200,6000,5300
+2024-01-23,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3000,4100,3600
+2024-01-23,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2250,2900,2500
+2024-01-23,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,6000,6200,6100
+2024-01-23,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6700,7200,6950
+2024-01-23,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,3500,4200,3850
+2024-01-23,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-23,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5250
+2024-01-23,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2250
+2024-01-23,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6200,5400
+2024-01-22,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2250
+2024-01-22,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,3100,4600,3900
+2024-01-22,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,6000,6200,6100
+2024-01-22,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6700,7200,6950
+2024-01-22,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,3500,4200,3850
+2024-01-22,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-22,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5250
+2024-01-22,Rice,119,Gangavathi,29,Karnataka,560,Koppal,Other,4300,4925,4400
+2024-01-20,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Fine,6000,7000,6500
+2024-01-20,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,5450,6500,6032
+2024-01-20,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4100,6200,5200
+2024-01-20,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3100,4000,3500
+2024-01-20,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2200,2800,2400
+2024-01-20,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Broken Rice,2500,3000,2750
+2024-01-20,Rice,763,Hassan,29,Karnataka,574,Hassan,Other,4300,4600,4500
+2024-01-20,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,6000,6200,6100
+2024-01-20,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6700,7200,6950
+2024-01-20,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,3500,4200,3850
+2024-01-20,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-20,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5250
+2024-01-20,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2250
+2024-01-20,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6000,5400
+2024-01-20,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2800,3200,3000
+2024-01-19,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2800,3200,3000
+2024-01-19,Rice,120,Kolar,29,Karnataka,581,Kolar,Fine,4700,5100,4900
+2024-01-19,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4200,6150,5100
+2024-01-19,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3200,4100,3700
+2024-01-19,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2150,2900,2500
+2024-01-19,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Fine,6000,7000,6500
+2024-01-19,Rice,763,Hassan,29,Karnataka,574,Hassan,Other,3310,3310,3310
+2024-01-19,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,6000,6200,6100
+2024-01-19,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6700,7200,6950
+2024-01-19,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,3500,4200,3850
+2024-01-19,Rice,527,Tarikere,29,Karnataka,570,Chikmagalur,Pusa Basmati Raw (Old),3500,3500,3500
+2024-01-19,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-19,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5250
+2024-01-19,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2250
+2024-01-19,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6000,5400
+2024-01-18,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5250
+2024-01-18,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,3200,8100,5500
+2024-01-18,Rice,771,Chintamani,29,Karnataka,581,Kolar,Broken Rice,2600,2850,2700
+2024-01-18,Rice,762,Arasikere,29,Karnataka,574,Hassan,Medium,5550,5550,5550
+2024-01-18,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-18,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-17,Rice,119,Gangavathi,29,Karnataka,560,Koppal,Other,4300,4300,4300
+2024-01-17,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6200,5500
+2024-01-17,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4150,6200,5300
+2024-01-17,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3000,4100,3505
+2024-01-17,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2200,2950,2500
+2024-01-17,Rice,763,Hassan,29,Karnataka,574,Hassan,Other,4523,4523,4523
+2024-01-17,Rice,773,Ramanagara,29,Karnataka,572,Bangalore,Fine,5000,7000,5800
+2024-01-17,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-17,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5300
+2024-01-17,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-17,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2700,3200,3000
+2024-01-16,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-16,Rice,119,Gangavathi,29,Karnataka,560,Koppal,Broken Rice,2400,2400,2400
+2024-01-16,Rice,119,Gangavathi,29,Karnataka,560,Koppal,Other,3500,4800,4300
+2024-01-16,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5250
+2024-01-16,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-16,Rice,763,Hassan,29,Karnataka,574,Hassan,Other,3250,4450,3350
+2024-01-16,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,4800,6850,6070
+2024-01-15,Rice,773,Ramanagara,29,Karnataka,572,Bangalore,Fine,5000,7500,6800
+2024-01-13,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2200,2800,2500
+2024-01-13,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6200,5500
+2024-01-13,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2700,3200,3000
+2024-01-13,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4200,6300,5100
+2024-01-13,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3100,4000,3600
+2024-01-12,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5300
+2024-01-12,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-12,Rice,119,Gangavathi,29,Karnataka,560,Koppal,Other,4292,4300,4300
+2024-01-12,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2800,3200,3000
+2024-01-12,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6200,5500
+2024-01-12,Rice,772,Bangarpet,29,Karnataka,581,Kolar,Sarbati Raw,4500,5000,4800
+2024-01-12,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4000,6000,5100
+2024-01-12,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3000,4000,3600
+2024-01-12,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2000,2800,2400
+2024-01-12,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-11,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5250
+2024-01-11,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,4100,6300,5156
+2024-01-11,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-11,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-10,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3000,4000,3600
+2024-01-10,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,3000,4680,3362
+2024-01-10,Rice,771,Chintamani,29,Karnataka,581,Kolar,Broken Rice,2250,3200,2988
+2024-01-10,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4150,6100,5500
+2024-01-10,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,1800,2800,2400
+2024-01-10,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,5600,5900,5750
+2024-01-10,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6000,6500,6250
+2024-01-10,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,4500,4800,4650
+2024-01-10,Rice,789,Sira,29,Karnataka,571,Tumkur,Other,4500,4500,4500
+2024-01-10,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-10,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5300
+2024-01-10,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-10,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,2800,3200,3000
+2024-01-10,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,5000,6200,5600
+2024-01-09,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2500,3500,3100
+2024-01-09,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4100,6000,5400
+2024-01-09,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3100,4000,3600
+2024-01-09,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2000,2800,2400
+2024-01-09,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Fine,7000,7500,7250
+2024-01-09,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Broken Rice,2500,3000,2750
+2024-01-09,Rice,763,Hassan,29,Karnataka,574,Hassan,Other,5373,5373,5373
+2024-01-09,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,5600,5900,5750
+2024-01-09,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6000,6500,6250
+2024-01-09,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,4500,4800,4650
+2024-01-09,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-09,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5300
+2024-01-09,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-09,Rice,119,Gangavathi,29,Karnataka,560,Koppal,Other,5175,5175,5175
+2024-01-09,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,3500,6200,5800
+2024-01-08,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-08,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,3850,6000,4272
+2024-01-08,Rice,514,Malur,29,Karnataka,581,Kolar,Sona,3500,4500,4032
+2024-01-08,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4150,6200,5500
+2024-01-08,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2200,3000,2600
+2024-01-08,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3025,4000,3500
+2024-01-08,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2150,2900,2500
+2024-01-08,Rice,763,Hassan,29,Karnataka,574,Hassan,Other,3228,3228,3228
+2024-01-08,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,5600,5900,5750
+2024-01-08,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6000,6500,6250
+2024-01-08,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,4500,4800,4650
+2024-01-08,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-08,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5300
+2024-01-08,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,3500,6200,5800
+2024-01-06,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5300
+2024-01-06,Rice,772,Bangarpet,29,Karnataka,581,Kolar,Broken Rice,2500,3085,2800
+2024-01-06,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,5600,5900,5750
+2024-01-06,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6000,6500,6250
+2024-01-06,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,4500,4800,4650
+2024-01-06,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-06,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-06,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6200,5200
+2024-01-06,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2700,3100,3000
+2024-01-05,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3100,4300,3800
+2024-01-05,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2000,3000,2500
+2024-01-05,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Sona Mansoori Non Basmati,4000,5100,4800
+2024-01-05,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Fine,5300,6980,5820
+2024-01-05,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,5600,5900,5750
+2024-01-05,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6000,6500,6250
+2024-01-05,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,4500,4800,4650
+2024-01-05,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-05,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5300
+2024-01-05,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-05,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6200,5200
+2024-01-05,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2700,3200,3000
+2024-01-05,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4400,6100,5200
+2024-01-04,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-04,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2600,3700,2900
+2024-01-04,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,4500,6200,5300
+2024-01-04,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,3800,5500,4630
+2024-01-04,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4350,6150,5300
+2024-01-04,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3150,4200,3800
+2024-01-04,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2100,3100,2800
+2024-01-04,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Sona Mansoori Non Basmati,4100,5300,4500
+2024-01-04,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Fine,5200,6500,6300
+2024-01-04,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Broken Rice,2750,3000,2800
+2024-01-04,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,5600,5900,5750
+2024-01-04,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6000,6500,6250
+2024-01-04,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,4500,4800,4650
+2024-01-04,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-04,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5300
+2024-01-03,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6000,6500,6250
+2024-01-03,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4425,6000,5200
+2024-01-03,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3200,4250,3800
+2024-01-03,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2150,3050,2600
+2024-01-03,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,5600,5900,5750
+2024-01-03,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,4500,4800,4650
+2024-01-03,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-03,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5300
+2024-01-03,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-03,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6200,5200
+2024-01-03,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2700,3200,3000
+2024-01-02,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2700,3200,3000
+2024-01-02,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,4000,6180,5365
+2024-01-02,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Fine,4500,6100,5500
+2024-01-02,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Coarse,3100,4400,3800
+2024-01-02,Rice,756,Kalburgi,29,Karnataka,579,Gulbarga,Broken Rice,2000,3000,2550
+2024-01-02,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Sona Mansoori Non Basmati,5800,7120,6850
+2024-01-02,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Broken Rice,11290,11800,11290
+2024-01-02,Rice,123,Mysore (Bandipalya),29,Karnataka,577,Mysore,Basumathi,3500,5250,4750
+2024-01-02,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,5600,5900,5750
+2024-01-02,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6000,6500,6250
+2024-01-02,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,4500,4800,4650
+2024-01-02,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-02,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5300
+2024-01-02,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
+2024-01-02,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6200,5200
+2024-01-01,Rice,112,Bidar,29,Karnataka,558,Bidar,Broken Rice,2700,3100,2900
+2024-01-01,Rice,772,Bangarpet,29,Karnataka,581,Kolar,Medium,4000,4700,4300
+2024-01-01,Rice,771,Chintamani,29,Karnataka,581,Kolar,Sona,5145,6200,5500
+2024-01-01,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Medium,5600,5900,5750
+2024-01-01,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Fine,6000,6500,6250
+2024-01-01,Rice,107,Bangalore,29,Karnataka,572,Bangalore,Dappa,4500,4800,4650
+2024-01-01,Rice,119,Gangavathi,29,Karnataka,560,Koppal,Other,2400,2630,2500
+2024-01-01,Rice,112,Bidar,29,Karnataka,558,Bidar,CR 1009 (Coarse) Boiled,5000,6200,5200
+2024-01-01,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Medium,2800,4500,3700
+2024-01-01,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Fine,3900,7500,5250
+2024-01-01,Rice,119,Gangavathi,29,Karnataka,560,Koppal,Broken Rice,2450,2460,2460
+2024-01-01,Rice,781,Shimoga,29,Karnataka,568,Shimoga,Coarse,1900,2700,2300
