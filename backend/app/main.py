@@ -18,10 +18,18 @@ from app.routes.market_price import router as market_price_router
 from app.routes.yield_prediction import router as yield_prediction_router
 from app.routes.price_prediction import router as price_prediction_router
 from app.routes.crop_recommendation import router as crop_recommendation_router
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Crop Yield & Market Price Prediction Portal",
     version="1.0.0"
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(crops_router)
