@@ -85,7 +85,7 @@ function App() {
     }
   }
   useEffect(() => {
-  loadHistory();
+    loadHistory();
   }, []);
 
   return (
@@ -266,6 +266,72 @@ function App() {
       <footer className="footer">
         AgriPredict · Crop market price forecasting
       </footer>
+
+      <section className="panel history-panel">
+        <div className="panel-heading">
+          <h2>Prediction history</h2>
+          <p>Your previously saved crop market price forecasts.</p>
+        </div>
+
+        {historyLoading && <p>Loading prediction history...</p>}
+
+        {historyError && (
+          <div className="error-message" role="alert">
+            {historyError}
+            <button type="button" onClick={loadHistory}>
+              Try again
+            </button>
+          </div>
+        )}
+
+        {!historyLoading && !historyError && history.length === 0 && (
+          <p>No prediction history found yet.</p>
+        )}
+
+        {!historyLoading && history.length > 0 && (
+          <div className="history-table-wrapper">
+            <table className="history-table">
+              <thead>
+                <tr>
+                  <th>Crop</th>
+                  <th>Forecast price</th>
+                  <th>Forecast date</th>
+                  <th>Model</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((item) => (
+                  <tr key={item.price_prediction_id}>
+                    <td>
+                      {Number(item.crop_id) === 1
+                        ? "Rice"
+                        : Number(item.crop_id) === 2
+                          ? "Wheat"
+                          : Number(item.crop_id) === 3
+                            ? "Maize"
+                            : `Crop ${item.crop_id}`}
+                    </td>
+                    <td>
+                      ₹{Number(item.forecast_price).toLocaleString("en-IN")}
+                    </td>
+                    <td>{item.forecast_date}</td>
+                    <td>{item.model_used}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <button
+          type="button"
+          className="predict-button history-refresh"
+          onClick={loadHistory}
+          disabled={historyLoading}
+        >
+          {historyLoading ? "Refreshing..." : "Refresh history"}
+        </button>
+      </section>
     </div>
   );
 }
