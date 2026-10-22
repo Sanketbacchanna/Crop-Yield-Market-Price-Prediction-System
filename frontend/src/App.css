@@ -382,3 +382,78 @@ button {
     padding: 21px;
   }
 }
+
+/* Prediction history */
+.history-panel {
+  margin-top: 28px;
+  overflow: hidden;
+}
+
+.history-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 18px;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.history-table th {
+  padding: 14px 16px;
+  background: #f1f6ed;
+  color: #385b3b;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.history-table th:first-child {
+  border-radius: 9px 0 0 9px;
+}
+
+.history-table th:last-child {
+  border-radius: 0 9px 9px 0;
+}
+
+.history-table td {
+  padding: 15px 16px;
+  border-bottom: 1px solid #edf0e9;
+  color: #46594a;
+  white-space: nowrap;
+}
+
+.history-table tbody tr:hover {
+  background: #f8faf5;
+}
+
+.history-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.history-refresh {
+  max-width: 220px;
+  margin-top: 22px;
+}
+
+@media (max-width: 600px) {
+  .history-panel {
+    padding: 16px;
+  }
+
+  .history-table {
+    min-width: 560px;
+  }
+
+  .history-table th,
+  .history-table td {
+    padding: 12px;
+  }
+
+  .history-refresh {
+    max-width: 100%;
+  }
+}

@@ -78,6 +78,7 @@ function App() {
       }
 
       setResult(data);
+      await loadHistory();
     } catch (err) {
       setError(err.message || "Unable to connect to the API.");
     } finally {
@@ -262,11 +263,6 @@ function App() {
           </section>
         </div>
       </main>
-
-      <footer className="footer">
-        AgriPredict · Crop market price forecasting
-      </footer>
-
       <section className="panel history-panel">
         <div className="panel-heading">
           <h2>Prediction history</h2>
@@ -332,6 +328,10 @@ function App() {
           {historyLoading ? "Refreshing..." : "Refresh history"}
         </button>
       </section>
+
+      <footer className="footer">
+        AgriPredict · Crop market price forecasting
+      </footer>
     </div>
   );
 }
