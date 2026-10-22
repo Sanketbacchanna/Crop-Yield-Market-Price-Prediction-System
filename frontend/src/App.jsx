@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+// import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
@@ -14,6 +15,32 @@ function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+
+  async function loadHistory() {
+    setHistoryLoading(true);
+    setHistoryError("");
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/price-prediction/"
+      );
+
+      if (!response.ok) {
+        throw new Error("Could not load prediction history.");
+      }
+
+      const data = await response.json();
+      setHistory(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setHistoryError(err.message || "Unable to load prediction history.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
 
   function handlePriceChange(event) {
     setPrices({ ...prices, [event.target.name]: event.target.value });
@@ -57,6 +84,9 @@ function App() {
       setLoading(false);
     }
   }
+  useEffect(() => {
+  loadHistory();
+  }, []);
 
   return (
     <div className="app-shell">
@@ -241,3 +271,4 @@ function App() {
 }
 
 export default App;
+
