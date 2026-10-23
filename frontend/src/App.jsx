@@ -16,6 +16,13 @@ function App() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
+
+  const [agriculturalRecords, setAgriculturalRecords] = useState([]);
+  const [selectedAgriculturalId, setSelectedAgriculturalId] = useState("");
+  const [yieldResult, setYieldResult] = useState(null);
+  const [yieldLoading, setYieldLoading] = useState(false);
+  const [yieldError, setYieldError] = useState("");
+
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
 
@@ -38,6 +45,72 @@ function App() {
       setHistoryError(err.message || "Unable to load prediction history.");
     } finally {
       setHistoryLoading(false);
+    }
+  }
+
+  async function loadAgriculturalRecords() {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/agricultural-data/"
+      );
+
+      if (!response.ok) {
+        throw new Error("Could not load agricultural records.");
+      }
+
+      const data = await response.json();
+      setAgriculturalRecords(Array.isArray(data) ? data : []);
+
+      if (Array.isArray(data) && data.length > 0) {
+        setSelectedAgriculturalId(String(data[0].agricultural_id));
+      }
+    } catch (err) {
+      setYieldError(
+        err.message || "Unable to load agricultural records."
+      );
+    }
+  }
+
+  async function handleYieldPrediction(event) {
+    event.preventDefault();
+
+    if (!selectedAgriculturalId) {
+      setYieldError("Please select an agricultural record.");
+      return;
+    }
+
+    setYieldLoading(true);
+    setYieldError("");
+    setYieldResult(null);
+
+    try {
+      const params = new URLSearchParams({
+        user_id: "1",
+        agricultural_id: selectedAgriculturalId,
+      });
+
+      const response = await fetch(
+        `http://127.0.0.1:8000/yield-prediction/?${params}`,
+        {
+          method: "POST",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail || "Unable to generate yield prediction."
+        );
+      }
+
+      setYieldResult(data);
+    } catch (err) {
+      setYieldError(
+        err.message || "Unable to connect to the yield prediction API."
+      );
+    } finally {
+      setYieldLoading(false);
     }
   }
 
@@ -87,6 +160,7 @@ function App() {
   }
   useEffect(() => {
     loadHistory();
+    loadAgriculturalRecords();
   }, []);
 
   return (
@@ -262,6 +336,99 @@ function App() {
             )}
           </section>
         </div>
+
+        <section className="panel yield-panel">
+          <div className="panel-heading">
+            <div>
+              <span className="eyebrow">MACHINE LEARNING</span>
+              <h2>Crop Yield Prediction</h2>
+              <p>Select an agricultural record to estimate its crop yield.</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleYieldPrediction}>
+            <div className="form-field">
+              <label htmlFor="agriculturalRecord">
+                Agricultural Record
+              </label>
+
+              <select
+                id="agriculturalRecord"
+                value={selectedAgriculturalId}
+                onChange={(event) =>
+                  setSelectedAgriculturalId(event.target.value)
+                }
+                required
+              >
+                <option value="">Select a record</option>
+
+                {agriculturalRecords.map((record) => (
+                  <option
+                    key={record.agricultural_id}
+                    value={record.agricultural_id}
+                  >
+                    {`Record ${record.agricultural_id} — ${record.district || "Unknown district"
+                      } — ${record.season || "Unknown season"
+                      } — ${record.crop_year || "Year unavailable"
+                      }`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="predict-button"
+              disabled={yieldLoading || agriculturalRecords.length === 0}
+            >
+              {yieldLoading ? "Predicting Yield..." : "Predict Crop Yield"}
+            </button>
+          </form>
+
+          {yieldError && (
+            <p className="error-message" role="alert">
+              {yieldError}
+            </p>
+          )}
+
+          {yieldResult && (
+            <div className="yield-result">
+              <span className="eyebrow">PREDICTION RESULT</span>
+              <h3>{yieldResult.crop_name}</h3>
+
+              <p>
+                <strong>Predicted yield:</strong>{" "}
+                {Number(yieldResult.predicted_yield).toFixed(2)}
+              </p>
+
+              <p>
+                <strong>District:</strong> {yieldResult.district}
+              </p>
+
+              <p>
+                <strong>Season:</strong> {yieldResult.season}
+              </p>
+
+              <p>
+                <strong>Crop year:</strong> {yieldResult.crop_year}
+              </p>
+
+              <p>
+                <strong>Cultivated area:</strong>{" "}
+                {yieldResult.cultivated_area}
+              </p>
+
+              <p>
+                <strong>Model:</strong> {yieldResult.model_used}
+              </p>
+
+              <p className="result-note">
+                This is an ML-based estimate. Confirm the yield unit used by
+                your trained model before interpreting the numerical value.
+              </p>
+            </div>
+          )}
+        </section>
       </main>
       <section className="panel history-panel">
         <div className="panel-heading">
