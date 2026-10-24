@@ -1,4 +1,3 @@
-
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
 
 :root {
@@ -456,4 +455,49 @@ button {
   .history-refresh {
     max-width: 100%;
   }
+}
+
+/* Crop yield history table layout fix */
+.yield-panel .history-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.yield-panel .history-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.yield-panel .history-table th,
+.yield-panel .history-table td {
+  padding: 12px 10px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.yield-panel .history-table th:nth-child(1),
+.yield-panel .history-table td:nth-child(1) {
+  width: 16%;
+}
+
+.yield-panel .history-table th:nth-child(2),
+.yield-panel .history-table td:nth-child(2) {
+  width: 20%;
+}
+
+.yield-panel .history-table th:nth-child(3),
+.yield-panel .history-table td:nth-child(3) {
+  width: 12%;
+}
+
+.yield-panel .history-table th:nth-child(4),
+.yield-panel .history-table td:nth-child(4) {
+  width: 22%;
+}
+
+.yield-panel .history-table th:nth-child(5),
+.yield-panel .history-table td:nth-child(5) {
+  width: 30%;
 }

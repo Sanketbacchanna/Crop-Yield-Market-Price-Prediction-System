@@ -396,12 +396,14 @@ function App() {
               <div className="history-table-wrapper">
                 <table className="history-table">
                   <thead>
+
                     <tr>
                       <th>Prediction ID</th>
                       <th>Agricultural ID</th>
                       <th>Crop ID</th>
                       <th>Predicted Yield</th>
                       <th>Model</th>
+                      <th>Prediction Date</th>
                     </tr>
                   </thead>
 
@@ -422,6 +424,11 @@ function App() {
                             : Number(item.predicted_yield).toFixed(2)}
                         </td>
                         <td>{item.model_used ?? "—"}</td>
+                        <td>
+                          {item.prediction_date
+                            ? new Date(item.prediction_date).toLocaleDateString()
+                            : "Not available"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
