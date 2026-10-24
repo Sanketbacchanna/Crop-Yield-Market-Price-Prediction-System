@@ -23,6 +23,11 @@ function App() {
   const [yieldLoading, setYieldLoading] = useState(false);
   const [yieldError, setYieldError] = useState("");
 
+  const [yieldHistory, setYieldHistory] = useState([]);
+  const [yieldHistoryLoading, setYieldHistoryLoading] = useState(false);
+  const [yieldHistoryError, setYieldHistoryError] = useState("");
+
+
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
 
@@ -45,6 +50,30 @@ function App() {
       setHistoryError(err.message || "Unable to load prediction history.");
     } finally {
       setHistoryLoading(false);
+    }
+  }
+
+  async function loadYieldHistory() {
+    setYieldHistoryLoading(true);
+    setYieldHistoryError("");
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/yield-prediction/"
+      );
+
+      if (!response.ok) {
+        throw new Error("Could not load yield prediction history.");
+      }
+
+      const data = await response.json();
+      setYieldHistory(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setYieldHistoryError(
+        err.message || "Unable to load yield prediction history."
+      );
+    } finally {
+      setYieldHistoryLoading(false);
     }
   }
 
