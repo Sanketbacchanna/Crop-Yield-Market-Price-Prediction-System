@@ -142,8 +142,6 @@ function App() {
       setYieldLoading(false);
     }
   }
-
-
   function handlePriceChange(event) {
     setPrices({ ...prices, [event.target.name]: event.target.value });
   }
@@ -190,6 +188,7 @@ function App() {
   useEffect(() => {
     loadHistory();
     loadAgriculturalRecords();
+    loadYieldHistory();
   }, []);
 
   return (
@@ -364,6 +363,73 @@ function App() {
               </>
             )}
           </section>
+
+          <section className="panel history-panel">
+            <div className="panel-heading">
+              <div>
+                <span className="eyebrow">SAVED PREDICTIONS</span>
+                <h2>Crop Yield Prediction History</h2>
+                <p>Review your previously generated yield estimates.</p>
+              </div>
+
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={loadYieldHistory}
+                disabled={yieldHistoryLoading}
+              >
+                {yieldHistoryLoading ? "Refreshing..." : "Refresh history"}
+              </button>
+            </div>
+
+            {yieldHistoryError && (
+              <p className="error-message" role="alert">
+                {yieldHistoryError}
+              </p>
+            )}
+
+            {yieldHistoryLoading && yieldHistory.length === 0 ? (
+              <p>Loading yield prediction history...</p>
+            ) : yieldHistory.length === 0 ? (
+              <p>No yield predictions found yet.</p>
+            ) : (
+              <div className="history-table-wrapper">
+                <table className="history-table">
+                  <thead>
+                    <tr>
+                      <th>Prediction ID</th>
+                      <th>Agricultural ID</th>
+                      <th>Crop ID</th>
+                      <th>Predicted Yield</th>
+                      <th>Model</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {yieldHistory.map((item, index) => (
+                      <tr
+                        key={
+                          item.prediction_id ??
+                          `${item.agricultural_id}-${index}`
+                        }
+                      >
+                        <td>{item.prediction_id ?? "—"}</td>
+                        <td>{item.agricultural_id ?? "—"}</td>
+                        <td>{item.crop_id ?? "—"}</td>
+                        <td>
+                          {item.predicted_yield == null
+                            ? "—"
+                            : Number(item.predicted_yield).toFixed(2)}
+                        </td>
+                        <td>{item.model_used ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
         </div>
 
         <section className="panel yield-panel">
