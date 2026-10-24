@@ -6,7 +6,7 @@ from app.models.yield_prediction import YieldPrediction
 from app.models.agricultural_data import AgriculturalData
 from app.models.crop import Crop
 from app.ml.yield_predictor import predict_yield
-
+from datetime import datetime
 
 router = APIRouter(
     prefix="/yield-prediction",
@@ -121,7 +121,7 @@ def create_yield_prediction(
         agricultural_id=agricultural_id,
         predicted_yield=predicted_yield,
         model_used="Random Forest",
-        prediction_date=None
+        prediction_date=datetime.now()
     )
 
     db.add(prediction)
