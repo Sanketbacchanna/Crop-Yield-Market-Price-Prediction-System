@@ -24,28 +24,38 @@ function App() {
   const [yieldError, setYieldError] = useState("");
 
   const [yieldHistory, setYieldHistory] = useState([]);
-  const [yieldHistoryLoading, setYieldHistoryLoading] = useState(false);
+  const [yieldHistoryLoading, setYieldHistoryLoading] = useState(true);
   const [yieldHistoryError, setYieldHistoryError] = useState("");
 
 
-  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState("");
 
+  async function fetchHistory() {
+    const response = await fetch("http://127.0.0.1:8000/price-prediction/");
+
+    if (!response.ok) {
+      throw new Error("Could not load prediction history.");
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  }
+
+  async function fetchYieldHistory() {
+    const response = await fetch("http://127.0.0.1:8000/yield-prediction/");
+
+    if (!response.ok) {
+      throw new Error("Could not load yield prediction history.");
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  }
+
   async function loadHistory() {
-    setHistoryLoading(true);
-    setHistoryError("");
-
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/price-prediction/"
-      );
-
-      if (!response.ok) {
-        throw new Error("Could not load prediction history.");
-      }
-
-      const data = await response.json();
-      setHistory(Array.isArray(data) ? data : []);
+      setHistory(await fetchHistory());
     } catch (err) {
       setHistoryError(err.message || "Unable to load prediction history.");
     } finally {
@@ -54,50 +64,30 @@ function App() {
   }
 
   async function loadYieldHistory() {
-    setYieldHistoryLoading(true);
-    setYieldHistoryError("");
-
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/yield-prediction/"
-      );
-
-      if (!response.ok) {
-        throw new Error("Could not load yield prediction history.");
-      }
-
-      const data = await response.json();
-      setYieldHistory(Array.isArray(data) ? data : []);
+      setYieldHistory(await fetchYieldHistory());
     } catch (err) {
-      setYieldHistoryError(
-        err.message || "Unable to load yield prediction history."
-      );
+      setYieldHistoryError(err.message || "Unable to load yield prediction history.");
     } finally {
       setYieldHistoryLoading(false);
     }
   }
 
-  async function loadAgriculturalRecords() {
-    try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/agricultural-data/"
-      );
+  function refreshYieldHistory() {
+    setYieldHistoryLoading(true);
+    setYieldHistoryError("");
+    loadYieldHistory();
+  }
 
-      if (!response.ok) {
-        throw new Error("Could not load agricultural records.");
-      }
+  async function fetchAgriculturalRecords() {
+    const response = await fetch("http://127.0.0.1:8000/agricultural-data/");
 
-      const data = await response.json();
-      setAgriculturalRecords(Array.isArray(data) ? data : []);
-
-      if (Array.isArray(data) && data.length > 0) {
-        setSelectedAgriculturalId(String(data[0].agricultural_id));
-      }
-    } catch (err) {
-      setYieldError(
-        err.message || "Unable to load agricultural records."
-      );
+    if (!response.ok) {
+      throw new Error("Could not load agricultural records.");
     }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
   }
 
   async function handleYieldPrediction(event) {
@@ -178,6 +168,8 @@ function App() {
       }
 
       setResult(data);
+      setHistoryLoading(true);
+      setHistoryError("");
       await loadHistory();
     } catch (err) {
       setError(err.message || "Unable to connect to the API.");
@@ -186,9 +178,42 @@ function App() {
     }
   }
   useEffect(() => {
-    loadHistory();
-    loadAgriculturalRecords();
-    loadYieldHistory();
+    async function loadInitialHistory() {
+      try {
+        setHistory(await fetchHistory());
+      } catch (err) {
+        setHistoryError(err.message || "Unable to load prediction history.");
+      } finally {
+        setHistoryLoading(false);
+      }
+    }
+
+    async function loadInitialYieldHistory() {
+      try {
+        setYieldHistory(await fetchYieldHistory());
+      } catch (err) {
+        setYieldHistoryError(err.message || "Unable to load yield prediction history.");
+      } finally {
+        setYieldHistoryLoading(false);
+      }
+    }
+
+    async function loadInitialAgriculturalRecords() {
+      try {
+        const data = await fetchAgriculturalRecords();
+        setAgriculturalRecords(data);
+
+        if (data.length > 0) {
+          setSelectedAgriculturalId(String(data[0].agricultural_id));
+        }
+      } catch (err) {
+        setYieldError(err.message || "Unable to load agricultural records.");
+      }
+    }
+
+    loadInitialHistory();
+    loadInitialAgriculturalRecords();
+    loadInitialYieldHistory();
   }, []);
 
   return (
@@ -375,7 +400,7 @@ function App() {
               <button
                 type="button"
                 className="secondary-button"
-                onClick={loadYieldHistory}
+                onClick={refreshYieldHistory}
                 disabled={yieldHistoryLoading}
               >
                 {yieldHistoryLoading ? "Refreshing..." : "Refresh history"}
@@ -606,4 +631,3 @@ function App() {
 }
 
 export default App;
-
