@@ -26,7 +26,10 @@ function App() {
   const [yieldHistory, setYieldHistory] = useState([]);
   const [yieldHistoryLoading, setYieldHistoryLoading] = useState(true);
   const [yieldHistoryError, setYieldHistoryError] = useState("");
-
+  const [recommendations, setRecommendations] = useState([]);
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
+  const [recommendationError, setRecommendationError] = useState("");
+  const [recommendationResult, setRecommendationResult] = useState(null);
 
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState("");
@@ -90,17 +93,18 @@ function App() {
     return Array.isArray(data) ? data : [];
   }
 
-  async function handleYieldPrediction(event) {
+  async function handleCropRecommendation(event) {
     event.preventDefault();
 
     if (!selectedAgriculturalId) {
-      setYieldError("Please select an agricultural record.");
+      setRecommendationError("Please select an agricultural record.");
       return;
     }
 
-    setYieldLoading(true);
-    setYieldError("");
-    setYieldResult(null);
+    setRecommendationLoading(true);
+    setRecommendationError("");
+    setRecommendationResult(null);
+    setRecommendations([]);
 
     try {
       const params = new URLSearchParams({
@@ -109,7 +113,7 @@ function App() {
       });
 
       const response = await fetch(
-        `http://127.0.0.1:8000/yield-prediction/?${params}`,
+        `http://127.0.0.1:8000/crop-recommendation/recommend?${params}`,
         {
           method: "POST",
         }
@@ -119,17 +123,20 @@ function App() {
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Unable to generate yield prediction."
+          data.detail || "Unable to generate crop recommendations."
         );
       }
 
-      setYieldResult(data);
+      setRecommendationResult(data);
+      setRecommendations(
+        Array.isArray(data.recommendations) ? data.recommendations : []
+      );
     } catch (err) {
-      setYieldError(
-        err.message || "Unable to connect to the yield prediction API."
+      setRecommendationError(
+        err.message || "Unable to connect to the crop recommendation API."
       );
     } finally {
-      setYieldLoading(false);
+      setRecommendationLoading(false);
     }
   }
   function handlePriceChange(event) {
