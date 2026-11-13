@@ -8,6 +8,7 @@ from app.models.crop_recommendation import CropRecommendation
 from app.models.agricultural_data import AgriculturalData
 from app.models.crop import Crop
 from app.models.price_prediction import PricePrediction
+from app.models.weather_data import WeatherData
 from app.ml.yield_predictor import predict_yield
 
 
@@ -81,6 +82,40 @@ def generate_crop_recommendations(
     season = agricultural.season
     crop_year = agricultural.crop_year
     area = float(agricultural.cultivated_area)
+
+    # ---------------------------------------------------------
+    # Get latest weather data for the agricultural district
+    # ---------------------------------------------------------
+    weather = (
+        db.query(WeatherData)
+        .filter(WeatherData.location.ilike(district))
+        .order_by(WeatherData.recorded_date.desc())
+        .first()
+    )
+
+    if not weather:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No weather data found for district: {district}"
+        )
+
+    temperature = (
+        float(weather.temperature)
+        if weather.temperature is not None
+        else None
+    )
+
+    rainfall = (
+        float(weather.rainfall)
+        if weather.rainfall is not None
+        else None
+    )
+
+    humidity = (
+        float(weather.humidity)
+        if weather.humidity is not None
+        else None
+    )
 
     candidates = []
 
