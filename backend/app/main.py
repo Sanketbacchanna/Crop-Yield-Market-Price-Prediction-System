@@ -1,3 +1,6 @@
+import logging
+import os
+
 from app.models import (
     User,
     Crop,
@@ -24,9 +27,20 @@ app = FastAPI(
     title="Crop Yield & Market Price Prediction Portal",
     version="1.0.0"
 )
+
+logger = logging.getLogger(__name__)
+cors_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173"
+    ).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,9 +71,9 @@ def health():
             "database": "Connected"
         }
 
-    except Exception as e:
+    except Exception:
+        logger.exception("Database health check failed")
         return {
             "status": "ERROR",
-            "database": "Connection failed",
-            "error": str(e)
+            "database": "Connection failed"
         }

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -16,8 +16,8 @@ router = APIRouter(
 
 @router.post("/")
 def create_yield_prediction(
-    user_id: int,
-    agricultural_id: int,
+    user_id: int = Query(gt=0),
+    agricultural_id: int = Query(gt=0),
     db: Session = Depends(get_db)
 ):
     # ---------------------------------------------------------

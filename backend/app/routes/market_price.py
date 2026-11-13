@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+from datetime import date
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -12,10 +14,10 @@ router = APIRouter(
 
 @router.post("/")
 def create_market_price(
-    crop_id: int,
-    market_price: float,
-    price_date: str,
-    market_location: str,
+    crop_id: int = Query(gt=0),
+    market_price: float = Query(ge=0, le=9999999999, allow_inf_nan=False),
+    price_date: date = Query(),
+    market_location: str = Query(min_length=1, max_length=45),
     db: Session = Depends(get_db)
 ):
     new_price = MarketPrice(

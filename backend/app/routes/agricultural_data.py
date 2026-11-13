@@ -25,7 +25,8 @@ def create_agricultural_data(
         season=data.season,
         crop_id=data.crop_id,
         cultivated_area=data.cultivated_area,
-        soil_type=data.soil_type
+        soil_type=data.soil_type,
+        crop_year=data.crop_year
     )
 
     db.add(new_data)

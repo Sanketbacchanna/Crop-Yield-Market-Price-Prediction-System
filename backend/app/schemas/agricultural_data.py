@@ -1,14 +1,16 @@
 from pydantic import BaseModel
+from pydantic import Field
 from typing import Optional
 
 
 class AgriculturalDataCreate(BaseModel):
-    state: Optional[str] = None
-    district: Optional[str] = None
-    season: Optional[str] = None
-    crop_id: Optional[int] = None
-    cultivated_area: Optional[float] = None
-    soil_type: Optional[str] = None
+    state: Optional[str] = Field(default=None, max_length=105)
+    district: Optional[str] = Field(default=None, max_length=45)
+    season: Optional[str] = Field(default=None, max_length=45)
+    crop_id: Optional[int] = Field(default=None, gt=0)
+    cultivated_area: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    soil_type: Optional[str] = Field(default=None, max_length=100)
+    crop_year: Optional[str] = Field(default=None, max_length=20)
 
 
 class AgriculturalDataResponse(AgriculturalDataCreate):

@@ -128,10 +128,21 @@ Create the project database in MySQL:
 
 **CREATE DATABASE crop_yield;**
 
-Configure your database connection using the settings expected by 
-**backend/app/database.py.**
+Copy `backend/.env.example` to `backend/.env` and set your database credentials.
+The backend requires `DB_HOST`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME`;
+`DB_PORT` defaults to `3306`. Set `CORS_ORIGINS` to a comma-separated list
+of trusted frontend origins (the default is `http://localhost:5173`).
+Never commit `backend/.env` or put real credentials in `.env.example`.
 
-Keep database passwords and other credentials in environment variables or a local configuration file excluded from Git. Do not commit API keys or passwords.
+The repository previously tracked `backend/.env`; it is now ignored. Remove
+it from Git tracking while keeping your local copy with:
+
+```powershell
+git rm --cached backend/.env
+```
+
+If real credentials were ever committed, rotate them; ignoring the file does
+not remove values from the repository's existing history.
 
 **Step 5: Start the Backend**
 

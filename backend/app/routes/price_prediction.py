@@ -1,7 +1,7 @@
 
 from datetime import date, datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -23,12 +23,12 @@ SUPPORTED_CROPS = {
 
 @router.post("/forecast")
 def generate_price_forecast(
-    user_id: int,
-    crop_id: int,
-    price_previous_month: float,
-    price_previous_2_months: float,
-    price_previous_3_months: float,
-    price_avg_previous_3_months: float,
+    user_id: int = Query(gt=0),
+    crop_id: int = Query(gt=0),
+    price_previous_month: float = Query(ge=0, allow_inf_nan=False),
+    price_previous_2_months: float = Query(ge=0, allow_inf_nan=False),
+    price_previous_3_months: float = Query(ge=0, allow_inf_nan=False),
+    price_avg_previous_3_months: float = Query(ge=0, allow_inf_nan=False),
     db: Session = Depends(get_db),
 ):
     # Verify the crop exists
@@ -44,20 +44,6 @@ def generate_price_forecast(
         raise HTTPException(
             status_code=400,
             detail="Price forecasting is currently supported for Rice, Wheat, and Maize only.",
-        )
-
-    # Validate that supplied prices are reasonable
-    prices = [
-        price_previous_month,
-        price_previous_2_months,
-        price_previous_3_months,
-        price_avg_previous_3_months,
-    ]
-
-    if any(price < 0 for price in prices):
-        raise HTTPException(
-            status_code=400,
-            detail="Historical prices cannot be negative",
         )
 
     # Generate the next-month forecast
