@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import CropRecommendation from "./components/CropRecommendation";
 import DashboardHeader, { DashboardIntro } from "./components/DashboardHeader";
+import Sidebar from "./components/Sidebar";
 import HistoryTable from "./components/HistoryTable";
 import {
   PricePredictionForm,
@@ -213,26 +214,205 @@ function App() {
     }
   }
 
-  return (
-    <div className="app-shell">
+    // <div className="app-shell">
+    //   <DashboardHeader />
+
+    //   <main className="dashboard">
+    //     <DashboardIntro />
+    //     <div className="content-grid">
+    //       <PricePredictionForm
+    //         cropId={cropId}
+    //         onCropChange={setCropId}
+    //         prices={prices}
+    //         onPriceChange={handlePriceChange}
+    //         onSubmit={handlePriceSubmit}
+    //         loading={priceLoading}
+    //         error={priceError}
+    //       />
+    //       <PricePredictionResult result={priceResult} />
+
+    //       <HistoryTable
+    //         eyebrow="SAVED PREDICTIONS"
+    //         title="Crop Yield Prediction History"
+    //         description="Review your previously generated yield estimates."
+    //         headers={[
+    //           "Prediction ID",
+    //           "Agricultural ID",
+    //           "Crop ID",
+    //           "Predicted Yield",
+    //           "Model",
+    //           "Prediction Date",
+    //         ]}
+    //         rows={yieldHistory}
+    //         loading={yieldHistoryLoading}
+    //         error={yieldHistoryError}
+    //         emptyMessage="No yield predictions found yet."
+    //         onRefresh={loadYieldHistory}
+    //         refreshPlacement="header"
+    //       >
+    //         {yieldHistory.map((item, index) => (
+    //           <tr
+    //             key={
+    //               item.prediction_id ??
+    //               `${item.agricultural_id}-${item.crop_id}-${index}`
+    //             }
+    //           >
+    //             <td>{item.prediction_id ?? "—"}</td>
+    //             <td>{item.agricultural_id ?? "—"}</td>
+    //             <td>{item.crop_id ?? "—"}</td>
+    //             <td>
+    //               {item.predicted_yield == null
+    //                 ? "—"
+    //                 : Number(item.predicted_yield).toFixed(2)}
+    //             </td>
+    //             <td>{item.model_used ?? "—"}</td>
+    //             <td>
+    //               {item.prediction_date
+    //                 ? new Date(item.prediction_date).toLocaleDateString()
+    //                 : "Not available"}
+    //             </td>
+    //           </tr>
+    //         ))}
+    //       </HistoryTable>
+    //     </div>
+
+    //     <YieldPrediction
+    //       agriculturalRecords={agriculturalRecords}
+    //       selectedAgriculturalId={selectedAgriculturalId}
+    //       onAgriculturalChange={setSelectedAgriculturalId}
+    //       onSubmit={handleYieldSubmit}
+    //       loading={yieldLoading}
+    //       error={yieldError || agriculturalError}
+    //       result={yieldResult}
+    //     />
+    //   </main>
+
+    //   <HistoryTable
+    //     title="Prediction history"
+    //     description="Your previously saved crop market price forecasts."
+    //     headers={["Crop", "Forecast price", "Forecast date", "Model"]}
+    //     rows={priceHistory}
+    //     loading={priceHistoryLoading}
+    //     error={priceHistoryError}
+    //     emptyMessage="No prediction history found yet."
+    //     onRefresh={loadPriceHistory}
+    //   >
+    //     {priceHistory.map((item) => {
+    //       const cropNames = { 1: "Rice", 2: "Wheat", 3: "Maize" };
+    //       return (
+    //         <tr key={item.price_prediction_id}>
+    //           <td>
+    //             {cropNames[Number(item.crop_id)] || `Crop ${item.crop_id}`}
+    //           </td>
+    //           <td>
+    //             ₹{Number(item.forecast_price).toLocaleString("en-IN")}
+    //           </td>
+    //           <td>{item.forecast_date}</td>
+    //           <td>{item.model_used}</td>
+    //         </tr>
+    //       );
+    //     })}
+    //   </HistoryTable>
+
+    //   <CropRecommendation
+    //     agriculturalRecords={agriculturalRecords}
+    //     selectedAgriculturalId={selectedAgriculturalId}
+    //     onAgriculturalChange={setSelectedAgriculturalId}
+    //     onSubmit={handleCropRecommendation}
+    //     loading={recommendationLoading}
+    //     error={recommendationError || agriculturalError}
+    //     result={recommendationResult}
+    //   />
+
+    //   <footer className="footer">
+    //     AgriPredict · Crop market price forecasting
+    //   </footer>
+    // </div>
+    return (
+      <div className="app-layout">
+        <Sidebar />
+
+    <div className="main-area">
       <DashboardHeader />
 
       <main className="dashboard">
         <DashboardIntro />
-        <div className="content-grid">
-          <PricePredictionForm
-            cropId={cropId}
-            onCropChange={setCropId}
-            prices={prices}
-            onPriceChange={handlePriceChange}
-            onSubmit={handlePriceSubmit}
-            loading={priceLoading}
-            error={priceError}
-          />
-          <PricePredictionResult result={priceResult} />
 
+        <section className="dashboard-section">
+          <div className="section-heading">
+            <div>
+              <p className="section-eyebrow">PREDICTIONS</p>
+              <h2>Market Price</h2>
+              <p>
+                Forecast the expected market price using recent historical
+                prices.
+              </p>
+            </div>
+          </div>
+
+          <div className="content-grid">
+            <PricePredictionForm
+              cropId={cropId}
+              onCropChange={setCropId}
+              prices={prices}
+              onPriceChange={handlePriceChange}
+              onSubmit={handlePriceSubmit}
+              loading={priceLoading}
+              error={priceError}
+            />
+
+            <PricePredictionResult result={priceResult} />
+          </div>
+        </section>
+
+        <section className="dashboard-section">
+          <div className="section-heading">
+            <div>
+              <p className="section-eyebrow">MACHINE LEARNING</p>
+              <h2>Crop Yield Prediction</h2>
+              <p>
+                Estimate crop yield using your agricultural information.
+              </p>
+            </div>
+          </div>
+
+          <YieldPrediction
+            agriculturalRecords={agriculturalRecords}
+            selectedAgriculturalId={selectedAgriculturalId}
+            onAgriculturalChange={setSelectedAgriculturalId}
+            onSubmit={handleYieldSubmit}
+            loading={yieldLoading}
+            error={yieldError || agriculturalError}
+            result={yieldResult}
+          />
+        </section>
+
+        <section className="dashboard-section">
+          <div className="section-heading">
+            <div>
+              <p className="section-eyebrow">SMART RECOMMENDATION</p>
+              <h2>Crop Recommendation</h2>
+              <p>
+                Find the most suitable crop based on your agricultural
+                information.
+              </p>
+            </div>
+          </div>
+
+          <CropRecommendation
+            agriculturalRecords={agriculturalRecords}
+            selectedAgriculturalId={selectedAgriculturalId}
+            onAgriculturalChange={setSelectedAgriculturalId}
+            onSubmit={handleCropRecommendation}
+            loading={recommendationLoading}
+            error={recommendationError || agriculturalError}
+            result={recommendationResult}
+          />
+        </section>
+
+        <section className="dashboard-section">
           <HistoryTable
-            eyebrow="SAVED PREDICTIONS"
+            eyebrow="YIELD HISTORY"
             title="Crop Yield Prediction History"
             description="Review your previously generated yield estimates."
             headers={[
@@ -274,61 +454,54 @@ function App() {
               </tr>
             ))}
           </HistoryTable>
-        </div>
+        </section>
 
-        <YieldPrediction
-          agriculturalRecords={agriculturalRecords}
-          selectedAgriculturalId={selectedAgriculturalId}
-          onAgriculturalChange={setSelectedAgriculturalId}
-          onSubmit={handleYieldSubmit}
-          loading={yieldLoading}
-          error={yieldError || agriculturalError}
-          result={yieldResult}
-        />
+        <section className="dashboard-section">
+          <HistoryTable
+            eyebrow="PRICE HISTORY"
+            title="Market Price Prediction History"
+            description="Review your previously generated market price forecasts."
+            headers={["Crop", "Forecast price", "Forecast date", "Model"]}
+            rows={priceHistory}
+            loading={priceHistoryLoading}
+            error={priceHistoryError}
+            emptyMessage="No prediction history found yet."
+            onRefresh={loadPriceHistory}
+          >
+            {priceHistory.map((item) => {
+              const cropNames = {
+                1: "Rice",
+                2: "Wheat",
+                3: "Maize",
+              };
+
+              return (
+                <tr key={item.price_prediction_id}>
+                  <td>
+                    {cropNames[Number(item.crop_id)] ||
+                      `Crop ${item.crop_id}`}
+                  </td>
+
+                  <td>
+                    ₹{Number(item.forecast_price).toLocaleString("en-IN")}
+                  </td>
+
+                  <td>{item.forecast_date}</td>
+
+                  <td>{item.model_used}</td>
+                </tr>
+              );
+            })}
+          </HistoryTable>
+        </section>
       </main>
 
-      <HistoryTable
-        title="Prediction history"
-        description="Your previously saved crop market price forecasts."
-        headers={["Crop", "Forecast price", "Forecast date", "Model"]}
-        rows={priceHistory}
-        loading={priceHistoryLoading}
-        error={priceHistoryError}
-        emptyMessage="No prediction history found yet."
-        onRefresh={loadPriceHistory}
-      >
-        {priceHistory.map((item) => {
-          const cropNames = { 1: "Rice", 2: "Wheat", 3: "Maize" };
-          return (
-            <tr key={item.price_prediction_id}>
-              <td>
-                {cropNames[Number(item.crop_id)] || `Crop ${item.crop_id}`}
-              </td>
-              <td>
-                ₹{Number(item.forecast_price).toLocaleString("en-IN")}
-              </td>
-              <td>{item.forecast_date}</td>
-              <td>{item.model_used}</td>
-            </tr>
-          );
-        })}
-      </HistoryTable>
-
-      <CropRecommendation
-        agriculturalRecords={agriculturalRecords}
-        selectedAgriculturalId={selectedAgriculturalId}
-        onAgriculturalChange={setSelectedAgriculturalId}
-        onSubmit={handleCropRecommendation}
-        loading={recommendationLoading}
-        error={recommendationError || agriculturalError}
-        result={recommendationResult}
-      />
-
       <footer className="footer">
-        AgriPredict · Crop market price forecasting
+        AgriPredict · Smart Agriculture Prediction Platform
       </footer>
     </div>
-  );
+  </div>
+);
 }
 
 export default App;
