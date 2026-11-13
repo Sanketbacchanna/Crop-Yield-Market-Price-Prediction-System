@@ -207,7 +207,231 @@ button {
   border-top: 1px solid var(--border);
   padding-top: 12px;
 }
+/* =========================================================
+   TOP HEADER
+   ========================================================= */
 
+.top-header {
+  height: 76px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 40px;
+
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+}
+
+.top-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.top-header-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 13px;
+
+  background: var(--primary-light);
+
+  font-size: 21px;
+}
+
+.top-header-brand h1 {
+  margin: 0;
+
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.top-header-brand span {
+  display: block;
+
+  margin-top: 2px;
+
+  color: var(--text-secondary);
+
+  font-size: 11px;
+}
+
+.top-header-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  color: var(--text-secondary);
+
+  font-size: 13px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #22c55e;
+}
+
+/* =========================================================
+   DASHBOARD INTRO
+   ========================================================= */
+
+.dashboard-intro {
+  min-height: 260px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+
+  padding: 42px 46px;
+
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #f0f8ed 0%,
+      #f8fbf6 55%,
+      #eef7e9 100%
+    );
+
+  border: 1px solid #e0ebdc;
+}
+
+.intro-content {
+  max-width: 760px;
+}
+
+.intro-eyebrow {
+  margin: 0 0 12px;
+
+  color: var(--primary);
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.dashboard-intro h2 {
+  margin: 0;
+
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+}
+
+.dashboard-intro h2 span {
+  color: var(--primary);
+}
+
+.intro-description {
+  max-width: 650px;
+
+  margin: 18px 0 0;
+
+  color: var(--text-secondary);
+
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.intro-notice {
+  max-width: 650px;
+
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  margin-top: 22px;
+  padding: 12px 15px;
+
+  border: 1px solid #dce9d7;
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.intro-notice span {
+  flex-shrink: 0;
+
+  font-size: 16px;
+}
+
+.intro-notice p {
+  margin: 0;
+
+  color: #58645b;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.intro-visual {
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.intro-visual-circle {
+  width: 145px;
+  height: 145px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 42px;
+
+  background: #e1f0d8;
+
+  font-size: 68px;
+
+  transform: rotate(-3deg);
+}
+
+/* =========================================================
+   HEADER RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 720px) {
+  .top-header {
+    height: auto;
+
+    padding: 16px 20px;
+  }
+
+  .top-header-status {
+    display: none;
+  }
+
+  .dashboard-intro {
+    flex-direction: column;
+    align-items: flex-start;
+
+    padding: 30px 24px;
+  }
+
+  .intro-visual {
+    display: none;
+  }
+
+  .dashboard-intro h2 {
+    font-size: 32px;
+  }
+}
 /* =========================================================
    MAIN AREA
    ========================================================= */
@@ -228,7 +452,7 @@ button {
 
   margin: 0 auto;
 
-  padding: 32px 40px 60px;
+  padding: 28px 40px 60px;
 }
 
 /* =========================================================
