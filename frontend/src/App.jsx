@@ -16,6 +16,7 @@ import {
   getCropRecommendations,
   getPriceHistory,
   getYieldHistory,
+  getWeatherData,
 } from "./services/api";
 import "./App.css";
 
@@ -92,6 +93,7 @@ function App() {
         getPriceHistory(),
         getYieldHistory(),
         getAgriculturalRecords(),
+        getWeatherData(),
       ]);
 
       if (!active) {
@@ -136,8 +138,20 @@ function App() {
           )
         );
       }
-    }
 
+      if (results[3].status === "fulfilled") {
+        setWeatherData(results[3].value);
+      } else {
+        setWeatherError(
+          getErrorMessage(
+            results[3].reason,
+            "Unable to load weather data."
+          )
+        );
+      }
+      setWeatherLoading(false);
+    }
+    
     loadInitialData();
     return () => {
       active = false;

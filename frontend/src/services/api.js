@@ -70,8 +70,13 @@ export function getCropRecommendations(agriculturalId) {
     user_id: "1",
     agricultural_id: agriculturalId,
   });
-
   return request(`/crop-recommendation/recommend?${params}`, {
     method: "POST",
   });
+}
+export function getWeatherData() {
+  return getList(
+    "/weather-data/",
+    "Could not load weather data."
+  );
 }
