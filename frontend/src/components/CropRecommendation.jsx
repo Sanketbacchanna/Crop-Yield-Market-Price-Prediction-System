@@ -8,7 +8,17 @@ function CropRecommendation({
   result,
 }) {
   const recommendation = result?.recommendations?.[0];
+  const cropImages = {
+    Rice: "/crops/Rice.png",
+    Wheat: "/crops/wheat.jpg",
+    Maize: "/crops/maize.jpg",
+    Cotton: "/crops/cotton.jpg",
+    Sugarcane: "/crops/sugarcane.jpg",
+  };
 
+  const cropImage = recommendation
+    ? cropImages[recommendation.crop_name]
+    : null;
   return (
     <div className="recommendation-card">
       <div className="recommendation-form">
@@ -73,7 +83,16 @@ function CropRecommendation({
             </div>
 
             <div className="recommended-crop">
-              <div className="recommended-crop-icon">🌱</div>
+              <div className="recommended-crop-image">
+                {cropImage ? (
+                  <img
+                    src={cropImage}
+                    alt={recommendation.crop_name}
+                  />
+                ) : (
+                  <span>🌱</span>
+                )}
+              </div>
 
               <div>
                 <p>Recommended Crop</p>
@@ -96,8 +115,8 @@ function CropRecommendation({
                 <strong>
                   {recommendation.forecast_price != null
                     ? `₹${Number(
-                        recommendation.forecast_price
-                      ).toLocaleString("en-IN")}`
+                      recommendation.forecast_price
+                    ).toLocaleString("en-IN")}`
                     : "—"}
                 </strong>
               </div>
