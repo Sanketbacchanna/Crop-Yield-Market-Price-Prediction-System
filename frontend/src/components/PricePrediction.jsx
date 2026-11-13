@@ -1,131 +1,208 @@
-const CROPS = [
-  { id: "1", name: "Rice" },
-  { id: "2", name: "Wheat" },
-  { id: "3", name: "Maize" },
-];
-
-const PRICE_FIELDS = [
-  { name: "previousMonth", label: "Price previous month (₹)" },
-  { name: "previousTwoMonths", label: "Price two months ago (₹)" },
-  { name: "previousThreeMonths", label: "Price three months ago (₹)" },
-  { name: "averagePrice", label: "Average price of previous three months (₹)" },
-];
-
-export function PricePredictionForm({
+function PricePredictionForm({
   cropId,
-  onCropChange,
   prices,
+  onCropChange,
   onPriceChange,
   onSubmit,
   loading,
   error,
 }) {
   return (
-    <section className="panel">
-      <div className="panel-heading">
-        <h2>Market price predictor</h2>
-        <p>Enter the previous three months of prices in ₹.</p>
-      </div>
+    <div className="price-prediction-card">
+      <div className="price-form-panel">
+        <div className="price-form-icon">📈</div>
 
-      <form onSubmit={onSubmit}>
-        <div className="form-field">
-          <label htmlFor="crop">Select crop</label>
-          <select
-            id="crop"
-            value={cropId}
-            onChange={(event) => onCropChange(event.target.value)}
-          >
-            {CROPS.map((crop) => (
-              <option key={crop.id} value={crop.id}>
-                {crop.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <div className="price-form-content">
+          <div className="section-kicker">MARKET PRICE FORECAST</div>
 
-        {PRICE_FIELDS.map((field) => (
-          <div className="form-field" key={field.name}>
-            <label htmlFor={field.name}>{field.label}</label>
-            <input
-              id={field.name}
-              name={field.name}
-              type="number"
-              min="0"
-              step="any"
-              value={prices[field.name]}
-              onChange={onPriceChange}
-              required
-            />
-            {field.name === "averagePrice" && (
-              <span className="field-help">
-                Enter the average for the same three-month period.
-              </span>
-            )}
-          </div>
-        ))}
+          <h3>Predict the next market price</h3>
 
-        <button className="predict-button" type="submit" disabled={loading}>
-          {loading ? "Generating forecast..." : "✦ Predict market price"}
-        </button>
-      </form>
-
-      {error && (
-        <div className="error-message" role="alert">
-          {error}
-        </div>
-      )}
-    </section>
-  );
-}
-
-export function PricePredictionResult({ result }) {
-  return (
-    <section className="panel result-panel" aria-live="polite">
-      <div className="panel-heading">
-        <h2>Prediction result</h2>
-        <p>Your forecast will appear here.</p>
-      </div>
-
-      {!result ? (
-        <div className="result-placeholder">
-          <div>
-            <span>🌿</span>
-            <strong>Ready when you are</strong>
-            <div>Complete the form and select Predict market price.</div>
-          </div>
-        </div>
-      ) : (
-        <>
-          <p className="result-value-label">Estimated next-month price</p>
-          <div className="result-value">
-            ₹
-            {Number(result.forecast_price).toLocaleString("en-IN", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </div>
-          <span className="result-crop">{result.crop}</span>
-
-          <div className="result-details">
-            <div className="result-detail">
-              <span>Forecast date</span>
-              <span>{result.forecast_date}</span>
-            </div>
-            <div className="result-detail">
-              <span>ML model</span>
-              <span>{result.model_used}</span>
-            </div>
-            <div className="result-detail">
-              <span>Status</span>
-              <span>Saved successfully</span>
-            </div>
-          </div>
-
-          <p className="disclaimer">
-            This is a model estimate, not a guaranteed selling price.
+          <p>
+            Enter recent crop prices to estimate the future market price
+            using the prediction model.
           </p>
-        </>
-      )}
-    </section>
+
+          <form onSubmit={onSubmit}>
+            <div className="price-form-grid">
+              <div className="form-field">
+                <label htmlFor="price-crop">Crop</label>
+
+                <select
+                  id="price-crop"
+                  value={cropId}
+                  onChange={(event) => onCropChange(event.target.value)}
+                  disabled={loading}
+                >
+                  <option value="1">Rice</option>
+                  <option value="2">Wheat</option>
+                  <option value="3">Maize</option>
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="previous-month">
+                  Previous Month Price
+                </label>
+
+                <div className="input-with-prefix">
+                  <span>₹</span>
+
+                  <input
+                    id="previous-month"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={prices.previousMonth}
+                    onChange={(event) =>
+                      onPriceChange(
+                        "previousMonth",
+                        event.target.value
+                      )
+                    }
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="previous-two-months">
+                  Previous 2 Months Price
+                </label>
+
+                <div className="input-with-prefix">
+                  <span>₹</span>
+
+                  <input
+                    id="previous-two-months"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={prices.previousTwoMonths}
+                    onChange={(event) =>
+                      onPriceChange(
+                        "previousTwoMonths",
+                        event.target.value
+                      )
+                    }
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="previous-three-months">
+                  Previous 3 Months Price
+                </label>
+
+                <div className="input-with-prefix">
+                  <span>₹</span>
+
+                  <input
+                    id="previous-three-months"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={prices.previousThreeMonths}
+                    onChange={(event) =>
+                      onPriceChange(
+                        "previousThreeMonths",
+                        event.target.value
+                      )
+                    }
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="average-price">
+                  Average Price
+                </label>
+
+                <div className="input-with-prefix">
+                  <span>₹</span>
+
+                  <input
+                    id="average-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={prices.averagePrice}
+                    onChange={(event) =>
+                      onPriceChange(
+                        "averagePrice",
+                        event.target.value
+                      )
+                    }
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="price-prediction-button"
+              disabled={loading}
+            >
+              {loading ? "Predicting..." : "Predict Market Price"}
+              {!loading && <span>→</span>}
+            </button>
+          </form>
+
+          {error && <p className="form-error">{error}</p>}
+        </div>
+      </div>
+    </div>
   );
 }
+
+function PricePredictionResult({ result }) {
+  if (!result) {
+    return (
+      <div className="price-result-empty">
+        <div className="price-result-empty-icon">💰</div>
+
+        <h3>No forecast yet</h3>
+
+        <p>
+          Enter the recent market prices and generate a forecast to
+          see the predicted price here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="price-result-card">
+      <div className="price-result-header">
+        <div>
+          <span className="price-result-label">FORECAST RESULT</span>
+          <h3>Estimated Market Price</h3>
+          <p className="price-result-crop">
+            Crop: <strong>{result.crop_name || "Rice"}</strong>
+          </p>
+        </div>
+
+        <div className="price-result-icon">₹</div>
+      </div>
+
+      <div className="price-result-value">
+        ₹
+        {Number(
+          result.predicted_price ?? result.forecast_price ?? 0
+        ).toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}
+        <span className="price-unit"> / unit</span>
+      </div>
+
+      <p className="price-result-note">
+        Predicted using the recent price history provided above.
+      </p>
+    </div>
+  );
+}
+
+export { PricePredictionForm, PricePredictionResult };

@@ -1019,3 +1019,476 @@ button {
     grid-template-columns: 1fr;
   }
 }
+/* ================================
+   MARKET PRICE PREDICTION
+================================ */
+
+.price-prediction-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.price-form-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 5px 18px rgba(31, 41, 35, 0.05);
+  text-align: center;
+}
+
+.price-form-icon {
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: #e8f5e9;
+  font-size: 26px;
+}
+
+.price-form-content {
+  width: 100%;
+  max-width: 900px;
+}
+
+.price-form-content h3 {
+  margin: 4px 0 8px;
+  font-size: 21px;
+  color: var(--text);
+}
+
+.price-form-content > p {
+  margin: 0 0 22px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.section-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--primary);
+}
+
+.price-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.form-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.form-field input,
+.form-field select {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.input-with-prefix {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-prefix span {
+  position: absolute;
+  left: 13px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.input-with-prefix input {
+  padding-left: 30px;
+}
+
+.price-prediction-button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 20px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.price-prediction-button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.price-prediction-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Result */
+
+.price-result-card {
+  padding: 24px;
+  background: linear-gradient(145deg, #f0f8f1, #ffffff);
+  border: 1px solid #dcebdd;
+  border-radius: 18px;
+}
+
+.price-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.price-result-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--primary);
+}
+
+.price-result-header h3 {
+  margin: 6px 0 0;
+  font-size: 19px;
+  color: var(--text);
+}
+
+.price-result-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #dcebdd;
+  color: var(--primary);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.price-result-value {
+  margin-top: 24px;
+  font-size: 38px;
+  font-weight: 800;
+  color: var(--primary-dark);
+}
+
+.price-result-note {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.price-result-empty {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 18px;
+}
+
+.price-result-empty-icon {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: var(--primary-light);
+  font-size: 26px;
+}
+
+.price-result-empty h3 {
+  margin: 0 0 7px;
+  color: var(--text);
+}
+
+.price-result-empty p {
+  max-width: 430px;
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Responsive */
+
+@media (max-width: 700px) {
+  .price-form-panel {
+    flex-direction: column;
+  }
+
+  .price-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .price-result-value {
+    font-size: 32px;
+  }
+}
+.price-result-crop {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.price-result-crop strong {
+  color: var(--text);
+}
+
+.price-unit {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+/* ================================
+   CROP YIELD PREDICTION
+================================ */
+
+.yield-prediction-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.yield-form-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 5px 18px rgba(31, 41, 35, 0.05);
+  text-align: center;
+}
+
+.yield-icon {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: var(--primary-light);
+  font-size: 27px;
+}
+
+.yield-form-content {
+  width: 100%;
+  max-width: 700px;
+}
+
+.yield-form-content h3 {
+  margin: 4px 0 8px;
+  font-size: 21px;
+  color: var(--text);
+}
+
+.yield-form-content > p {
+  margin: 0 0 22px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.yield-form-content form {
+  width: 100%;
+  text-align: left;
+}
+
+.yield-form-content .form-field {
+  margin-bottom: 18px;
+}
+
+.yield-prediction-button {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.yield-prediction-button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.yield-prediction-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Result */
+
+.yield-result-card {
+  min-height: 280px;
+  padding: 24px;
+  background: linear-gradient(145deg, #f0f8f1, #ffffff);
+  border: 1px solid #dcebdd;
+  border-radius: 18px;
+  box-sizing: border-box;
+}
+
+.yield-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.yield-result-header h3 {
+  margin: 6px 0 0;
+  font-size: 19px;
+  color: var(--text);
+}
+
+.yield-result-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #dcebdd;
+  font-size: 22px;
+}
+
+.yield-result-value {
+  margin-top: 24px;
+  font-size: 38px;
+  font-weight: 800;
+  color: var(--primary-dark);
+}
+
+.yield-unit {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.yield-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.yield-details > div {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #dcebdd;
+  border-radius: 10px;
+}
+
+.yield-details span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.yield-details strong {
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* Empty result */
+
+.yield-result-empty {
+  height: 100%;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.yield-empty-icon {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: var(--primary-light);
+  font-size: 27px;
+}
+
+.yield-result-empty h3 {
+  margin: 0 0 7px;
+  color: var(--text);
+}
+
+.yield-result-empty p {
+  max-width: 380px;
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+  .yield-prediction-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .yield-details {
+    grid-template-columns: 1fr;
+  }
+
+  .yield-result-value {
+    font-size: 32px;
+  }
+}
