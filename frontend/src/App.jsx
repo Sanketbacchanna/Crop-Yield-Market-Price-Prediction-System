@@ -57,6 +57,10 @@ function App() {
   const [priceHistoryLoading, setPriceHistoryLoading] = useState(true);
   const [priceHistoryError, setPriceHistoryError] = useState("");
 
+  const [weatherData, setWeatherData] = useState([]);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [weatherError, setWeatherError] = useState("");
+
   const loadPriceHistory = useCallback(async () => {
     setPriceHistoryLoading(true);
     setPriceHistoryError("");
@@ -151,7 +155,7 @@ function App() {
       }
       setWeatherLoading(false);
     }
-    
+
     loadInitialData();
     return () => {
       active = false;
@@ -414,6 +418,24 @@ function App() {
                   : "No agricultural record"
               }
               accent="purple"
+            />
+            <SummaryCard
+              icon="🌦️"
+              label="Weather"
+              value={
+                weatherData.length > 0
+                  ? `${weatherData[0].temperature ?? "—"}°C`
+                  : "—"
+              }
+              description={
+                weatherData.length > 0
+                  ? `${weatherData[0].location || "Unknown"} • Humidity ${weatherData[0].humidity ?? "—"
+                  }%`
+                  : weatherLoading
+                    ? "Loading weather..."
+                    : "No weather data"
+              }
+              accent="blue"
             />
           </section>
 

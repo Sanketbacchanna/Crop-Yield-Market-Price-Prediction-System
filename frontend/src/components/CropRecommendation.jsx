@@ -1,4 +1,4 @@
-export default function CropRecommendation({
+function CropRecommendation({
   agriculturalRecords,
   selectedAgriculturalId,
   onAgriculturalChange,
@@ -7,107 +7,115 @@ export default function CropRecommendation({
   error,
   result,
 }) {
-  const recommendations = Array.isArray(result?.recommendations)
-    ? result.recommendations
-    : [];
+  const recommendation = result?.recommendations?.[0];
 
   return (
-    <section className="panel recommendation-panel">
-      <div className="panel-heading">
-        <div>
-          <span className="eyebrow">SMART RECOMMENDATION</span>
-          <h2>Crop Recommendation</h2>
+    <div className="recommendation-card">
+      <div className="recommendation-form">
+        <div className="recommendation-icon">🌾</div>
+
+        <div className="recommendation-form-content">
+          <h3>Find the best crop for your farm</h3>
+
           <p>
-            Get the top recommended crops based on yield prediction and
-            forecast market price.
+            Select your agricultural record and let the prediction model
+            recommend the most suitable crop.
           </p>
+
+          <form onSubmit={onSubmit}>
+            <label htmlFor="recommendation-agricultural-record">
+              Agricultural Record
+            </label>
+
+            <select
+              id="recommendation-agricultural-record"
+              value={selectedAgriculturalId}
+              onChange={(event) =>
+                onAgriculturalChange(event.target.value)
+              }
+              disabled={loading || agriculturalRecords.length === 0}
+            >
+              {agriculturalRecords.length === 0 ? (
+                <option value="">No records available</option>
+              ) : (
+                agriculturalRecords.map((record) => (
+                  <option
+                    key={record.agricultural_id}
+                    value={record.agricultural_id}
+                  >
+                    {record.district || "Unknown"} •{" "}
+                    {record.season || "Unknown Season"} •{" "}
+                    {record.crop_year || "Unknown Year"}
+                  </option>
+                ))
+              )}
+            </select>
+
+            <button
+              type="submit"
+              className="recommendation-button"
+              disabled={loading || agriculturalRecords.length === 0}
+            >
+              {loading ? "Generating..." : "Generate Recommendation"}
+            </button>
+          </form>
+
+          {error && <p className="form-error">{error}</p>}
         </div>
       </div>
 
-      <form onSubmit={onSubmit}>
-        <div className="form-field">
-          <label htmlFor="recommendationAgriculturalRecord">
-            Agricultural Record
-          </label>
-          <select
-            id="recommendationAgriculturalRecord"
-            value={selectedAgriculturalId}
-            onChange={(event) => onAgriculturalChange(event.target.value)}
-            required
-          >
-            <option value="">Select a record</option>
-            {agriculturalRecords.map((record) => (
-              <option
-                key={record.agricultural_id}
-                value={record.agricultural_id}
-              >
-                {`Record ${record.agricultural_id} — ${
-                  record.district || "Unknown district"
-                } — ${record.season || "Unknown season"} — ${
-                  record.crop_year || "Year unavailable"
-                }`}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="recommendation-result">
+        {recommendation ? (
+          <>
+            <div className="recommendation-result-header">
+              <span>TOP RECOMMENDATION</span>
+              <strong>#{recommendation.recommendation_rank}</strong>
+            </div>
 
-        <button
-          type="submit"
-          className="predict-button"
-          disabled={loading || agriculturalRecords.length === 0}
-        >
-          {loading
-            ? "Generating Recommendations..."
-            : "🌱 Get Crop Recommendations"}
-        </button>
-      </form>
+            <div className="recommended-crop">
+              <div className="recommended-crop-icon">🌱</div>
 
-      {error && (
-        <p className="error-message" role="alert">
-          {error}
-        </p>
-      )}
-
-      {result && (
-        <div className="recommendation-result">
-          <span className="eyebrow">TOP RECOMMENDATIONS</span>
-          <h3>Recommended Crops for {result.district}</h3>
-          <p>
-            <strong>Season:</strong> {result.season}
-          </p>
-          <p>
-            <strong>Crop year:</strong> {result.crop_year}
-          </p>
-
-          <div className="recommendation-list">
-            {recommendations.map((item) => (
-              <div
-                className="recommendation-card"
-                key={`${item.crop_id}-${item.recommendation_rank}`}
-              >
-                <div className="recommendation-rank">
-                  #{item.recommendation_rank}
-                </div>
-                <div className="recommendation-info">
-                  <h4>{item.crop_name}</h4>
-                  <p>
-                    <strong>Predicted yield:</strong>{" "}
-                    {Number(item.predicted_yield).toFixed(2)}
-                  </p>
-                  <p>
-                    <strong>Forecast price:</strong> ₹
-                    {Number(item.forecast_price).toLocaleString("en-IN")}
-                  </p>
-                  <p>
-                    <strong>Recommendation score:</strong>{" "}
-                    {Number(item.recommendation_score).toFixed(2)}
-                  </p>
-                </div>
+              <div>
+                <p>Recommended Crop</p>
+                <h3>{recommendation.crop_name}</h3>
               </div>
-            ))}
+            </div>
+
+            <div className="recommendation-stats">
+              <div>
+                <span>Predicted Yield</span>
+                <strong>
+                  {recommendation.predicted_yield != null
+                    ? Number(recommendation.predicted_yield).toFixed(2)
+                    : "—"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Forecast Price</span>
+                <strong>
+                  {recommendation.forecast_price != null
+                    ? `₹${Number(
+                        recommendation.forecast_price
+                      ).toLocaleString("en-IN")}`
+                    : "—"}
+                </strong>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="recommendation-empty">
+            <div>🌿</div>
+            <h3>No recommendation yet</h3>
+            <p>
+              Generate a recommendation to see the best crop for your
+              selected agricultural record.
+            </p>
           </div>
-        </div>
-      )}
-    </section>
+        )}
+      </div>
+    </div>
   );
 }
+
+export default CropRecommendation;
