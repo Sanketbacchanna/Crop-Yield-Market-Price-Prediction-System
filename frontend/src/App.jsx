@@ -366,12 +366,11 @@ function App() {
               }
               description={
                 recommendationResult?.recommendations?.[0]
-                  ? `Rank #${recommendationResult.recommendations[0].recommendation_rank}`
+                  ? `Rank #${recommendationResult.recommendations[0].recommendation_rank} • Best match`
                   : "Generate a recommendation"
               }
               accent="green"
             />
-
             <SummaryCard
               icon="💰"
               label="Forecast Price"
@@ -382,7 +381,7 @@ function App() {
               }
               description={
                 priceResult?.crop_name
-                  ? priceResult.crop_name
+                  ? `${priceResult.crop_name} • Next forecast`
                   : "Generate a price forecast"
               }
               accent="orange"
@@ -398,7 +397,7 @@ function App() {
               }
               description={
                 yieldResult?.crop_name
-                  ? yieldResult.crop_name
+                  ? `${yieldResult.crop_name} • Random Forest`
                   : "Generate a yield prediction"
               }
               accent="blue"
@@ -413,7 +412,7 @@ function App() {
               }
               description={
                 agriculturalRecords.length > 0
-                  ? `${agriculturalRecords[0].season || "Season"} • ${agriculturalRecords[0].cultivated_area ?? "—"
+                  ? `${agriculturalRecords[0].state || "State"} • ${agriculturalRecords[0].cultivated_area ?? "—"
                   } acres`
                   : "No agricultural record"
               }
@@ -429,8 +428,8 @@ function App() {
               }
               description={
                 weatherData.length > 0
-                  ? `${weatherData[0].location || "Unknown"} • Humidity ${weatherData[0].humidity ?? "—"
-                  }%`
+                  ? `${weatherData[0].location || "Unknown"} • Rainfall ${weatherData[0].rainfall ?? "—"
+                  } mm`
                   : weatherLoading
                     ? "Loading weather..."
                     : "No weather data"
@@ -518,12 +517,12 @@ function App() {
               title="Crop Yield Prediction History"
               description="Review your previously generated yield estimates."
               headers={[
-                "Prediction ID",
-                "Agricultural ID",
-                "Crop ID",
+                "Prediction",
+                "Agricultural Record",
+                "Crop",
                 "Predicted Yield",
                 "Model",
-                "Prediction Date",
+                "Date",
               ]}
               rows={yieldHistory}
               loading={yieldHistoryLoading}
@@ -532,29 +531,59 @@ function App() {
               onRefresh={loadYieldHistory}
               refreshPlacement="header"
             >
-              {yieldHistory.map((item, index) => (
-                <tr
-                  key={
-                    item.prediction_id ??
-                    `${item.agricultural_id}-${item.crop_id}-${index}`
-                  }
-                >
-                  <td>{item.prediction_id ?? "—"}</td>
-                  <td>{item.agricultural_id ?? "—"}</td>
-                  <td>{item.crop_id ?? "—"}</td>
-                  <td>
-                    {item.predicted_yield == null
-                      ? "—"
-                      : Number(item.predicted_yield).toFixed(2)}
-                  </td>
-                  <td>{item.model_used ?? "—"}</td>
-                  <td>
-                    {item.prediction_date
-                      ? new Date(item.prediction_date).toLocaleDateString()
-                      : "Not available"}
-                  </td>
-                </tr>
-              ))}
+              {yieldHistory.map((item, index) => {
+                const cropNames = {
+                  1: "Rice",
+                  2: "Wheat",
+                  3: "Maize",
+                };
+
+                return (
+                  <tr
+                    key={
+                      item.prediction_id ??
+                      `${item.agricultural_id}-${item.crop_id}-${index}`
+                    }
+                  >
+                    <td>
+                      #{item.prediction_id ?? "—"}
+                    </td>
+
+                    <td>
+                      #{item.agricultural_id ?? "—"}
+                    </td>
+
+                    <td>
+                      <strong>
+                        {cropNames[Number(item.crop_id)] ||
+                          `Crop ${item.crop_id ?? "—"}`}
+                      </strong>
+                    </td>
+
+                    <td>
+                      <strong>
+                        {item.predicted_yield == null
+                          ? "—"
+                          : Number(item.predicted_yield).toFixed(2)}
+                      </strong>
+                    </td>
+
+                    <td>
+                      <span className="history-model-badge">
+                        {item.model_used ?? "—"}
+                      </span>
+                    </td>
+
+                    <td>
+                      {item.prediction_date
+                        ? new Date(item.prediction_date).toLocaleDateString(
+                          "en-IN"
+                        )
+                        : "Not available"}
+                    </td>
+                  </tr>
+                );
+              })}
             </HistoryTable>
           </section>
 
@@ -563,14 +592,14 @@ function App() {
               eyebrow="PRICE HISTORY"
               title="Market Price Prediction History"
               description="Review your previously generated market price forecasts."
-              headers={["Crop", "Forecast price", "Forecast date", "Model"]}
+              headers={["Crop", "Forecast Price", "Forecast Date", "Model"]}
               rows={priceHistory}
               loading={priceHistoryLoading}
               error={priceHistoryError}
               emptyMessage="No prediction history found yet."
               onRefresh={loadPriceHistory}
             >
-              {priceHistory.map((item) => {
+              {priceHistory.map((item, index) => {
                 const cropNames = {
                   1: "Rice",
                   2: "Wheat",
@@ -578,19 +607,39 @@ function App() {
                 };
 
                 return (
-                  <tr key={item.price_prediction_id}>
+                  <tr
+                    key={
+                      item.price_prediction_id ??
+                      `${item.crop_id}-${item.forecast_date}-${index}`
+                    }
+                  >
                     <td>
-                      {cropNames[Number(item.crop_id)] ||
-                        `Crop ${item.crop_id}`}
+                      <strong>
+                        {cropNames[Number(item.crop_id)] ||
+                          `Crop ${item.crop_id ?? "—"}`}
+                      </strong>
                     </td>
 
                     <td>
-                      ₹{Number(item.forecast_price).toLocaleString("en-IN")}
+                      <strong>
+                        ₹
+                        {item.forecast_price == null
+                          ? "—"
+                          : Number(item.forecast_price).toLocaleString("en-IN")}
+                      </strong>
                     </td>
 
-                    <td>{item.forecast_date}</td>
+                    <td>
+                      {item.forecast_date
+                        ? new Date(item.forecast_date).toLocaleDateString("en-IN")
+                        : "Not available"}
+                    </td>
 
-                    <td>{item.model_used}</td>
+                    <td>
+                      <span className="history-model-badge">
+                        {item.model_used ?? "—"}
+                      </span>
+                    </td>
                   </tr>
                 );
               })}
