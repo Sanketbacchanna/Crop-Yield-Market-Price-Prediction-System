@@ -7,36 +7,25 @@ function YieldPrediction({
   error,
   result,
 }) {
+  const selectedRecord = agriculturalRecords.find(
+    (record) => String(record.agricultural_id) === String(selectedAgriculturalId)
+  );
+  const cropNames = { 1: "Rice", 2: "Wheat", 3: "Maize" };
+
   return (
     <div className="yield-prediction-card">
       <div className="yield-form-panel">
-        <div className="yield-icon">🌾</div>
-
         <div className="yield-form-content">
-          <div className="section-kicker">CROP YIELD FORECAST</div>
-
-          <h3>Estimate your crop yield</h3>
-
-          <p>
-            Select an agricultural record to estimate the expected yield
-            using the machine-learning model.
-          </p>
-
           <form onSubmit={onSubmit}>
-            <div className="form-field">
+            <div className="yield-record-field form-field">
               <label htmlFor="yield-agricultural-record">
-                Agricultural Record
+                🌿 &nbsp; Farm record
               </label>
-
               <select
                 id="yield-agricultural-record"
                 value={selectedAgriculturalId}
-                onChange={(event) =>
-                  onAgriculturalChange(event.target.value)
-                }
-                disabled={
-                  loading || agriculturalRecords.length === 0
-                }
+                onChange={(event) => onAgriculturalChange(event.target.value)}
+                disabled={loading || agriculturalRecords.length === 0}
               >
                 {agriculturalRecords.length === 0 ? (
                   <option value="">No records available</option>
@@ -46,8 +35,8 @@ function YieldPrediction({
                       key={record.agricultural_id}
                       value={record.agricultural_id}
                     >
-                      {record.district || "Unknown"} •{" "}
-                      {record.season || "Unknown Season"} •{" "}
+                      {record.district || "Unknown"} ·{" "}
+                      {record.season || "Unknown Season"} ·{" "}
                       {record.crop_year || "Unknown Year"}
                     </option>
                   ))
@@ -55,15 +44,38 @@ function YieldPrediction({
               </select>
             </div>
 
+            <div className="yield-details-form">
+              <div className="yield-detail-field">
+                <span>Crop type</span>
+                <strong>
+                  {selectedRecord?.crop_name ||
+                    cropNames[Number(selectedRecord?.crop_id)] ||
+                    "Not specified"}
+                </strong>
+              </div>
+              <div className="yield-detail-field">
+                <span>Location</span>
+                <strong>{selectedRecord?.district || "Not specified"}</strong>
+              </div>
+              <div className="yield-detail-field">
+                <span>Season</span>
+                <strong>{selectedRecord?.season || "Not specified"}</strong>
+              </div>
+              <div className="yield-detail-field">
+                <span>Area</span>
+                <strong>
+                  {selectedRecord?.cultivated_area ?? "Not specified"}
+                  {selectedRecord?.cultivated_area != null && " acres"}
+                </strong>
+              </div>
+            </div>
+
             <button
               type="submit"
               className="yield-prediction-button"
-              disabled={
-                loading || agriculturalRecords.length === 0
-              }
+              disabled={loading || agriculturalRecords.length === 0}
             >
-              {loading ? "Predicting..." : "Predict Crop Yield"}
-              {!loading && <span>→</span>}
+              {loading ? "Predicting..." : "▥  Predict Yield"}
             </button>
           </form>
 
@@ -76,16 +88,11 @@ function YieldPrediction({
           <>
             <div className="yield-result-header">
               <div>
-                <span className="price-result-label">
-                  PREDICTION RESULT
-                </span>
-
-                <h3>Estimated Crop Yield</h3>
+                <h3><span aria-hidden="true">✓</span> Prediction Result</h3>
               </div>
-
-              <div className="yield-result-icon">🌱</div>
             </div>
 
+            <div className="yield-result-plant" aria-hidden="true">🌱</div>
             <div className="yield-result-value">
               {result.predicted_yield != null
                 ? Number(result.predicted_yield).toFixed(2)
@@ -118,14 +125,12 @@ function YieldPrediction({
           </>
         ) : (
           <div className="yield-result-empty">
-            <div className="yield-empty-icon">🌱</div>
-
-            <h3>No prediction yet</h3>
-
-            <p>
-              Select an agricultural record and generate a prediction
-              to see the expected crop yield here.
-            </p>
+            <div className="yield-result-header">
+              <h3><span aria-hidden="true">✓</span> Prediction Result</h3>
+            </div>
+            <div className="yield-result-plant" aria-hidden="true">🌱</div>
+            <h3>Ready to estimate</h3>
+            <p>Choose a farm record and your yield prediction will appear here.</p>
           </div>
         )}
       </div>

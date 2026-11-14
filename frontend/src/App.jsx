@@ -348,23 +348,47 @@ function App() {
   //     AgriPredict · Crop market price forecasting
   //   </footer>
   // </div>
-  return(
-    <div className={`app-layout ${menuOpen ? "menu-open" : "menu-closed"}`}>
-      <Sidebar
-        isOpen={menuOpen}
-        onClose={() => setMenuOpen(false)}
-      />
-
-      <div className="main-area">
-        <div className="main-area">
-          <DashboardHeader
-            onMenuClick={() => setSidebarOpen(true)}
+  return (
+    <div className="app-shell">
+      <DashboardHeader onMenuClick={() => setMenuOpen((isOpen) => !isOpen)} />
+      <div className={`app-layout ${menuOpen ? "menu-open" : "menu-closed"}`}>
+        <Sidebar isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
+        {menuOpen && (
+          <button
+            type="button"
+            className="sidebar-overlay"
+            onClick={() => setMenuOpen(false)}
+            aria-label="Close navigation"
           />
-
-          <main className="dashboard">
+        )}
+        <div className="main-area">
+          <main className="dashboard" id="dashboard">
             <DashboardIntro />
 
-            <section className="summary-grid">
+            <section
+              className="dashboard-section yield-dashboard-section"
+              id="yield-prediction"
+            >
+              <div className="section-heading yield-section-heading">
+                <span aria-hidden="true">🌱</span>
+                <div>
+                  <h2>Crop Yield Prediction</h2>
+                  <p>Estimate crop yield using your agricultural information.</p>
+                </div>
+              </div>
+
+              <YieldPrediction
+                agriculturalRecords={agriculturalRecords}
+                selectedAgriculturalId={selectedAgriculturalId}
+                onAgriculturalChange={setSelectedAgriculturalId}
+                onSubmit={handleYieldSubmit}
+                loading={yieldLoading}
+                error={yieldError || agriculturalError}
+                result={yieldResult}
+              />
+            </section>
+
+            <section className="summary-grid" id="weather">
               <SummaryCard
                 icon="🌾"
                 label="Recommended Crop"
@@ -437,16 +461,15 @@ function App() {
                   weatherData.length > 0
                     ? `${weatherData[0].location || "Unknown"} • Rainfall ${weatherData[0].rainfall ?? "—"
                     } mm`
-                    : weatherLoading
-                      ? "Loading weather..."
-                      : "No weather data"
+                    : weatherError ||
+                      (weatherLoading ? "Loading weather..." : "No weather data")
                 }
                 accent="blue"
               />
             </section>
 
 
-            <section className="dashboard-section">
+            <section className="dashboard-section" id="market-price">
               <div className="section-heading">
                 <div>
                   <p className="section-eyebrow">PREDICTIONS</p>
@@ -473,29 +496,7 @@ function App() {
               </div>
             </section>
 
-            <section className="dashboard-section">
-              <div className="section-heading">
-                <div>
-                  <p className="section-eyebrow">MACHINE LEARNING</p>
-                  <h2>Crop Yield Prediction</h2>
-                  <p>
-                    Estimate crop yield using your agricultural information.
-                  </p>
-                </div>
-              </div>
-
-              <YieldPrediction
-                agriculturalRecords={agriculturalRecords}
-                selectedAgriculturalId={selectedAgriculturalId}
-                onAgriculturalChange={setSelectedAgriculturalId}
-                onSubmit={handleYieldSubmit}
-                loading={yieldLoading}
-                error={yieldError || agriculturalError}
-                result={yieldResult}
-              />
-            </section>
-
-            <section className="dashboard-section">
+            <section className="dashboard-section" id="crop-recommendation">
               <div className="section-heading">
                 <div>
                   <p className="section-eyebrow">SMART RECOMMENDATION</p>
@@ -518,7 +519,7 @@ function App() {
               />
             </section>
 
-            <section className="dashboard-section">
+            <section className="dashboard-section" id="yield-history">
               <HistoryTable
                 eyebrow="YIELD HISTORY"
                 title="Crop Yield Prediction History"
@@ -594,7 +595,7 @@ function App() {
               </HistoryTable>
             </section>
 
-            <section className="dashboard-section">
+            <section className="dashboard-section" id="prediction-history">
               <HistoryTable
                 eyebrow="PRICE HISTORY"
                 title="Market Price Prediction History"

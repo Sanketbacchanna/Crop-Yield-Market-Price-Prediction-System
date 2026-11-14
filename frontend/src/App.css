@@ -2170,3 +2170,693 @@ button {
     font-size: 38px;
   }
 }
+
+/* Reference dashboard layout */
+.app-shell {
+  min-height: 100vh;
+  background: #f5f8f4;
+}
+
+.app-layout {
+  min-height: calc(100vh - 70px);
+  align-items: flex-start;
+  gap: 0;
+  background: #f5f8f4;
+}
+
+.top-header {
+  position: sticky;
+  top: 0;
+  min-height: 70px;
+  height: 70px;
+  padding: 0 16px 0 20px;
+  border-bottom-color: #e4ebe5;
+  box-shadow: 0 1px 5px rgba(32, 54, 39, 0.06);
+}
+
+.top-header-left {
+  gap: 24px;
+}
+
+.menu-button {
+  width: 42px;
+  height: 42px;
+  gap: 4px;
+  border: 0;
+  border-radius: 12px;
+  background: #eef7ef;
+}
+
+.menu-button span {
+  width: 19px;
+  height: 2px;
+  background: #254d34;
+}
+
+.top-header-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  font-size: 27px;
+}
+
+.top-header-brand {
+  gap: 12px;
+}
+
+.top-header-brand h1 {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.top-header-brand span {
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.top-header-status {
+  padding: 10px 14px;
+  background: #f5faf5;
+  color: #293a30;
+  font-size: 12px;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+}
+
+.sidebar {
+  position: sticky;
+  top: 70px;
+  left: auto;
+  z-index: 20;
+  width: 234px;
+  height: calc(100vh - 70px);
+  flex: 0 0 234px;
+  overflow: hidden;
+  border-right: 1px solid #e3ebe4;
+  box-shadow: none;
+  transform: none;
+}
+
+.menu-closed .sidebar,
+.menu-open .sidebar {
+  display: flex;
+  transform: none;
+}
+
+.sidebar-nav {
+  padding: 20px 6px;
+}
+
+.nav-label {
+  margin: 10px 14px 9px;
+  color: #52635a;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.nav-item {
+  min-height: 48px;
+  gap: 12px;
+  margin: 3px 0;
+  padding: 9px 13px;
+  border-radius: 12px;
+  color: #53645b;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.nav-item span {
+  width: 25px;
+}
+
+.nav-item.active,
+.nav-item.active:hover {
+  background: #e8f6e8;
+  color: #176523;
+  transform: none;
+}
+
+.sidebar-bottom {
+  padding: 12px 6px;
+  border-top: 1px solid #e7ede8;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+.main-area {
+  width: auto;
+  min-height: calc(100vh - 70px);
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+  background: #f5f8f4;
+}
+
+.dashboard {
+  width: 100%;
+  max-width: 1600px;
+  padding: 15px 15px 48px;
+}
+
+.dashboard-intro {
+  min-height: 196px;
+  justify-content: flex-start;
+  padding: 16px 34px;
+  border: 1px solid #deebdc;
+  border-radius: 17px;
+  background:
+    radial-gradient(ellipse at 70% 15%, rgba(198, 244, 179, 0.55), transparent 38%),
+    linear-gradient(105deg, #eff9e9 0%, #f5fbef 45%, #e1f3df 100%);
+  box-shadow: 0 2px 6px rgba(31, 57, 37, 0.06);
+}
+
+.dashboard-intro::before {
+  width: 300px;
+  height: 170px;
+  right: 18%;
+  bottom: -132px;
+  background: rgba(136, 208, 103, 0.13);
+}
+
+.intro-content {
+  max-width: 55%;
+}
+
+.intro-eyebrow {
+  margin-bottom: 10px;
+  color: #16742b;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.dashboard-intro h2 {
+  font-size: clamp(29px, 3vw, 39px);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.dashboard-intro h2 span {
+  color: #2f8836;
+}
+
+.intro-description {
+  margin-top: 10px;
+  color: #51645a;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.intro-visual {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 54%;
+  min-height: 0;
+  overflow: hidden;
+  align-self: auto;
+  background: linear-gradient(180deg, transparent 0 62%, #b8e686 63%, #8ecf56 78%, #67b63f 100%);
+}
+
+.intro-visual::before,
+.intro-visual::after {
+  position: absolute;
+  right: -5%;
+  bottom: 24%;
+  width: 75%;
+  height: 48%;
+  border-radius: 50% 50% 0 0;
+  background: #9edb73;
+  content: "";
+}
+
+.intro-visual::after {
+  right: 36%;
+  bottom: 22%;
+  width: 75%;
+  height: 42%;
+  background: #b6e98b;
+}
+
+.scene-cloud,
+.scene-drone,
+.scene-house,
+.scene-tree,
+.scene-field {
+  position: absolute;
+  z-index: 2;
+}
+
+.scene-cloud {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 54px;
+  line-height: 1;
+}
+
+.scene-cloud-one {
+  top: 13px;
+  right: 10%;
+}
+
+.scene-cloud-two {
+  top: 46px;
+  right: 38%;
+  font-size: 42px;
+}
+
+.scene-drone {
+  top: 28px;
+  left: 34%;
+  font-size: 38px;
+  transform: rotate(-12deg);
+}
+
+.scene-mountain {
+  position: absolute;
+  z-index: 1;
+  bottom: 23%;
+  width: 42%;
+  height: 38%;
+  background: #c9e8ba;
+  clip-path: polygon(0 100%, 38% 12%, 53% 54%, 70% 26%, 100% 100%);
+}
+
+.scene-mountain-back {
+  right: 34%;
+}
+
+.scene-mountain-front {
+  right: 0;
+  width: 45%;
+  height: 28%;
+  background: #a9d990;
+}
+
+.scene-house {
+  right: 16%;
+  bottom: 20%;
+  font-size: 62px;
+}
+
+.scene-tree {
+  bottom: 20%;
+  font-size: 48px;
+}
+
+.scene-tree-one {
+  left: 8%;
+}
+
+.scene-tree-two {
+  right: 4%;
+  font-size: 42px;
+}
+
+.scene-field {
+  right: 0;
+  bottom: 1%;
+  left: 0;
+  color: rgba(31, 111, 32, 0.7);
+  font-size: 25px;
+  letter-spacing: 5px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.dashboard-section {
+  margin-top: 14px;
+  padding: 16px;
+  border-color: #e4ebe5;
+  border-radius: 17px;
+  box-shadow: 0 2px 7px rgba(31, 57, 37, 0.06);
+}
+
+.yield-dashboard-section {
+  padding: 14px;
+}
+
+.yield-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 4px 8px;
+}
+
+.yield-section-heading > span {
+  font-size: 30px;
+}
+
+.yield-section-heading h2 {
+  margin: 0;
+  color: #101914;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.yield-section-heading p {
+  margin-top: 2px;
+  color: #5a6a60;
+  font-size: 13px;
+}
+
+.yield-prediction-card {
+  height: 310px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.yield-form-panel,
+.yield-result-card {
+  height: 100%;
+  min-height: 0;
+  padding: 15px;
+  border-radius: 17px;
+  box-shadow: none;
+}
+
+.yield-form-panel {
+  background: linear-gradient(145deg, #f3faef, #fbfdf9);
+}
+
+.yield-form-content form {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+}
+
+.yield-record-field {
+  margin-bottom: 12px;
+}
+
+.yield-record-field label,
+.yield-detail-field span {
+  color: #263b2b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.yield-record-field select {
+  min-height: 43px;
+  padding: 9px 12px;
+  border-color: #e1e9e1;
+  border-radius: 13px;
+  color: #5e6b63;
+}
+
+.yield-details-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  flex: 1;
+}
+
+.yield-detail-field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid #e4ece4;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.yield-detail-field strong {
+  overflow: hidden;
+  color: #18251c;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yield-prediction-button {
+  min-height: 46px;
+  margin-top: 12px;
+  border-radius: 14px;
+  background: linear-gradient(100deg, #238633, #18792a);
+  font-size: 15px;
+}
+
+.yield-result-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 54% 36%, rgba(213, 250, 195, 0.68), transparent 30%),
+    linear-gradient(145deg, #f2faee, #eaf8e5);
+  border-color: #dcefd8;
+}
+
+.yield-result-header {
+  justify-content: flex-start;
+}
+
+.yield-result-header h3 {
+  margin: 0;
+  color: #176e2a;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.yield-result-header h3 span {
+  display: inline-flex;
+  width: 25px;
+  height: 25px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: #248b35;
+  color: #fff;
+}
+
+.yield-result-plant {
+  width: 104px;
+  height: 104px;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: rgba(219, 250, 204, 0.74);
+  font-size: 57px;
+}
+
+.yield-result-value {
+  margin-top: 2px;
+  color: #126625;
+  font-size: 38px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.yield-unit {
+  color: #267c36;
+  font-size: 15px;
+}
+
+.yield-details {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: auto;
+}
+
+.yield-details > div {
+  padding: 9px 11px;
+  border: 0;
+  border-radius: 12px;
+}
+
+.yield-result-empty {
+  height: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.yield-result-empty h3 {
+  margin: 5px 0 3px;
+  color: #176e2a;
+  font-size: 16px;
+}
+
+.yield-result-empty p {
+  max-width: 260px;
+  color: #586a5d;
+  font-size: 13px;
+}
+
+.summary-grid {
+  scroll-margin-top: 84px;
+}
+
+.dashboard-section[id],
+.dashboard[id] {
+  scroll-margin-top: 84px;
+}
+
+.footer {
+  margin-left: 0;
+  padding: 18px 24px;
+  background: #fff;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    width: 250px;
+    height: calc(100vh - 70px);
+    z-index: 100;
+    box-shadow: 12px 0 35px rgba(31, 41, 35, 0.1);
+    transform: translateX(-105%);
+  }
+
+  .menu-closed .sidebar {
+    display: flex;
+    transform: translateX(-105%);
+  }
+
+  .menu-open .sidebar {
+    display: flex;
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 70px 0 0;
+    z-index: 90;
+    display: block;
+    border: 0;
+    background: rgba(23, 32, 24, 0.22);
+  }
+
+  .app-layout {
+    display: block;
+  }
+
+  .dashboard {
+    padding: 14px;
+  }
+
+  .intro-visual {
+    width: 49%;
+  }
+}
+
+@media (max-width: 650px) {
+  .top-header {
+    padding: 0 12px;
+  }
+
+  .top-header-left {
+    gap: 12px;
+  }
+
+  .top-header-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .top-header-brand h1 {
+    font-size: 17px;
+  }
+
+  .top-header-brand span {
+    font-size: 10px;
+  }
+
+  .top-header-status {
+    display: none;
+  }
+
+  .dashboard-intro {
+    min-height: 188px;
+    padding: 23px 20px;
+  }
+
+  .intro-content {
+    max-width: 100%;
+  }
+
+  .dashboard-intro h2 {
+    font-size: 29px;
+  }
+
+  .intro-description {
+    max-width: 65%;
+    font-size: 12px;
+  }
+
+  .desktop-break {
+    display: none;
+  }
+
+  .intro-visual {
+    width: 38%;
+    opacity: 0.58;
+  }
+
+  .scene-house {
+    right: 12%;
+    font-size: 43px;
+  }
+
+  .scene-drone {
+    left: 15%;
+    font-size: 29px;
+  }
+
+  .dashboard-section,
+  .yield-dashboard-section {
+    padding: 12px;
+  }
+
+  .yield-prediction-card {
+    height: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .yield-form-panel,
+  .yield-result-card {
+    height: auto;
+    min-height: 270px;
+    padding: 13px;
+  }
+
+  .yield-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .top-header-brand span {
+    display: none;
+  }
+
+  .intro-visual {
+    width: 31%;
+  }
+
+  .dashboard-intro h2 {
+    font-size: 26px;
+  }
+
+  .intro-description {
+    max-width: 70%;
+  }
+
+  .scene-tree {
+    font-size: 34px;
+  }
+
+  .scene-house {
+    right: 7%;
+    font-size: 35px;
+  }
+}

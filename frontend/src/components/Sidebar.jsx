@@ -1,58 +1,49 @@
-function Sidebar() {
+function Sidebar({ isOpen, onClose }) {
+  const closeMenu = () => onClose?.();
+
   return (
-    <aside className="sidebar">
-      <div className="sidebar-brand">
-        <div className="brand-icon">🌱</div>
-
-        <div>
-          <h2>AgriPredict</h2>
-          <span>Smart Agriculture</span>
-        </div>
-      </div>
-
+    <aside
+      id="primary-navigation"
+      className={`sidebar${isOpen ? " sidebar-open" : ""}`}
+      aria-label="Primary navigation"
+    >
       <nav className="sidebar-nav">
-        <p className="nav-label">MAIN</p>
-
-        <button className="nav-item active">
-          <span>▣</span>
+        <p className="nav-label">Main</p>
+        <a className="nav-item active" href="#dashboard" onClick={closeMenu}>
+          <span aria-hidden="true">▦</span>
           Dashboard
-        </button>
+        </a>
 
-        <p className="nav-label">PREDICTIONS</p>
-
-        <button className="nav-item">
-          <span>🌾</span>
+        <p className="nav-label">Predictions</p>
+        <a className="nav-item" href="#crop-recommendation" onClick={closeMenu}>
+          <span aria-hidden="true">🌾</span>
           Crop Recommendation
-        </button>
-
-        <button className="nav-item">
-          <span>📈</span>
+        </a>
+        <a className="nav-item" href="#market-price" onClick={closeMenu}>
+          <span aria-hidden="true">📈</span>
           Market Price
-        </button>
-
-        <button className="nav-item">
-          <span>🌱</span>
+        </a>
+        <a className="nav-item" href="#yield-prediction" onClick={closeMenu}>
+          <span aria-hidden="true">🌱</span>
           Crop Yield
-        </button>
+        </a>
 
-        <p className="nav-label">DATA</p>
-
-        <button className="nav-item">
-          <span>🌦️</span>
+        <p className="nav-label">Data</p>
+        <a className="nav-item" href="#weather" onClick={closeMenu}>
+          <span aria-hidden="true">🌦️</span>
           Weather
-        </button>
-
-        <button className="nav-item">
-          <span>📋</span>
+        </a>
+        <a className="nav-item" href="#prediction-history" onClick={closeMenu}>
+          <span aria-hidden="true">📋</span>
           Prediction History
-        </button>
+        </a>
       </nav>
 
       <div className="sidebar-bottom">
-        <button className="nav-item">
-          <span>⚙️</span>
+        <a className="nav-item" href="#dashboard" onClick={closeMenu}>
+          <span aria-hidden="true">⚙️</span>
           Settings
-        </button>
+        </a>
       </div>
     </aside>
   );
