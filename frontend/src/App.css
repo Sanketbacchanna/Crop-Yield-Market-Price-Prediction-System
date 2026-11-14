@@ -65,6 +65,26 @@ button {
 /* =========================================================
    MAIN APP LAYOUT
    ========================================================= */
+.menu-button {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.menu-button:hover {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
 
 .app-layout {
   min-height: 100vh;
@@ -88,7 +108,61 @@ button {
   border-right: 1px solid var(--border);
   box-sizing: border-box;
 }
+.sidebar {
+  transition: transform 0.25s ease;
+}
 
+.sidebar-close {
+  display: none;
+}
+.sidebar-open {
+  transform: translateX(0);
+}
+@media (min-width: 901px) {
+  .menu-button {
+    display: none;
+  }
+
+  .sidebar {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    transform: translateX(-100%);
+    box-shadow: 8px 0 25px rgba(31, 41, 35, 0.12);
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-close {
+    display: flex;
+    position: absolute;
+    top: 18px;
+    right: 14px;
+    width: 34px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 8px;
+    background: var(--surface-soft);
+    color: var(--text);
+    font-size: 24px;
+    cursor: pointer;
+  }
+
+  .top-header {
+    padding: 0 20px;
+  }
+}
 /* Brand */
 
 .sidebar-brand {

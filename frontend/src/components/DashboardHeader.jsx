@@ -42,9 +42,18 @@
 //     </>
 //   );
 // }
-function DashboardHeader() {
+function DashboardHeader({ onMenuClick }) {
   return (
     <header className="top-header">
+      <button
+        type="button"
+        className="menu-button"
+        onClick={onMenuClick}
+        aria-label="Toggle navigation"
+      >
+        ☰
+      </button>
+
       <div className="top-header-brand">
         <div className="top-header-icon">🌱</div>
 
@@ -66,11 +75,14 @@ export function DashboardIntro() {
   return (
     <section className="dashboard-intro">
       <div className="intro-content">
-        <p className="intro-eyebrow">SMART AGRICULTURE PLATFORM</p>
+        <p className="intro-eyebrow">
+          🌱 SMART AGRICULTURE PLATFORM
+        </p>
 
         <h2>
-          Make smarter decisions for your{" "}
-          <span>next harvest.</span>
+          Make smarter decisions
+          <br />
+          for your <span>next harvest.</span>
         </h2>
 
         <p className="intro-description">
@@ -89,8 +101,21 @@ export function DashboardIntro() {
       </div>
 
       <div className="intro-visual">
-        <div className="intro-visual-circle">
-          🌾
+        <div className="farm-scene">
+          <div className="farm-sun">☀️</div>
+
+          <div className="farm-cloud cloud-one">☁️</div>
+          <div className="farm-cloud cloud-two">☁️</div>
+
+          <div className="farm-house">🏠</div>
+
+          <div className="farm-field">
+            <span>🌾</span>
+            <span>🌱</span>
+            <span>🌾</span>
+            <span>🌱</span>
+            <span>🌾</span>
+          </div>
         </div>
       </div>
     </section>
