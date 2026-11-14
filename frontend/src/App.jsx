@@ -32,7 +32,7 @@ function getErrorMessage(error, fallback) {
 }
 
 function App() {
-  const [menuOpen, setMenuOpen] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [cropId, setCropId] = useState("1");
   const [prices, setPrices] = useState(INITIAL_PRICES);
   const [priceResult, setPriceResult] = useState(null);
@@ -358,7 +358,7 @@ function App() {
       <div className="main-area">
         <div className="main-area">
           <DashboardHeader
-            onMenuClick={() => setMenuOpen((current) => !current)}
+            onMenuClick={() => setSidebarOpen(true)}
           />
 
           <main className="dashboard">

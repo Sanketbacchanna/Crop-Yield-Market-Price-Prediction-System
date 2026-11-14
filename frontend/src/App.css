@@ -66,38 +66,38 @@ button {
    MAIN APP LAYOUT
    ========================================================= */
 .menu-button {
-  width: 44px;
-  height: 44px;
-
+  width: 56px;
+  height: 56px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-
-  flex-shrink: 0;
-
+  gap: 5px;
+  padding: 0;
   border: 1px solid var(--border);
-  border-radius: 12px;
-
+  border-radius: 16px;
   background: #ffffff;
-  color: var(--text);
-
-  font-size: 23px;
-  line-height: 1;
-
   cursor: pointer;
-
   transition:
     background 0.2s ease,
     color 0.2s ease,
     transform 0.2s ease;
 }
+.menu-button span {
+  width: 23px;
+  height: 2px;
 
+  display: block;
+
+  border-radius: 10px;
+
+  background: var(--text);
+}
 .menu-button:hover {
   background: var(--primary-light);
-  color: var(--primary-dark);
+  border-color: #cfe1d0;
   transform: translateY(-1px);
 }
-
 .app-layout {
   min-height: 100vh;
   display: flex;
@@ -336,37 +336,29 @@ button {
 .top-header {
   position: sticky;
   top: 0;
-
   z-index: 40;
-
-  min-height: 86px;
-
+  min-height: 84px;
   display: flex;
   align-items: center;
-
-  gap: 18px;
-
-  padding: 0 32px;
-
+  justify-content: space-between;
+  padding: 0 34px;
   background: rgba(255, 255, 255, 0.97);
-
   border-bottom: 1px solid var(--border);
-
   backdrop-filter: blur(12px);
 }
-
+.top-header-left {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
 .top-header-brand {
   display: flex;
   align-items: center;
-
-  gap: 12px;
-
-  flex: 1;
+  gap: 14px;
 }
-
 .top-header-icon {
-  width: 44px;
-  height: 44px;
+  width: 58px;
+  height: 58px;
 
   display: flex;
   align-items: center;
@@ -376,15 +368,14 @@ button {
 
   background: var(--primary-light);
 
-  font-size: 24px;
+  font-size: 28px;
 }
 
 .top-header-brand h1 {
   margin: 0;
-
   color: var(--text);
-
-  font-size: 21px;
+  font-family: "Manrope", sans-serif;
+  font-size: 25px;
   font-weight: 800;
 
   letter-spacing: -0.04em;
@@ -392,41 +383,28 @@ button {
 
 .top-header-brand span {
   display: block;
-
-  margin-top: 3px;
-
+  margin-top: 4px;
   color: var(--text-secondary);
-
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 500;
 }
 .top-header-status {
   display: flex;
   align-items: center;
-
-  gap: 9px;
-
-  padding: 10px 16px;
-
+  gap: 11px;
+  padding: 13px 18px;
   border: 1px solid var(--border);
-
   border-radius: 999px;
-
-  background: var(--surface-soft);
-
+  background: #ffffff;
   color: var(--text-secondary);
-
   font-size: 13px;
   font-weight: 600;
 }
-
 .status-dot {
-  width: 9px;
-  height: 9px;
-
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-
   background: #43a047;
-
   box-shadow:
     0 0 0 4px rgba(67, 160, 71, 0.12);
 }
