@@ -32,7 +32,7 @@ function getErrorMessage(error, fallback) {
 }
 
 function App() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(true);
   const [cropId, setCropId] = useState("1");
   const [prices, setPrices] = useState(INITIAL_PRICES);
   const [priceResult, setPriceResult] = useState(null);
