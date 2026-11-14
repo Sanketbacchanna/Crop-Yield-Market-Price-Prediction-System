@@ -22,10 +22,11 @@ export default function HistoryTable({
         {onRefresh && refreshPlacement === "header" && (
           <button
             type="button"
-            className="secondary-button"
+            className={`history-action-button${loading ? " is-loading" : ""}`}
             onClick={onRefresh}
             disabled={loading}
           >
+            <span className="history-refresh-icon" aria-hidden="true">↻</span>
             {loading ? "Refreshing..." : "Refresh history"}
           </button>
         )}
@@ -35,7 +36,11 @@ export default function HistoryTable({
         <div className="error-message" role="alert">
           {error}
           {onRefresh && (
-            <button type="button" onClick={onRefresh}>
+            <button
+              type="button"
+              className="history-retry-button"
+              onClick={onRefresh}
+            >
               Try again
             </button>
           )}
@@ -63,10 +68,11 @@ export default function HistoryTable({
       {onRefresh && refreshPlacement === "footer" && (
         <button
           type="button"
-          className="predict-button history-refresh"
+          className={`history-action-button history-refresh${loading ? " is-loading" : ""}`}
           onClick={onRefresh}
           disabled={loading}
         >
+          <span className="history-refresh-icon" aria-hidden="true">↻</span>
           {loading ? "Refreshing..." : "Refresh history"}
         </button>
       )}

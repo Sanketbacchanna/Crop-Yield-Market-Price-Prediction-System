@@ -1,4 +1,4 @@
-function DashboardHeader({ onMenuClick }) {
+function DashboardHeader({ onMenuClick, isMenuOpen }) {
   return (
     <header className="top-header">
       <div className="top-header-left">
@@ -8,6 +8,7 @@ function DashboardHeader({ onMenuClick }) {
           onClick={onMenuClick}
           aria-label="Toggle navigation"
           aria-controls="primary-navigation"
+          aria-expanded={isMenuOpen}
         >
           <span />
           <span />

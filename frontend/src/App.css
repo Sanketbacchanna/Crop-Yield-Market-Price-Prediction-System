@@ -1992,6 +1992,75 @@ button {
   margin-top: 16px;
 }
 
+.history-action-button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid #d8e7da;
+  border-radius: 10px;
+  background: #f7fbf7;
+  color: #246632;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.history-action-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: #b6d5ba;
+  background: #edf7ee;
+}
+
+.history-action-button:focus-visible,
+.history-retry-button:focus-visible {
+  outline: 3px solid rgba(46, 125, 50, 0.25);
+  outline-offset: 2px;
+}
+
+.history-action-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.history-refresh-icon {
+  display: inline-block;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.history-action-button.is-loading .history-refresh-icon {
+  animation: history-refresh-spin 0.9s linear infinite;
+}
+
+@keyframes history-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.history-retry-button {
+  min-height: 30px;
+  margin-left: 10px;
+  padding: 5px 10px;
+  border: 1px solid #d8e7da;
+  border-radius: 8px;
+  background: #fff;
+  color: #246632;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.history-retry-button:hover {
+  background: #edf7ee;
+}
+
 .history-panel .error-message {
   margin-bottom: 16px;
 }
@@ -2007,7 +2076,7 @@ button {
     flex-direction: column;
   }
 
-  .history-panel .panel-heading .secondary-button {
+  .history-panel .panel-heading .history-action-button {
     width: 100%;
   }
 }
@@ -2173,7 +2242,9 @@ button {
 
 /* Reference dashboard layout */
 .app-shell {
+  --footer-height: 52px;
   min-height: 100vh;
+  padding-bottom: var(--footer-height);
   background: #f5f8f4;
 }
 
@@ -2247,23 +2318,31 @@ button {
 }
 
 .sidebar {
-  position: sticky;
+  position: fixed;
   top: 70px;
-  left: auto;
-  z-index: 20;
+  left: 0;
+  z-index: 100;
   width: 234px;
   height: calc(100vh - 70px);
-  flex: 0 0 234px;
+  flex: none;
   overflow: hidden;
   border-right: 1px solid #e3ebe4;
-  box-shadow: none;
-  transform: none;
+  box-shadow: 12px 0 35px rgba(31, 41, 35, 0.1);
+  transform: translateX(-105%);
+  transition: transform 0.25s ease;
 }
 
 .menu-closed .sidebar,
 .menu-open .sidebar {
   display: flex;
-  transform: none;
+}
+
+.menu-closed .sidebar {
+  transform: translateX(-105%);
+}
+
+.menu-open .sidebar {
+  transform: translateX(0);
 }
 
 .sidebar-nav {
@@ -2305,7 +2384,12 @@ button {
 }
 
 .sidebar-overlay {
-  display: none;
+  position: fixed;
+  inset: 70px 0 0;
+  z-index: 90;
+  display: block;
+  border: 0;
+  background: rgba(23, 32, 24, 0.22);
 }
 
 .main-area {
@@ -2523,15 +2607,16 @@ button {
 }
 
 .yield-prediction-card {
-  height: 310px;
+  height: auto;
+  min-height: 310px;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 14px;
 }
 
 .yield-form-panel,
 .yield-result-card {
-  height: 100%;
-  min-height: 0;
+  height: auto;
+  min-height: 310px;
   padding: 15px;
   border-radius: 17px;
   box-shadow: none;
@@ -2543,8 +2628,12 @@ button {
 
 .yield-form-content form {
   display: flex;
-  height: 100%;
+  height: auto;
   flex-direction: column;
+}
+
+.yield-form-content {
+  height: auto;
 }
 
 .yield-record-field {
@@ -2570,7 +2659,6 @@ button {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 9px;
-  flex: 1;
 }
 
 .yield-detail-field {
@@ -2591,6 +2679,54 @@ button {
   font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.yield-input-field {
+  min-width: 0;
+  justify-content: center;
+  padding: 10px 12px;
+  border: 1px solid #e4ece4;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.yield-input-field label {
+  color: #263b2b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.yield-input-field input,
+.yield-input-field select {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid #e1e9e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #18251c;
+  font-size: 13px;
+}
+
+.yield-input-field input:focus,
+.yield-input-field select:focus {
+  border-color: var(--primary);
+  outline: 2px solid rgba(46, 125, 50, 0.12);
+}
+
+.yield-location-retry {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #246632;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.yield-location-retry:hover {
+  text-decoration: underline;
 }
 
 .yield-prediction-button {
@@ -2694,15 +2830,40 @@ button {
   scroll-margin-top: 84px;
 }
 
+.dashboard-page > .summary-grid {
+  margin-top: 18px;
+}
+
 .dashboard-section[id],
-.dashboard[id] {
+.dashboard[id],
+.dashboard-page[id],
+.history-page[id],
+.page-section[id] {
   scroll-margin-top: 84px;
 }
 
+.page-loading {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  color: #53645b;
+}
+
 .footer {
-  margin-left: 0;
-  padding: 18px 24px;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  height: var(--footer-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 24px;
   background: #fff;
+  border-top: 1px solid #e4ebe5;
+  box-shadow: 0 -2px 8px rgba(32, 54, 39, 0.05);
 }
 
 @media (max-width: 900px) {
