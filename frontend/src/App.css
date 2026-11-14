@@ -148,7 +148,7 @@ button {
 .sidebar-close {
   display: none;
 }
-@media (max-width: 900px) {
+/* @media (max-width: 900px) {
   .sidebar {
     position: fixed;
     left: 0;
@@ -182,7 +182,7 @@ button {
   .top-header {
     padding: 0 20px;
   }
-}
+} */
 /* Brand */
 .sidebar-brand {
   min-height: 114px;
@@ -328,6 +328,81 @@ button {
   padding: 14px;
 
   border-top: 1px solid var(--border);
+}
+/* =========================================================
+   SIDEBAR MENU OVERLAY
+   ========================================================= */
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 90;
+
+  background: rgba(23, 32, 24, 0.25);
+
+  backdrop-filter: blur(2px);
+}
+
+/* Sidebar */
+
+.sidebar {
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  z-index: 100;
+
+  width: 280px;
+  height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #ffffff;
+
+  border-right: 1px solid var(--border);
+
+  box-shadow: 12px 0 35px rgba(31, 41, 35, 0.10);
+
+  transform: translateX(-105%);
+
+  transition: transform 0.28s ease;
+}
+
+.sidebar.sidebar-open {
+  transform: translateX(0);
+}
+
+.sidebar-close {
+  position: absolute;
+
+  top: 22px;
+  right: 16px;
+
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 10px;
+
+  background: var(--surface-soft);
+
+  color: var(--text);
+
+  font-size: 24px;
+
+  cursor: pointer;
+}
+
+.sidebar-close:hover {
+  background: var(--primary-light);
+  color: var(--primary-dark);
 }
 /* =========================================================
    TOP HEADER

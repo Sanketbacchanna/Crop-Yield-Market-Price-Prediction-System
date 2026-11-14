@@ -1,6 +1,6 @@
-function Sidebar({ isOpen, onClose }) {
+function Sidebar() {
   return (
-    <aside className={`sidebar ${isOpen ? "sidebar-visible" : ""}`}>
+    <aside className="sidebar">
       <div className="sidebar-brand">
         <div className="brand-icon">🌱</div>
 
@@ -8,15 +8,6 @@ function Sidebar({ isOpen, onClose }) {
           <h2>AgriPredict</h2>
           <span>Smart Agriculture</span>
         </div>
-
-        <button
-          type="button"
-          className="sidebar-close"
-          onClick={onClose}
-          aria-label="Close navigation"
-        >
-          ×
-        </button>
       </div>
 
       <nav className="sidebar-nav">
