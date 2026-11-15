@@ -2,22 +2,39 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 function YieldPrediction({
   agriculturalRecords,
+  districts,
   selectedAgriculturalId,
   onAgriculturalChange,
   onSubmit,
   loading,
   error,
   result,
+  area,
+  onAreaChange,
 }) {
   const [cropType, setCropType] = useState("");
-  const [area, setArea] = useState("");
+  const [districtSelection, setDistrictSelection] = useState(null);
+  const [localArea, setLocalArea] = useState("");
+  const currentArea = area ?? localArea;
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [locationLookupLoading, setLocationLookupLoading] = useState(false);
+  const [locationLookupError, setLocationLookupError] = useState("");
   const locationRequested = useRef(false);
   const selectedRecord = agriculturalRecords.find(
     (record) => String(record.agricultural_id) === String(selectedAgriculturalId)
   );
+  const matchingDistrict = districts.find(
+    (name) =>
+      name.toLowerCase() ===
+      selectedRecord?.district?.trim().toLowerCase()
+  );
+  const district =
+    districtSelection?.agriculturalId === String(selectedAgriculturalId)
+      ? districtSelection.value
+      : matchingDistrict || "";
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -60,11 +77,75 @@ function YieldPrediction({
     requestLocation();
   }, [requestLocation]);
 
+  useEffect(() => {
+    if (!currentLocation) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const lookupArea = async () => {
+      setLocationLookupLoading(true);
+      setLocationLookupError("");
+      setLocationName("");
+
+      try {
+        const params = new URLSearchParams({
+          format: "jsonv2",
+          lat: currentLocation.latitude,
+          lon: currentLocation.longitude,
+          zoom: "14",
+          addressdetails: "1",
+        });
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?${params}`,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          throw new Error("Area lookup request failed.");
+        }
+
+        const data = await response.json();
+        const address = data.address || {};
+        const areaName =
+          address.neighbourhood ||
+          address.suburb ||
+          address.village ||
+          address.hamlet ||
+          address.town ||
+          address.city_district ||
+          address.city ||
+          address.municipality ||
+          address.county ||
+          address.state_district;
+
+        if (!areaName) {
+          throw new Error("No nearby area name was returned.");
+        }
+
+        setLocationName(areaName);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setLocationLookupError(
+            "Area name unavailable. Your coordinates are shown below."
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLocationLookupLoading(false);
+        }
+      }
+    };
+
+    lookupArea();
+    return () => controller.abort();
+  }, [currentLocation]);
+
   return (
     <div className="yield-prediction-card">
       <div className="yield-form-panel">
         <div className="yield-form-content">
-          <form onSubmit={onSubmit}>
+          <form onSubmit={(event) => onSubmit(event, cropType, district)}>
             <div className="yield-record-field form-field">
               <label htmlFor="yield-agricultural-record">
                 🌿 &nbsp; Farm record
@@ -98,6 +179,7 @@ function YieldPrediction({
                 <select
                   id="yield-crop-type"
                   value={cropType}
+                  required
                   onChange={(event) => setCropType(event.target.value)}
                 >
                   <option value="">Select crop</option>
@@ -108,23 +190,66 @@ function YieldPrediction({
                   <option value="Sugarcane">Sugarcane</option>
                 </select>
               </div>
-              <div className="yield-detail-field">
-                <span>Location</span>
-                <strong className="yield-location-value">
+              <div className="form-field yield-input-field">
+                <label htmlFor="yield-district">District</label>
+                <select
+                  id="yield-district"
+                  value={district}
+                  required
+                  disabled={districts.length === 0}
+                  onChange={(event) =>
+                    setDistrictSelection({
+                      agriculturalId: String(selectedAgriculturalId),
+                      value: event.target.value,
+                    })
+                  }
+                >
+                  <option value="">
+                    {districts.length === 0
+                      ? "Districts unavailable"
+                      : "Select district"}
+                  </option>
+                  {districts.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+                <small className="yield-location-note">
+                  Current area:{" "}
                   {locationLoading
-                    ? "Fetching current location..."
-                    : currentLocation
-                      ? `${currentLocation.latitude.toFixed(5)}, ${currentLocation.longitude.toFixed(5)}`
-                      : locationError}
-                </strong>
-                {locationError && (
+                    ? "Fetching location..."
+                    : locationLookupLoading
+                      ? "Finding nearby area..."
+                      : locationName || locationError || "Not available"}
+                </small>
+                {currentLocation && (
+                  <small className="yield-location-note">
+                    {currentLocation.latitude.toFixed(5)},{" "}
+                    {currentLocation.longitude.toFixed(5)}
+                    {" · "}
+                    <a
+                      href="https://www.openstreetmap.org/copyright"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      © OpenStreetMap contributors
+                    </a>
+                  </small>
+                )}
+                {(locationError || locationLookupError) && (
                   <button
                     type="button"
                     className="yield-location-retry"
                     onClick={requestLocation}
                   >
-                    Retry location
+                    {locationLookupError ? "Retry area lookup" : "Retry location"}
                   </button>
+                )}
+                {locationLookupError && (
+                  <small className="yield-location-error">
+                    {locationLookupError}
+                  </small>
                 )}
               </div>
               <div className="yield-detail-field">
@@ -139,8 +264,15 @@ function YieldPrediction({
                   min="0"
                   step="0.01"
                   placeholder="Enter area"
-                  value={area}
-                  onChange={(event) => setArea(event.target.value)}
+                  value={currentArea}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    if (onAreaChange) {
+                      onAreaChange(nextValue);
+                    } else {
+                      setLocalArea(nextValue);
+                    }
+                  }}
                 />
               </div>
             </div>

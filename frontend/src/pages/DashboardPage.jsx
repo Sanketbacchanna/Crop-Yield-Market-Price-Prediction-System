@@ -4,8 +4,11 @@ import YieldPrediction from "../components/YieldPrediction";
 
 function DashboardPage({
   agriculturalRecords,
+  yieldDistricts,
   selectedAgriculturalId,
   onAgriculturalChange,
+  farmArea,
+  onAreaChange,
   onYieldSubmit,
   yieldLoading,
   yieldError,
@@ -15,9 +18,20 @@ function DashboardPage({
   weatherLoading,
   weatherError,
   yieldResult,
+  liveLocation,
+  liveWeather,
+  liveLocationLoading,
 }) {
   const firstRecord = agriculturalRecords[0];
   const firstRecommendation = recommendationResult?.recommendations?.[0];
+  const currentLocationName =
+    liveLocation?.name || firstRecord?.district || "Current location";
+  const weatherSummary = liveWeather || weatherData[0];
+  const parsedFarmArea = Number(farmArea);
+  const formattedArea =
+    farmArea !== "" && Number.isFinite(parsedFarmArea) && parsedFarmArea >= 0
+      ? `${parsedFarmArea.toFixed(2).replace(/\.00$/, "")} acres`
+      : "Enter area in the yield form";
 
   return (
     <div id="dashboard" className="dashboard-page">
@@ -34,8 +48,11 @@ function DashboardPage({
 
         <YieldPrediction
           agriculturalRecords={agriculturalRecords}
+          districts={yieldDistricts}
           selectedAgriculturalId={selectedAgriculturalId}
           onAgriculturalChange={onAgriculturalChange}
+          area={farmArea}
+          onAreaChange={onAreaChange}
           onSubmit={onYieldSubmit}
           loading={yieldLoading}
           error={yieldError}
@@ -88,11 +105,11 @@ function DashboardPage({
         <SummaryCard
           icon="📍"
           label="Farm Location"
-          value={firstRecord?.district || "—"}
+          value={currentLocationName}
           description={
-            firstRecord
-              ? `${firstRecord.state || "State"} • ${firstRecord.cultivated_area ?? "—"} acres`
-              : "No agricultural record"
+            liveLocationLoading
+              ? `Live location • ${formattedArea}`
+              : `${formattedArea}${firstRecord ? "" : " • No farm record"}`
           }
           accent="purple"
         />
@@ -100,13 +117,13 @@ function DashboardPage({
           icon="🌦️"
           label="Weather"
           value={
-            weatherData.length > 0
-              ? `${weatherData[0].temperature ?? "—"}°C`
+            weatherSummary
+              ? `${weatherSummary.temperature ?? "—"}°C`
               : "—"
           }
           description={
-            weatherData.length > 0
-              ? `${weatherData[0].location || "Unknown"} • Rainfall ${weatherData[0].rainfall ?? "—"} mm`
+            weatherSummary
+              ? `${weatherSummary.location || currentLocationName} • Rainfall ${weatherSummary.rainfall ?? "—"} mm`
               : weatherError ||
                 (weatherLoading ? "Loading weather..." : "No weather data")
           }

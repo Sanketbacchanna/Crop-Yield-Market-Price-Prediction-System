@@ -2,6 +2,7 @@ import YieldPrediction from "../components/YieldPrediction";
 
 function CropYieldPage({
   agriculturalRecords,
+  yieldDistricts,
   selectedAgriculturalId,
   onAgriculturalChange,
   onSubmit,
@@ -24,6 +25,7 @@ function CropYieldPage({
 
       <YieldPrediction
         agriculturalRecords={agriculturalRecords}
+        districts={yieldDistricts}
         selectedAgriculturalId={selectedAgriculturalId}
         onAgriculturalChange={onAgriculturalChange}
         onSubmit={onSubmit}

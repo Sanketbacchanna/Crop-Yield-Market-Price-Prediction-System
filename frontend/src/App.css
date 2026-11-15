@@ -2681,6 +2681,21 @@ button {
   white-space: nowrap;
 }
 
+.yield-location-note,
+.yield-location-error {
+  color: #647168;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.yield-location-note a {
+  color: #246632;
+}
+
+.yield-location-error {
+  color: #a33b32;
+}
+
 .yield-input-field {
   min-width: 0;
   justify-content: center;

@@ -36,6 +36,13 @@ export function getYieldHistory() {
   );
 }
 
+export function getYieldDistricts() {
+  return getList(
+    "/yield-prediction/districts",
+    "Could not load Karnataka districts."
+  );
+}
+
 export function getAgriculturalRecords() {
   return getList(
     "/agricultural-data/",
@@ -56,10 +63,12 @@ export function createPriceForecast({ cropId, prices }) {
   return request(`/price-prediction/forecast?${params}`, { method: "POST" });
 }
 
-export function createYieldPrediction(agriculturalId) {
+export function createYieldPrediction(agriculturalId, cropName, district) {
   const params = new URLSearchParams({
     user_id: "1",
     agricultural_id: agriculturalId,
+    crop_name: cropName,
+    district,
   });
 
   return request(`/yield-prediction/?${params}`, { method: "POST" });
@@ -79,4 +88,71 @@ export function getWeatherData() {
     "/weather-data/",
     "Could not load weather data."
   );
+}
+
+export async function getLocationName(latitude, longitude) {
+  const params = new URLSearchParams({
+    format: "jsonv2",
+    lat: String(latitude),
+    lon: String(longitude),
+    zoom: "14",
+    addressdetails: "1",
+  });
+
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/reverse?${params}`,
+    {
+      headers: {
+        "Accept-Language": "en",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to determine the current location.");
+  }
+
+  const data = await response.json();
+  const address = data.address || {};
+
+  return (
+    address.neighbourhood ||
+    address.suburb ||
+    address.village ||
+    address.hamlet ||
+    address.town ||
+    address.city_district ||
+    address.city ||
+    address.municipality ||
+    address.county ||
+    address.state_district ||
+    "Current location"
+  );
+}
+
+export async function getLiveWeather(latitude, longitude) {
+  const params = new URLSearchParams({
+    latitude: String(latitude),
+    longitude: String(longitude),
+    current: "temperature_2m,relative_humidity_2m,precipitation",
+    timezone: "auto",
+  });
+
+  const response = await fetch(
+    `https://api.open-meteo.com/v1/forecast?${params}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to fetch live weather data.");
+  }
+
+  const data = await response.json();
+  const current = data.current || {};
+
+  return {
+    temperature: current.temperature_2m,
+    humidity: current.relative_humidity_2m,
+    rainfall: current.precipitation,
+    location: "Current location",
+  };
 }

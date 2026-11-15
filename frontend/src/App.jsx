@@ -7,7 +7,10 @@ import {
   getAgriculturalRecords,
   getCropRecommendations,
   getPriceHistory,
+  getYieldDistricts,
   getYieldHistory,
+  getLiveWeather,
+  getLocationName,
   getWeatherData,
 } from "./services/api";
 import "./App.css";
@@ -49,7 +52,10 @@ function App() {
 
   const [agriculturalRecords, setAgriculturalRecords] = useState([]);
   const [selectedAgriculturalId, setSelectedAgriculturalId] = useState("");
+  const [farmArea, setFarmArea] = useState("");
   const [agriculturalError, setAgriculturalError] = useState("");
+  const [yieldDistricts, setYieldDistricts] = useState([]);
+  const [yieldDistrictError, setYieldDistrictError] = useState("");
 
   const [yieldResult, setYieldResult] = useState(null);
   const [yieldLoading, setYieldLoading] = useState(false);
@@ -69,6 +75,9 @@ function App() {
   const [weatherData, setWeatherData] = useState([]);
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [weatherError, setWeatherError] = useState("");
+  const [liveLocation, setLiveLocation] = useState(null);
+  const [liveWeather, setLiveWeather] = useState(null);
+  const [liveLocationLoading, setLiveLocationLoading] = useState(true);
 
   const loadPriceHistory = useCallback(async () => {
     setPriceHistoryLoading(true);
@@ -110,12 +119,65 @@ function App() {
   useEffect(() => {
     let active = true;
 
+    async function loadLiveFarmContext() {
+      if (!navigator.geolocation) {
+        setLiveLocationLoading(false);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async ({ coords }) => {
+          if (!active) {
+            return;
+          }
+
+          try {
+            const [locationName, weather] = await Promise.all([
+              getLocationName(coords.latitude, coords.longitude),
+              getLiveWeather(coords.latitude, coords.longitude),
+            ]);
+
+            setLiveLocation({
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+              name: locationName,
+            });
+            setLiveWeather({ ...weather, location: locationName });
+          } catch {
+            setLiveLocation({
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+              name: "Current location",
+            });
+          } finally {
+            setLiveLocationLoading(false);
+          }
+        },
+        () => {
+          if (active) {
+            setLiveLocationLoading(false);
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      );
+    }
+
+    loadLiveFarmContext();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
     async function loadInitialData() {
       const results = await Promise.allSettled([
         getPriceHistory(),
         getYieldHistory(),
         getAgriculturalRecords(),
         getWeatherData(),
+        getYieldDistricts(),
       ]);
 
       if (!active) {
@@ -169,6 +231,17 @@ function App() {
         );
       }
       setWeatherLoading(false);
+
+      if (results[4].status === "fulfilled") {
+        setYieldDistricts(results[4].value);
+      } else {
+        setYieldDistrictError(
+          getErrorMessage(
+            results[4].reason,
+            "Unable to load Karnataka districts."
+          )
+        );
+      }
     }
 
     loadInitialData();
@@ -200,7 +273,7 @@ function App() {
     }
   }
 
-  async function handleYieldSubmit(event) {
+  async function handleYieldSubmit(event, cropName, district) {
     event.preventDefault();
     if (!selectedAgriculturalId) {
       setYieldError("Please select an agricultural record.");
@@ -212,7 +285,9 @@ function App() {
     setYieldResult(null);
 
     try {
-      setYieldResult(await createYieldPrediction(selectedAgriculturalId));
+      setYieldResult(
+        await createYieldPrediction(selectedAgriculturalId, cropName, district)
+      );
       await loadYieldHistory();
     } catch (error) {
       setYieldError(getErrorMessage(error, "Unable to predict crop yield."));
@@ -251,17 +326,23 @@ function App() {
   const pageProps = {
     dashboard: {
       agriculturalRecords,
+      yieldDistricts,
       selectedAgriculturalId,
       onAgriculturalChange: setSelectedAgriculturalId,
+      farmArea,
+      onAreaChange: setFarmArea,
       onYieldSubmit: handleYieldSubmit,
       yieldLoading,
-      yieldError: yieldError || agriculturalError,
+      yieldError: yieldError || agriculturalError || yieldDistrictError,
       priceResult,
       recommendationResult,
       weatherData,
       weatherLoading,
       weatherError,
       yieldResult,
+      liveLocation,
+      liveWeather,
+      liveLocationLoading,
     },
     "market-price": {
       cropId,
@@ -275,11 +356,14 @@ function App() {
     },
     "yield-prediction": {
       agriculturalRecords,
+      yieldDistricts,
       selectedAgriculturalId,
       onAgriculturalChange: setSelectedAgriculturalId,
+      farmArea,
+      onAreaChange: setFarmArea,
       onSubmit: handleYieldSubmit,
       loading: yieldLoading,
-      error: yieldError || agriculturalError,
+      error: yieldError || agriculturalError || yieldDistrictError,
       result: yieldResult,
     },
     "crop-recommendation": {
@@ -291,7 +375,14 @@ function App() {
       error: recommendationError || agriculturalError,
       result: recommendationResult,
     },
-    weather: { weatherData, weatherLoading, weatherError },
+    weather: {
+      weatherData,
+      weatherLoading,
+      weatherError,
+      liveLocation,
+      liveWeather,
+      liveLocationLoading,
+    },
     settings: {},
     "prediction-history": {
       yieldHistory,

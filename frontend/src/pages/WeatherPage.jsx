@@ -1,7 +1,15 @@
 import SummaryCard from "../components/SummaryCard";
 
-function WeatherPage({ weatherData, weatherLoading, weatherError }) {
-  const currentWeather = weatherData[0];
+function WeatherPage({
+  weatherData,
+  weatherLoading,
+  weatherError,
+  liveLocation,
+  liveWeather,
+  liveLocationLoading,
+}) {
+  const currentWeather = liveWeather || weatherData[0];
+  const locationName = liveLocation?.name || currentWeather?.location || "Current location";
 
   return (
     <section className="dashboard-section page-section" id="weather">
@@ -22,9 +30,11 @@ function WeatherPage({ weatherData, weatherLoading, weatherError }) {
           }
           description={
             currentWeather
-              ? `${currentWeather.location || "Unknown"} • Rainfall ${currentWeather.rainfall ?? "—"} mm`
+              ? `${locationName} • Rainfall ${currentWeather.rainfall ?? "—"} mm`
               : weatherError ||
-                (weatherLoading ? "Loading weather..." : "No weather data")
+                (weatherLoading || liveLocationLoading
+                  ? "Loading weather..."
+                  : "No weather data")
           }
           accent="blue"
         />
