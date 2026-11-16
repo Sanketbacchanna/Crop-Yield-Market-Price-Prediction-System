@@ -8,6 +8,7 @@ import {
   getAgriculturalRecords,
   getCrops,
   getCropRecommendations,
+  getAdminUsers,
   getCurrentUser,
   getPriceHistory,
   getYieldDistricts,
@@ -18,7 +19,12 @@ import {
   loginUser,
   logoutUser,
   registerUser,
+  requestEmailVerification,
+  requestPasswordReset,
+  resetPassword,
   saveAuthSession,
+  updateCurrentUser,
+  verifyEmail,
 } from "./services/api";
 import "./App.css";
 
@@ -189,6 +195,39 @@ function App() {
       setAuthLoading(false);
     }
   };
+
+  const handleProfileUpdate = useCallback(
+    async (payload) => {
+      const updatedUser = await updateCurrentUser(payload);
+      setCurrentUser(updatedUser);
+      saveAuthSession(authToken, updatedUser);
+      return updatedUser;
+    },
+    [authToken]
+  );
+
+  const handlePasswordResetRequest = useCallback(async (email) => {
+    return requestPasswordReset(email);
+  }, []);
+
+  const handleEmailVerificationRequest = useCallback(async () => {
+    return requestEmailVerification();
+  }, []);
+
+  const handlePasswordReset = useCallback(async (token, newPassword) => {
+    return resetPassword(token, newPassword);
+  }, []);
+
+  const handleEmailVerification = useCallback(
+    async (token) => {
+      const result = await verifyEmail(token);
+      const refreshedUser = await getCurrentUser();
+      setCurrentUser(refreshedUser);
+      saveAuthSession(authToken, refreshedUser);
+      return result;
+    },
+    [authToken]
+  );
 
   const loadPriceHistory = useCallback(async () => {
     setPriceHistoryLoading(true);
@@ -542,7 +581,16 @@ function App() {
       liveWeather,
       liveLocationLoading,
     },
-    settings: {},
+    settings: {
+      currentUser,
+      onProfileUpdate: handleProfileUpdate,
+      onPasswordResetRequest: handlePasswordResetRequest,
+      onPasswordReset: handlePasswordReset,
+      onEmailVerificationRequest: handleEmailVerificationRequest,
+      onEmailVerification: handleEmailVerification,
+      onLogout: handleLogout,
+      loadAdminUsers: getAdminUsers,
+    },
     "prediction-history": {
       yieldHistory,
       yieldHistoryLoading,

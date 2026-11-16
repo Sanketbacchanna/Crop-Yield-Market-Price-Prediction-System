@@ -1,4 +1,5 @@
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -31,6 +32,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     )
 
 
+def generate_secure_token(length: int = 32) -> str:
+    return secrets.token_urlsafe(length)
+
+
 def create_access_token(email: str) -> str:
     expires = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {"sub": email, "exp": expires}
@@ -60,3 +65,16 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+
+def require_role(required_role: str):
+    def dependency(current_user: User = Depends(get_current_user)) -> User:
+        user_role = (current_user.role or "farmer").strip().lower()
+        if user_role != required_role.lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"This action requires the '{required_role}' role.",
+            )
+        return current_user
+
+    return dependency
