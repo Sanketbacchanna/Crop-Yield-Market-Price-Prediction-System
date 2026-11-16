@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { findKarnatakaDistrict } from "../utils/karnatakaDistrict";
 
 function YieldPrediction({
   agriculturalRecords,
@@ -30,6 +31,7 @@ function YieldPrediction({
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState("");
   const [locationName, setLocationName] = useState("");
+  const [locationDetails, setLocationDetails] = useState(null);
   const [locationLookupLoading, setLocationLookupLoading] = useState(false);
   const [locationLookupError, setLocationLookupError] = useState("");
   const locationRequested = useRef(false);
@@ -41,10 +43,28 @@ function YieldPrediction({
       name.toLowerCase() ===
       selectedRecord?.district?.trim().toLowerCase()
   );
-  const district =
-    districtSelection?.agriculturalId === String(selectedAgriculturalId)
+  const autoDetectedDistrict = findKarnatakaDistrict(locationDetails, districts);
+  const isKarnatakaLocation =
+    locationDetails?.state?.trim().toLowerCase() === "karnataka" &&
+    (!locationDetails.countryCode ||
+      locationDetails.countryCode.toLowerCase() === "in");
+  const locationKey = currentLocation
+    ? `${currentLocation.latitude},${currentLocation.longitude}`
+    : "";
+  const districtSelectionKey =
+    locationKey || `record:${selectedAgriculturalId}`;
+  const manuallySelectedDistrict =
+    districtSelection?.selectionKey === districtSelectionKey
       ? districtSelection.value
-      : matchingDistrict || "";
+      : "";
+  const district =
+    manuallySelectedDistrict ||
+    autoDetectedDistrict ||
+    (!locationLoading &&
+    !locationLookupLoading &&
+    !currentLocation
+      ? matchingDistrict || ""
+      : "");
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -55,6 +75,11 @@ function YieldPrediction({
 
     setLocationLoading(true);
     setLocationError("");
+    setLocationLookupLoading(false);
+    setLocationLookupError("");
+    setCurrentLocation(null);
+    setLocationDetails(null);
+    setLocationName("");
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         setCurrentLocation({
@@ -129,6 +154,16 @@ function YieldPrediction({
           address.county ||
           address.state_district;
 
+        setLocationDetails({
+          state: address.state || "",
+          countryCode: address.country_code || "",
+          districtCandidates: [
+            address.state_district,
+            address.county,
+            address.district,
+          ].filter((candidate) => typeof candidate === "string"),
+        });
+
         if (!areaName) {
           throw new Error("No nearby area name was returned.");
         }
@@ -201,7 +236,12 @@ function YieldPrediction({
                 </select>
               </div>
               <div className="form-field yield-input-field">
-                <label htmlFor="yield-district">District</label>
+                <label htmlFor="yield-district">
+                  District
+                  {autoDetectedDistrict && !manuallySelectedDistrict
+                    ? " (auto-detected)"
+                    : ""}
+                </label>
                 <select
                   id="yield-district"
                   value={district}
@@ -209,7 +249,7 @@ function YieldPrediction({
                   disabled={districts.length === 0}
                   onChange={(event) =>
                     setDistrictSelection({
-                      agriculturalId: String(selectedAgriculturalId),
+                      selectionKey: districtSelectionKey,
                       value: event.target.value,
                     })
                   }
@@ -217,6 +257,8 @@ function YieldPrediction({
                   <option value="">
                     {districts.length === 0
                       ? "Districts unavailable"
+                      : locationLoading || locationLookupLoading
+                        ? "Detecting district..."
                       : "Select district"}
                   </option>
                   {districts.map((name) => (
@@ -232,6 +274,19 @@ function YieldPrediction({
                     : locationLookupLoading
                       ? "Finding nearby area..."
                       : locationName || locationError || "Not available"}
+                </small>
+                <small className="yield-location-note">
+                  {autoDetectedDistrict
+                    ? manuallySelectedDistrict
+                      ? `Manually selected · live location suggests ${autoDetectedDistrict}`
+                      : `District auto-selected from live location: ${autoDetectedDistrict}`
+                    : locationLookupLoading || locationLoading
+                      ? "Detecting district from live location..."
+                      : currentLocation
+                        ? isKarnatakaLocation
+                          ? "Could not match this Karnataka location to a district. Select one manually."
+                          : "Choose a supported Karnataka district manually."
+                        : "Choose the district for your farm record."}
                 </small>
                 {currentLocation && (
                   <small className="yield-location-note">
