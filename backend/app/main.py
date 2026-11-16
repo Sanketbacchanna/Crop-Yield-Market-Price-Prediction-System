@@ -9,7 +9,8 @@ from app.models import (
     MarketPrice,
     YieldPrediction,
     PricePrediction,
-    CropRecommendation
+    CropRecommendation,
+    FarmProfile,
 )
 from fastapi import FastAPI
 from sqlalchemy import text
@@ -22,6 +23,7 @@ from app.routes.yield_prediction import router as yield_prediction_router
 from app.routes.price_prediction import router as price_prediction_router
 from app.routes.crop_recommendation import router as crop_recommendation_router
 from app.routes.auth import router as auth_router
+from app.routes.farms import router as farms_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -34,7 +36,7 @@ cors_origins = [
     origin.strip()
     for origin in os.getenv(
         "CORS_ORIGINS",
-        "http://localhost:5173"
+        "http://localhost:5173,http://127.0.0.1:5173"
     ).split(",")
     if origin.strip()
 ]
@@ -48,6 +50,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(farms_router)
 app.include_router(crops_router)
 app.include_router(agricultural_data_router)
 app.include_router(weather_data_router)

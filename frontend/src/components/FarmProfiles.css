@@ -1,0 +1,161 @@
+.farm-profiles-section {
+  margin-bottom: 24px;
+  padding: 24px;
+  border: 1px solid #e3ebe3;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.farm-profiles-heading h3,
+.farm-profile-form h4,
+.farm-profile-list h4 {
+  margin: 0;
+  color: #17251b;
+}
+
+.farm-profiles-heading > div > p:last-child,
+.farm-profile-hint,
+.farm-profile-card p,
+.farm-profile-empty {
+  color: #64746a;
+}
+
+.farm-profiles-heading > div > p:last-child {
+  margin: 6px 0 18px;
+}
+
+.farm-profiles-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(280px, 1.1fr);
+  gap: 20px;
+}
+
+.farm-profile-form,
+.farm-profile-list {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.farm-profile-form {
+  padding: 18px;
+  border-radius: 14px;
+  background: #f6faf5;
+}
+
+.farm-profile-hint {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.farm-profile-form label {
+  color: #34483a;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.farm-profile-form input,
+.farm-profile-form select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #d6e0d6;
+  border-radius: 9px;
+  background: #fff;
+  color: #17251b;
+  font: inherit;
+}
+
+.farm-profile-form input:focus,
+.farm-profile-form select:focus {
+  border-color: #3a9653;
+  outline: 3px solid rgba(58, 150, 83, 0.14);
+}
+
+.farm-profile-form-actions,
+.farm-profile-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.farm-profile-form-actions button,
+.farm-profile-card-actions button {
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 0;
+  border-radius: 9px;
+  background: #217a3d;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+
+.farm-profile-form-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.farm-profile-form-actions .farm-profile-cancel {
+  background: #e7eee8;
+  color: #34483a;
+}
+
+.farm-profile-card-actions .farm-profile-delete {
+  background: #fff0ed;
+  color: #9b2c1f;
+}
+
+.farm-profile-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e3ebe3;
+  border-radius: 12px;
+}
+
+.farm-profile-card h5 {
+  margin: 0 0 6px;
+  color: #17251b;
+  font-size: 1rem;
+}
+
+.farm-profile-card p {
+  margin: 3px 0;
+  font-size: 0.9rem;
+}
+
+.farm-profile-card-actions {
+  margin-top: 0;
+}
+
+.farm-profile-card-actions button {
+  min-height: 34px;
+  padding: 6px 10px;
+  background: #edf5ed;
+  color: #245c34;
+}
+
+.farm-profile-error {
+  color: #a3261d;
+}
+
+.farm-profile-status {
+  color: #217a3d;
+}
+
+@media (max-width: 760px) {
+  .farm-profiles-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .farm-profile-card {
+    flex-direction: column;
+  }
+}

@@ -164,3 +164,105 @@ def test_password_reset_and_email_verification_flow():
         json={"token": verification_token},
     )
     assert verification_response.status_code == 200, verification_response.text
+
+
+def test_farm_profiles_are_private_and_support_crud():
+    first_user_response = client.post(
+        "/auth/register",
+        json={
+            "name": "Farm Owner One",
+            "email": "farm-owner-one@example.com",
+            "password": "farmerpass123",
+        },
+    )
+    second_user_response = client.post(
+        "/auth/register",
+        json={
+            "name": "Farm Owner Two",
+            "email": "farm-owner-two@example.com",
+            "password": "farmerpass123",
+        },
+    )
+    first_user_token = first_user_response.json()["access_token"]
+    second_user_token = second_user_response.json()["access_token"]
+    first_user_headers = {"Authorization": f"Bearer {first_user_token}"}
+    second_user_headers = {"Authorization": f"Bearer {second_user_token}"}
+
+    create_response = client.post(
+        "/farms/",
+        headers=first_user_headers,
+        json={
+            "farm_name": "North Field",
+            "district": "Dakshina Kannada",
+            "area_acres": 2.5,
+            "soil_type": "Red soil",
+            "irrigation_type": "Drip",
+            "primary_crop": "Arecanut",
+            "season": "Kharif",
+        },
+    )
+    assert create_response.status_code == 201, create_response.text
+    farm = create_response.json()
+    assert farm["district"] == "Dakshina Kannada"
+    assert farm["area_acres"] == 2.5
+
+    first_user_farms = client.get("/farms/", headers=first_user_headers)
+    assert first_user_farms.status_code == 200, first_user_farms.text
+    assert [item["farm_id"] for item in first_user_farms.json()] == [
+        farm["farm_id"]
+    ]
+
+    second_user_farms = client.get("/farms/", headers=second_user_headers)
+    assert second_user_farms.status_code == 200, second_user_farms.text
+    assert second_user_farms.json() == []
+
+    forbidden_update = client.put(
+        f"/farms/{farm['farm_id']}",
+        headers=second_user_headers,
+        json={"farm_name": "Changed Farm"},
+    )
+    assert forbidden_update.status_code == 404, forbidden_update.text
+
+    update_response = client.put(
+        f"/farms/{farm['farm_id']}",
+        headers=first_user_headers,
+        json={"farm_name": "South Field", "area_acres": 3.25},
+    )
+    assert update_response.status_code == 200, update_response.text
+    assert update_response.json()["farm_name"] == "South Field"
+    assert update_response.json()["area_acres"] == 3.25
+
+    delete_response = client.delete(
+        f"/farms/{farm['farm_id']}",
+        headers=first_user_headers,
+    )
+    assert delete_response.status_code == 204, delete_response.text
+    assert client.get("/farms/", headers=first_user_headers).json() == []
+
+
+def test_farm_profiles_require_auth_and_supported_district():
+    unauthenticated = client.get("/farms/")
+    assert unauthenticated.status_code == 401
+
+    register_response = client.post(
+        "/auth/register",
+        json={
+            "name": "District Test",
+            "email": "district-test@example.com",
+            "password": "farmerpass123",
+        },
+    )
+    headers = {
+        "Authorization": f"Bearer {register_response.json()['access_token']}"
+    }
+
+    invalid_district = client.post(
+        "/farms/",
+        headers=headers,
+        json={
+            "farm_name": "Invalid District Farm",
+            "district": "Not a Karnataka district",
+            "area_acres": 1,
+        },
+    )
+    assert invalid_district.status_code == 422, invalid_district.text

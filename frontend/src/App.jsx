@@ -3,13 +3,16 @@ import DashboardHeader from "./components/DashboardHeader";
 import Sidebar from "./components/Sidebar";
 import {
   clearAuthSession,
+  createFarmProfile,
   createPriceForecast,
   createYieldPrediction,
+  deleteFarmProfile,
   getAgriculturalRecords,
   getCrops,
   getCropRecommendations,
   getAdminUsers,
   getCurrentUser,
+  getFarmProfiles,
   getPriceHistory,
   getYieldDistricts,
   getYieldHistory,
@@ -24,6 +27,7 @@ import {
   resetPassword,
   saveAuthSession,
   updateCurrentUser,
+  updateFarmProfile,
   verifyEmail,
 } from "./services/api";
 import "./App.css";
@@ -98,6 +102,12 @@ function App() {
   const [agriculturalError, setAgriculturalError] = useState("");
   const [yieldDistricts, setYieldDistricts] = useState([]);
   const [yieldDistrictError, setYieldDistrictError] = useState("");
+  const [farmProfileState, setFarmProfileState] = useState({
+    userId: null,
+    farms: [],
+    loading: true,
+    error: "",
+  });
 
   const [yieldResult, setYieldResult] = useState(null);
   const [yieldLoading, setYieldLoading] = useState(false);
@@ -120,6 +130,14 @@ function App() {
   const [liveLocation, setLiveLocation] = useState(null);
   const [liveWeather, setLiveWeather] = useState(null);
   const [liveLocationLoading, setLiveLocationLoading] = useState(true);
+  const isCurrentUserFarmState =
+    farmProfileState.userId === currentUser?.user_id;
+  const farmProfiles = isCurrentUserFarmState ? farmProfileState.farms : [];
+  const farmProfilesLoading =
+    !isCurrentUserFarmState || farmProfileState.loading;
+  const farmProfilesError = isCurrentUserFarmState
+    ? farmProfileState.error
+    : "";
 
   const logoutCurrentUser = useCallback(() => {
     clearAuthSession();
@@ -257,6 +275,36 @@ function App() {
     }
   }, []);
 
+  const handleFarmSave = useCallback(async (payload, farmId) => {
+    const savedFarm = farmId
+      ? await updateFarmProfile(farmId, payload)
+      : await createFarmProfile(payload);
+
+    const userId = currentUser?.user_id;
+    setFarmProfileState((current) => {
+      const farms = current.userId === userId ? current.farms : [];
+      return {
+        userId,
+        farms: farmId
+          ? farms.map((farm) =>
+              farm.farm_id === farmId ? savedFarm : farm
+            )
+          : [...farms, savedFarm],
+        loading: false,
+        error: "",
+      };
+    });
+    return savedFarm;
+  }, [currentUser?.user_id]);
+
+  const handleFarmDelete = useCallback(async (farmId) => {
+    await deleteFarmProfile(farmId);
+    setFarmProfileState((current) => ({
+      ...current,
+      farms: current.farms.filter((farm) => farm.farm_id !== farmId),
+    }));
+  }, []);
+
   useEffect(() => {
     function handleHashChange() {
       setActivePage(getPageFromHash());
@@ -324,6 +372,36 @@ function App() {
       active = false;
     };
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser?.user_id) {
+      return;
+    }
+
+    let active = true;
+    const userId = currentUser.user_id;
+
+    getFarmProfiles()
+      .then((farms) => {
+        if (active) {
+          setFarmProfileState({ userId, farms, loading: false, error: "" });
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          setFarmProfileState({
+            userId,
+            farms: [],
+            loading: false,
+            error: getErrorMessage(error, "Unable to load farm profiles."),
+          });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, currentUser?.user_id]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -586,6 +664,12 @@ function App() {
     },
     settings: {
       currentUser,
+      farms: farmProfiles,
+      farmDistricts: yieldDistricts,
+      farmsLoading: farmProfilesLoading,
+      farmsError: farmProfilesError,
+      onFarmSave: handleFarmSave,
+      onFarmDelete: handleFarmDelete,
       onProfileUpdate: handleProfileUpdate,
       onPasswordResetRequest: handlePasswordResetRequest,
       onPasswordReset: handlePasswordReset,

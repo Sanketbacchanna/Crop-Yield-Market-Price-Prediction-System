@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import FarmProfiles from "../components/FarmProfiles";
 
 function SettingsPage({
   currentUser,
@@ -9,6 +10,12 @@ function SettingsPage({
   onEmailVerification,
   onLogout,
   loadAdminUsers,
+  farms,
+  farmDistricts,
+  farmsLoading,
+  farmsError,
+  onFarmSave,
+  onFarmDelete,
 }) {
   const [form, setForm] = useState({
     name: "",
@@ -150,6 +157,15 @@ function SettingsPage({
           <p>Manage your account, security, and access preferences.</p>
         </div>
       </div>
+
+      <FarmProfiles
+        farms={farms}
+        districts={farmDistricts}
+        loading={farmsLoading}
+        error={farmsError}
+        onSave={onFarmSave}
+        onDelete={onFarmDelete}
+      />
 
       <div style={{ display: "grid", gap: 24, gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
         <div style={{ background: "#fff", borderRadius: 16, padding: 20, boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)" }}>

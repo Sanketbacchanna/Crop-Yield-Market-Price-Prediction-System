@@ -27,6 +27,8 @@ The system combines crop-yield prediction, agricultural information, weather dat
 
 - Includes a crop-yield dataset for model development.
 
+- Automatically selects the supported Karnataka district matching the farmer's live location; the district can still be changed manually.
+
 **2. Crop Recommendation**
 
 - Retrieves agricultural information such as district, season, and cultivated area.
@@ -54,6 +56,12 @@ The system combines crop-yield prediction, agricultural information, weather dat
 - Includes a Karnataka weather dataset covering 2015–2026.
 
 - Provides weather information that can support future improvements to crop prediction and recommendations.
+
+- Shows a location-specific 7-day forecast, 30-day ensemble rainfall outlook, and six-month seasonal rainfall outlook.
+
+- Compares weekly and monthly rainfall forecasts with the provider's model climatology and surfaces heuristic dry-spell and heavy-rain signals.
+
+- Weather outlooks use Open-Meteo data. Rainfall signals are informational only, not official drought or flood warnings.
 
 **5. Soil Data**
 
@@ -131,7 +139,8 @@ Create the project database in MySQL:
 Copy `backend/.env.example` to `backend/.env` and set your database credentials.
 The backend requires `DB_HOST`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME`;
 `DB_PORT` defaults to `3306`. Set `CORS_ORIGINS` to a comma-separated list
-of trusted frontend origins (the default is `http://localhost:5173`).
+of trusted frontend origins (the defaults are `http://localhost:5173` and
+`http://127.0.0.1:5173`).
 Never commit `backend/.env` or put real credentials in `.env.example`.
 
 The repository previously tracked `backend/.env`; it is now ignored. Remove
@@ -143,6 +152,25 @@ git rm --cached backend/.env
 
 If real credentials were ever committed, rotate them; ignoring the file does
 not remove values from the repository's existing history.
+
+For an existing database, run the additive auth-column migration once from
+the `backend` directory:
+
+```powershell
+python migrate_user_lifecycle.py
+```
+
+The migration is safe to rerun and preserves existing user data.
+
+For farmer farm profiles, create the new account-owned farm table from the
+`backend` directory:
+
+```powershell
+python migrate_farm_profiles.py
+```
+
+The migration is safe to rerun. After it completes, sign in and open
+**Settings & Profile** to create, edit, or remove farm profiles.
 
 **Step 5: Start the Backend**
 

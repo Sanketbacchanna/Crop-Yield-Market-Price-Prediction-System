@@ -168,6 +168,28 @@ export function getAgriculturalRecords() {
   );
 }
 
+export function getFarmProfiles() {
+  return getList("/farms/", "Could not load farm profiles.");
+}
+
+export function createFarmProfile(payload) {
+  return request("/farms/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateFarmProfile(farmId, payload) {
+  return request(`/farms/${farmId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteFarmProfile(farmId) {
+  return request(`/farms/${farmId}`, { method: "DELETE" });
+}
+
 export function createPriceForecast({ cropId, prices }) {
   const params = new URLSearchParams({
     crop_id: cropId,

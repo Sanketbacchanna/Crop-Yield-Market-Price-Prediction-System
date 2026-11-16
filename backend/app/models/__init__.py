@@ -6,3 +6,4 @@ from app.models.market_price import MarketPrice
 from app.models.yield_prediction import YieldPrediction
 from app.models.price_prediction import PricePrediction
 from app.models.crop_recommendation import CropRecommendation
+from app.models.farm_profile import FarmProfile
