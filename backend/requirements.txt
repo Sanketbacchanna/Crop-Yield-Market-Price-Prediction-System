@@ -3,3 +3,5 @@ uvicorn
 sqlalchemy
 pymysql
 python-dotenv
+pyjwt
+bcrypt

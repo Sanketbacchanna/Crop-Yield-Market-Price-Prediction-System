@@ -3,10 +3,12 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
 from app.models.yield_prediction import YieldPrediction
 from app.models.agricultural_data import AgriculturalData
 from app.models.crop import Crop
+from app.models.user import User
 from app.ml.yield_predictor import get_karnataka_districts, predict_yield
 from datetime import datetime
 
@@ -29,13 +31,13 @@ def get_yield_districts():
 
 @router.post("/")
 def create_yield_prediction(
-    user_id: int = Query(gt=0),
     agricultural_id: int = Query(gt=0),
     crop_name: Optional[str] = Query(default=None, max_length=100),
     district_override: Optional[str] = Query(
         default=None, alias="district", max_length=45
     ),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     # ---------------------------------------------------------
     # 1. Get agricultural data
@@ -153,7 +155,7 @@ def create_yield_prediction(
     # 6. Save prediction to database
     # ---------------------------------------------------------
     prediction = YieldPrediction(
-        user_id=user_id,
+        user_id=current_user.user_id,
         crop_id=crop.crop_id,
         agricultural_id=agricultural_id,
         predicted_yield=predicted_yield,

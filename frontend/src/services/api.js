@@ -2,15 +2,87 @@ const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
 ).replace(/\/$/, "");
 
-async function request(path, options) {
-  const response = await fetch(`${API_BASE_URL}${path}`, options);
-  const data = await response.json();
+function getAuthToken() {
+  return localStorage.getItem("crop_prediction_token");
+}
+
+function getStoredUser() {
+  const storedUser = localStorage.getItem("crop_prediction_user");
+  if (!storedUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(storedUser);
+  } catch {
+    return null;
+  }
+}
+
+export function saveAuthSession(token, user) {
+  localStorage.setItem("crop_prediction_token", token);
+  localStorage.setItem("crop_prediction_user", JSON.stringify(user));
+}
+
+export function clearAuthSession() {
+  localStorage.removeItem("crop_prediction_token");
+  localStorage.removeItem("crop_prediction_user");
+}
+
+export function getCurrentUser() {
+  return request("/auth/me");
+}
+
+export function loginUser({ email, password }) {
+  return request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function registerUser({ name, email, password, phone, role = "farmer" }) {
+  return request("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ name, email, password, phone, role }),
+  });
+}
+
+export function updateCurrentUser(payload) {
+  return request("/auth/me", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function logoutUser() {
+  clearAuthSession();
+}
+
+async function request(path, options = {}) {
+  const requestHeaders = new Headers(options.headers || {});
+
+  const token = getAuthToken();
+  if (token) {
+    requestHeaders.set("Authorization", `Bearer ${token}`);
+  }
+
+  if (options.body && !(options.body instanceof FormData)) {
+    requestHeaders.set("Content-Type", "application/json");
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: requestHeaders,
+  });
+
+  const rawText = await response.text();
+  const data = rawText ? JSON.parse(rawText) : null;
 
   if (!response.ok) {
     const detail =
-      typeof data.detail === "string"
+      typeof data?.detail === "string"
         ? data.detail
-        : JSON.stringify(data.detail || data);
+        : JSON.stringify(data?.detail || data || "The request could not be completed.");
     throw new Error(detail || "The request could not be completed.");
   }
 
@@ -56,7 +128,6 @@ export function getAgriculturalRecords() {
 
 export function createPriceForecast({ cropId, prices }) {
   const params = new URLSearchParams({
-    user_id: "1",
     crop_id: cropId,
     price_previous_month: prices.previousMonth,
     price_previous_2_months: prices.previousTwoMonths,
@@ -69,7 +140,6 @@ export function createPriceForecast({ cropId, prices }) {
 
 export function createYieldPrediction(agriculturalId, cropName, district) {
   const params = new URLSearchParams({
-    user_id: "1",
     agricultural_id: agriculturalId,
     crop_name: cropName,
     district,
@@ -80,7 +150,6 @@ export function createYieldPrediction(agriculturalId, cropName, district) {
 
 export function getCropRecommendations(agriculturalId) {
   const params = new URLSearchParams({
-    user_id: "1",
     agricultural_id: agriculturalId,
   });
   return request(`/crop-recommendation/recommend?${params}`, {

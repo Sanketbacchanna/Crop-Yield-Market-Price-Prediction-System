@@ -21,6 +21,7 @@ from app.routes.market_price import router as market_price_router
 from app.routes.yield_prediction import router as yield_prediction_router
 from app.routes.price_prediction import router as price_prediction_router
 from app.routes.crop_recommendation import router as crop_recommendation_router
+from app.routes.auth import router as auth_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -46,6 +47,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 app.include_router(crops_router)
 app.include_router(agricultural_data_router)
 app.include_router(weather_data_router)

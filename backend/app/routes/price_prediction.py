@@ -4,9 +4,11 @@ from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
 from app.models.price_prediction import PricePrediction
 from app.models.crop import Crop
+from app.models.user import User
 from app.ml.price_predictor import predict_price
 
 router = APIRouter(
@@ -17,13 +19,13 @@ router = APIRouter(
 
 @router.post("/forecast")
 def generate_price_forecast(
-    user_id: int = Query(gt=0),
     crop_id: int = Query(gt=0),
     price_previous_month: float = Query(ge=0, allow_inf_nan=False),
     price_previous_2_months: float = Query(ge=0, allow_inf_nan=False),
     price_previous_3_months: float = Query(ge=0, allow_inf_nan=False),
     price_avg_previous_3_months: float = Query(ge=0, allow_inf_nan=False),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     # Verify the crop exists
     crop = db.query(Crop).filter(Crop.crop_id == crop_id).first()
@@ -58,7 +60,7 @@ def generate_price_forecast(
 
     # Save the forecast in the existing database table
     prediction = PricePrediction(
-        user_id=user_id,
+        user_id=current_user.user_id,
         crop_id=crop_id,
         forecast_price=round(forecast_price),
         model_used="RandomForestRegressor",

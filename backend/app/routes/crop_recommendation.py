@@ -3,11 +3,13 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
 from app.models.crop_recommendation import CropRecommendation
 from app.models.agricultural_data import AgriculturalData
 from app.models.crop import Crop
 from app.models.price_prediction import PricePrediction
+from app.models.user import User
 from app.models.weather_data import WeatherData
 from app.ml.yield_predictor import predict_yield
 
@@ -20,9 +22,9 @@ router = APIRouter(
 
 @router.post("/recommend")
 def generate_crop_recommendations(
-    user_id: int = Query(gt=0),
     agricultural_id: int = Query(gt=0),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     # ---------------------------------------------------------
     # 1. Get agricultural information
@@ -270,7 +272,7 @@ def generate_crop_recommendations(
     for rank, item in enumerate(top_crops, start=1):
 
         recommendation = CropRecommendation(
-            user_id=user_id,
+            user_id=current_user.user_id,
             crop_id=item["crop_id"],
             predicted_yield=item["predicted_yield"],
             forecast_price=item["forecast_price"],
@@ -299,7 +301,7 @@ def generate_crop_recommendations(
     # ---------------------------------------------------------
     return {
         "message": "Crop recommendations generated successfully",
-        "user_id": user_id,
+        "user_id": current_user.user_id,
         "agricultural_id": agricultural_id,
         "district": district,
         "season": season,

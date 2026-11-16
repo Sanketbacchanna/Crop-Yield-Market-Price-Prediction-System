@@ -2,17 +2,23 @@ import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import DashboardHeader from "./components/DashboardHeader";
 import Sidebar from "./components/Sidebar";
 import {
+  clearAuthSession,
   createPriceForecast,
   createYieldPrediction,
   getAgriculturalRecords,
   getCrops,
   getCropRecommendations,
+  getCurrentUser,
   getPriceHistory,
   getYieldDistricts,
   getYieldHistory,
   getLiveWeather,
   getLocationName,
   getWeatherData,
+  loginUser,
+  logoutUser,
+  registerUser,
+  saveAuthSession,
 } from "./services/api";
 import "./App.css";
 
@@ -33,6 +39,19 @@ const INITIAL_PRICES = {
   averagePrice: "2750",
 };
 
+function getStoredUser() {
+  const storedUser = localStorage.getItem("crop_prediction_user");
+  if (!storedUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(storedUser);
+  } catch {
+    return null;
+  }
+}
+
 function getErrorMessage(error, fallback) {
   return error instanceof Error ? error.message : fallback;
 }
@@ -45,6 +64,21 @@ function getPageFromHash() {
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState(getPageFromHash);
+  const [authToken, setAuthToken] = useState(
+    () => localStorage.getItem("crop_prediction_token") || ""
+  );
+  const [currentUser, setCurrentUser] = useState(getStoredUser);
+  const [authMode, setAuthMode] = useState("login");
+  const [authForm, setAuthForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    phone: "",
+  });
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const isAuthenticated = Boolean(authToken && currentUser);
+
   const [cropOptions, setCropOptions] = useState([]);
   const [cropId, setCropId] = useState("1");
   const [prices, setPrices] = useState(INITIAL_PRICES);
@@ -80,6 +114,81 @@ function App() {
   const [liveLocation, setLiveLocation] = useState(null);
   const [liveWeather, setLiveWeather] = useState(null);
   const [liveLocationLoading, setLiveLocationLoading] = useState(true);
+
+  const logoutCurrentUser = useCallback(() => {
+    clearAuthSession();
+    logoutUser();
+    setAuthToken("");
+    setCurrentUser(null);
+  }, []);
+
+  const handleLogout = () => {
+    logoutCurrentUser();
+    setAuthError("");
+  };
+
+  useEffect(() => {
+    if (!authToken) {
+      setCurrentUser(null);
+      return;
+    }
+
+    let active = true;
+
+    async function loadCurrentUser() {
+      try {
+        const user = await getCurrentUser();
+        if (!active) {
+          return;
+        }
+
+        setCurrentUser(user);
+        saveAuthSession(authToken, user);
+      } catch {
+        if (active) {
+          logoutCurrentUser();
+        }
+      }
+    }
+
+    loadCurrentUser();
+    return () => {
+      active = false;
+    };
+  }, [authToken, logoutCurrentUser]);
+
+  const handleAuthSubmit = async (event) => {
+    event.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+
+    try {
+      const payload = {
+        name: authForm.name,
+        email: authForm.email,
+        password: authForm.password,
+        phone: authForm.phone,
+      };
+
+      const response =
+        authMode === "login"
+          ? await loginUser({
+              email: payload.email,
+              password: payload.password,
+            })
+          : await registerUser(payload);
+
+      const { access_token, user } = response;
+      saveAuthSession(access_token, user);
+      setAuthToken(access_token);
+      setCurrentUser(user);
+      setAuthForm({ name: "", email: "", password: "", phone: "" });
+    } catch (error) {
+      setAuthError(getErrorMessage(error, "Unable to authenticate."));
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const loadPriceHistory = useCallback(async () => {
     setPriceHistoryLoading(true);
@@ -119,6 +228,10 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
     let active = true;
 
     async function loadLiveFarmContext() {
@@ -168,9 +281,13 @@ function App() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
     let active = true;
 
     async function loadCrops() {
@@ -191,7 +308,7 @@ function App() {
               : firstCropId
           );
         }
-      } catch (error) {
+      } catch {
         if (active) {
           setCropOptions([]);
         }
@@ -202,9 +319,13 @@ function App() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
     let active = true;
 
     async function loadInitialData() {
@@ -284,7 +405,7 @@ function App() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   function handlePriceChange(field, value) {
     setPrices((currentPrices) => ({
@@ -435,6 +556,155 @@ function App() {
   };
   const ActivePage = pages[activePage];
 
+  if (!isAuthenticated) {
+    return (
+      <div className="auth-shell" style={{ maxWidth: 540, margin: "80px auto", padding: 24 }}>
+        <div className="card" style={{ borderRadius: 16, padding: 24, background: "#fff", boxShadow: "0 16px 40px rgba(0,0,0,0.08)" }}>
+          <div style={{ marginBottom: 24 }}>
+            <h2 style={{ margin: 0, fontSize: 28 }}>AgriPredict</h2>
+            <p style={{ margin: "8px 0 0", color: "#4b5563" }}>
+              Sign in to access crop yield and market price predictions.
+            </p>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+            <button
+              type="button"
+              onClick={() => setAuthMode("login")}
+              style={{
+                flex: 1,
+                padding: "10px 16px",
+                borderRadius: 10,
+                border: "none",
+                background: authMode === "login" ? "#2563eb" : "#e5e7eb",
+                color: authMode === "login" ? "#fff" : "#111827",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthMode("register")}
+              style={{
+                flex: 1,
+                padding: "10px 16px",
+                borderRadius: 10,
+                border: "none",
+                background: authMode === "register" ? "#2563eb" : "#e5e7eb",
+                color: authMode === "register" ? "#fff" : "#111827",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Register
+            </button>
+          </div>
+
+          <form onSubmit={handleAuthSubmit}>
+            {authMode === "register" && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+                  Full name
+                </label>
+                <input
+                  type="text"
+                  value={authForm.name}
+                  onChange={(event) =>
+                    setAuthForm((current) => ({ ...current, name: event.target.value }))
+                  }
+                  required={authMode === "register"}
+                  placeholder="Enter your full name"
+                  style={{ width: "100%", padding: 12, borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </div>
+            )}
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+                Email
+              </label>
+              <input
+                type="email"
+                value={authForm.email}
+                onChange={(event) =>
+                  setAuthForm((current) => ({ ...current, email: event.target.value }))
+                }
+                required
+                placeholder="you@example.com"
+                style={{ width: "100%", padding: 12, borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+                Password
+              </label>
+              <input
+                type="password"
+                value={authForm.password}
+                onChange={(event) =>
+                  setAuthForm((current) => ({ ...current, password: event.target.value }))
+                }
+                required
+                minLength={6}
+                placeholder="Enter your password"
+                style={{ width: "100%", padding: 12, borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+            </div>
+
+            {authMode === "register" && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+                  Phone number
+                </label>
+                <input
+                  type="tel"
+                  value={authForm.phone}
+                  onChange={(event) =>
+                    setAuthForm((current) => ({ ...current, phone: event.target.value }))
+                  }
+                  placeholder="Optional"
+                  style={{ width: "100%", padding: 12, borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </div>
+            )}
+
+            {authError && (
+              <p style={{ margin: "0 0 16px", color: "#b91c1c", fontSize: 14 }}>
+                {authError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={authLoading}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                borderRadius: 10,
+                border: "none",
+                background: "#16a34a",
+                color: "#fff",
+                fontWeight: 700,
+                cursor: authLoading ? "not-allowed" : "pointer",
+              }}
+            >
+              {authLoading
+                ? authMode === "login"
+                  ? "Signing in..."
+                  : "Creating account..."
+                : authMode === "login"
+                  ? "Login"
+                  : "Create account"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
       <DashboardHeader
@@ -457,6 +727,23 @@ function App() {
           />
         )}
         <div className="main-area">
+          <div style={{ display: "flex", justifyContent: "flex-end", padding: "16px 24px 0" }}>
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={{
+                border: "none",
+                borderRadius: 10,
+                background: "#111827",
+                color: "#fff",
+                padding: "8px 12px",
+                cursor: "pointer",
+              }}
+            >
+              Logout ({currentUser?.name || currentUser?.email || "User"})
+            </button>
+          </div>
+
           <main className="dashboard">
             <Suspense
               fallback={
