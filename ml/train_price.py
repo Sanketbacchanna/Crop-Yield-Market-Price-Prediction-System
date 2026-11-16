@@ -1,13 +1,14 @@
 
-import pandas as pd
-import joblib
+import os
 
+import joblib
+import pandas as pd
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
 
 # Load prepared historical data
 df = pd.read_csv("prepared_crop_price_data.csv")
@@ -18,13 +19,8 @@ df = df.sort_values(["crop", "t"]).reset_index(drop=True)
 df["target_next_month"] = df.groupby("crop")["p_modal"].shift(-1)
 
 # Use only historical features available at prediction time
-df["price_previous_2_months"] = (
-    df.groupby("crop")["p_modal"].shift(2)
-)
-
-df["price_previous_3_months"] = (
-    df.groupby("crop")["p_modal"].shift(3)
-)
+df["price_previous_2_months"] = df.groupby("crop")["p_modal"].shift(2)
+df["price_previous_3_months"] = df.groupby("crop")["p_modal"].shift(3)
 
 feature_columns = [
     "crop",
@@ -88,6 +84,7 @@ print("Testing rows:", len(test_df))
 print(f"MAE: {mae:.2f}")
 print(f"RMSE: {rmse:.2f}")
 
-# Save the trained model
-joblib.dump(model, "price_prediction_model.pkl")
-print("Model saved to price_prediction_model.pkl")
+os.makedirs("ml/saved_models", exist_ok=True)
+model_path = os.path.join("ml", "saved_models", "price_prediction_model.pkl")
+joblib.dump(model, model_path)
+print(f"Model saved to {model_path}")

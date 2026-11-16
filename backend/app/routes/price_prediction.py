@@ -14,12 +14,6 @@ router = APIRouter(
     tags=["Price Prediction"]
 )
 
-SUPPORTED_CROPS = {
-    1: "Rice",
-    2: "Wheat",
-    3: "Maize",
-}
-
 
 @router.post("/forecast")
 def generate_price_forecast(
@@ -37,16 +31,17 @@ def generate_price_forecast(
     if crop is None:
         raise HTTPException(status_code=404, detail="Crop not found")
 
-    # This model was trained only on Rice, Wheat, and Maize
-    crop_name = SUPPORTED_CROPS.get(crop_id)
+    crop_name = (crop.crop_name or "").strip()
 
-    if crop_name is None:
+    if not crop_name:
         raise HTTPException(
             status_code=400,
-            detail="Price forecasting is currently supported for Rice, Wheat, and Maize only.",
+            detail="Crop name is missing for the selected crop.",
         )
 
-    # Generate the next-month forecast
+    # Generate the next-month forecast. The backend automatically falls back to
+    # a stable average-based estimate when the crop isn't in the limited training
+    # set, so the UI can use the full crop catalogue from the dataset.
     try:
         forecast_price = predict_price(
             crop=crop_name,

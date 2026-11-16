@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 function YieldPrediction({
   agriculturalRecords,
   districts,
+  cropOptions = [],
   selectedAgriculturalId,
   onAgriculturalChange,
   onSubmit,
@@ -14,6 +15,15 @@ function YieldPrediction({
 }) {
   const [cropType, setCropType] = useState("");
   const [districtSelection, setDistrictSelection] = useState(null);
+  const availableCrops = cropOptions.length
+    ? cropOptions
+    : [
+        { crop_id: 1, crop_name: "Rice" },
+        { crop_id: 2, crop_name: "Wheat" },
+        { crop_id: 3, crop_name: "Maize" },
+        { crop_id: 4, crop_name: "Cotton" },
+        { crop_id: 5, crop_name: "Sugarcane" },
+      ];
   const [localArea, setLocalArea] = useState("");
   const currentArea = area ?? localArea;
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -183,11 +193,11 @@ function YieldPrediction({
                   onChange={(event) => setCropType(event.target.value)}
                 >
                   <option value="">Select crop</option>
-                  <option value="Rice">Rice</option>
-                  <option value="Wheat">Wheat</option>
-                  <option value="Maize">Maize</option>
-                  <option value="Cotton">Cotton</option>
-                  <option value="Sugarcane">Sugarcane</option>
+                  {availableCrops.map((crop) => (
+                    <option key={crop.crop_id ?? crop.crop_name} value={crop.crop_name}>
+                      {crop.crop_name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="form-field yield-input-field">

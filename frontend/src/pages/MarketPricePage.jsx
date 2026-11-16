@@ -5,6 +5,7 @@ import {
 
 function MarketPricePage({
   cropId,
+  crops,
   onCropChange,
   prices,
   onPriceChange,
@@ -28,6 +29,7 @@ function MarketPricePage({
       <div className="content-grid">
         <PricePredictionForm
           cropId={cropId}
+          crops={crops}
           onCropChange={onCropChange}
           prices={prices}
           onPriceChange={onPriceChange}

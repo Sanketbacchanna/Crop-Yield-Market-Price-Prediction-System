@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -5,7 +7,7 @@ from app.database import get_db
 from app.models.yield_prediction import YieldPrediction
 from app.models.agricultural_data import AgriculturalData
 from app.models.crop import Crop
-from app.ml.yield_predictor import predict_yield
+from app.ml.yield_predictor import get_karnataka_districts, predict_yield
 from datetime import datetime
 
 router = APIRouter(
@@ -14,10 +16,25 @@ router = APIRouter(
 )
 
 
+@router.get("/districts")
+def get_yield_districts():
+    try:
+        return list(get_karnataka_districts())
+    except (OSError, ValueError) as error:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load districts from the Karnataka weather dataset"
+        ) from error
+
+
 @router.post("/")
 def create_yield_prediction(
     user_id: int = Query(gt=0),
     agricultural_id: int = Query(gt=0),
+    crop_name: Optional[str] = Query(default=None, max_length=100),
+    district_override: Optional[str] = Query(
+        default=None, alias="district", max_length=45
+    ),
     db: Session = Depends(get_db)
 ):
     # ---------------------------------------------------------
@@ -36,10 +53,20 @@ def create_yield_prediction(
     # ---------------------------------------------------------
     # 2. Validate required agricultural information
     # ---------------------------------------------------------
-    if not agricultural.district:
+    district = (
+        district_override.strip()
+        if district_override is not None
+        else agricultural.district
+    )
+    if not district:
         raise HTTPException(
             status_code=400,
             detail="District is missing in agricultural data"
+        )
+    if not district.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="District cannot be empty"
         )
 
     if not agricultural.season:
@@ -60,7 +87,7 @@ def create_yield_prediction(
             detail="Crop year is missing in agricultural data"
         )
 
-    if agricultural.crop_id is None:
+    if agricultural.crop_id is None and crop_name is None:
         raise HTTPException(
             status_code=400,
             detail="Crop ID is missing in agricultural data"
@@ -69,9 +96,20 @@ def create_yield_prediction(
     # ---------------------------------------------------------
     # 3. Get crop information
     # ---------------------------------------------------------
-    crop = db.query(Crop).filter(
-        Crop.crop_id == agricultural.crop_id
-    ).first()
+    if crop_name is not None:
+        selected_crop_name = crop_name.strip()
+        if not selected_crop_name:
+            raise HTTPException(
+                status_code=400,
+                detail="Crop name cannot be empty"
+            )
+        crop = db.query(Crop).filter(
+            Crop.crop_name.ilike(selected_crop_name)
+        ).first()
+    else:
+        crop = db.query(Crop).filter(
+            Crop.crop_id == agricultural.crop_id
+        ).first()
 
     if not crop:
         raise HTTPException(
@@ -95,7 +133,6 @@ def create_yield_prediction(
     # season
     # area
     # ---------------------------------------------------------
-    district = agricultural.district
     crop_name = crop.crop_name
     crop_year = agricultural.crop_year
     season = agricultural.season
@@ -117,7 +154,7 @@ def create_yield_prediction(
     # ---------------------------------------------------------
     prediction = YieldPrediction(
         user_id=user_id,
-        crop_id=agricultural.crop_id,
+        crop_id=crop.crop_id,
         agricultural_id=agricultural_id,
         predicted_yield=predicted_yield,
         model_used="Random Forest",

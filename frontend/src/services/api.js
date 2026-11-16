@@ -25,6 +25,10 @@ async function getList(path, errorMessage) {
   return data;
 }
 
+export function getCrops() {
+  return getList("/crops/", "Could not load crop list.");
+}
+
 export function getPriceHistory() {
   return getList("/price-prediction/", "Could not load prediction history.");
 }

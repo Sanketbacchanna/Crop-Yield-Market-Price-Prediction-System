@@ -1,5 +1,6 @@
 function PricePredictionForm({
   cropId,
+  crops = [],
   prices,
   onCropChange,
   onPriceChange,
@@ -7,6 +8,10 @@ function PricePredictionForm({
   loading,
   error,
 }) {
+  const cropOptions = crops.length
+    ? crops
+    : [{ crop_id: 1, crop_name: "Rice" }];
+
   return (
     <div className="price-prediction-card">
       <div className="price-form-panel">
@@ -31,11 +36,13 @@ function PricePredictionForm({
                   id="price-crop"
                   value={cropId}
                   onChange={(event) => onCropChange(event.target.value)}
-                  disabled={loading}
+                  disabled={loading || cropOptions.length === 0}
                 >
-                  <option value="1">Rice</option>
-                  <option value="2">Wheat</option>
-                  <option value="3">Maize</option>
+                  {cropOptions.map((crop) => (
+                    <option key={crop.crop_id} value={String(crop.crop_id)}>
+                      {crop.crop_name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

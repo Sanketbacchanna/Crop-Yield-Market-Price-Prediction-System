@@ -5,6 +5,7 @@ import {
   createPriceForecast,
   createYieldPrediction,
   getAgriculturalRecords,
+  getCrops,
   getCropRecommendations,
   getPriceHistory,
   getYieldDistricts,
@@ -44,6 +45,7 @@ function getPageFromHash() {
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState(getPageFromHash);
+  const [cropOptions, setCropOptions] = useState([]);
   const [cropId, setCropId] = useState("1");
   const [prices, setPrices] = useState(INITIAL_PRICES);
   const [priceResult, setPriceResult] = useState(null);
@@ -163,6 +165,40 @@ function App() {
     }
 
     loadLiveFarmContext();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCrops() {
+      try {
+        const crops = await getCrops();
+        if (!active) {
+          return;
+        }
+
+        const normalizedCrops = Array.isArray(crops) ? crops : [];
+        setCropOptions(normalizedCrops);
+
+        if (normalizedCrops.length > 0) {
+          const firstCropId = String(normalizedCrops[0].crop_id);
+          setCropId((current) =>
+            normalizedCrops.some((crop) => String(crop.crop_id) === current)
+              ? current
+              : firstCropId
+          );
+        }
+      } catch (error) {
+        if (active) {
+          setCropOptions([]);
+        }
+      }
+    }
+
+    loadCrops();
     return () => {
       active = false;
     };
@@ -346,6 +382,7 @@ function App() {
     },
     "market-price": {
       cropId,
+      crops: cropOptions,
       onCropChange: setCropId,
       prices,
       onPriceChange: handlePriceChange,
@@ -357,6 +394,7 @@ function App() {
     "yield-prediction": {
       agriculturalRecords,
       yieldDistricts,
+      crops: cropOptions,
       selectedAgriculturalId,
       onAgriculturalChange: setSelectedAgriculturalId,
       farmArea,
