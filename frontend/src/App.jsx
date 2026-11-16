@@ -285,6 +285,13 @@ function App() {
             return;
           }
 
+          const currentLocation = {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            name: "Current location",
+          };
+          setLiveLocation(currentLocation);
+
           try {
             const [locationName, weather] = await Promise.all([
               getLocationName(coords.latitude, coords.longitude),
@@ -298,11 +305,7 @@ function App() {
             });
             setLiveWeather({ ...weather, location: locationName });
           } catch {
-            setLiveLocation({
-              latitude: coords.latitude,
-              longitude: coords.longitude,
-              name: "Current location",
-            });
+            setLiveLocation(currentLocation);
           } finally {
             setLiveLocationLoading(false);
           }

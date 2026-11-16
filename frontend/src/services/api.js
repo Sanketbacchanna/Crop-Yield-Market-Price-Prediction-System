@@ -1,5 +1,6 @@
 const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000"
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? "/api" : "http://127.0.0.1:8000")
 ).replace(/\/$/, "");
 
 function getAuthToken() {
@@ -107,7 +108,17 @@ async function request(path, options = {}) {
   });
 
   const rawText = await response.text();
-  const data = rawText ? JSON.parse(rawText) : null;
+  let data = null;
+  if (rawText) {
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      if (!response.ok) {
+        throw new Error(rawText);
+      }
+      throw new Error("The server returned an invalid response.");
+    }
+  }
 
   if (!response.ok) {
     const detail =
@@ -258,5 +269,69 @@ export async function getLiveWeather(latitude, longitude) {
     humidity: current.relative_humidity_2m,
     rainfall: current.precipitation,
     location: "Current location",
+  };
+}
+
+async function getWeatherProviderData(baseUrl, params, signal) {
+  const response = await fetch(`${baseUrl}?${params}`, { signal });
+  const data = await response.json();
+
+  if (!response.ok || data.error) {
+    throw new Error(data.reason || "The weather provider returned an error.");
+  }
+
+  return data;
+}
+
+export async function getWeatherOutlook(latitude, longitude, signal) {
+  const forecastParams = new URLSearchParams({
+    latitude: String(latitude),
+    longitude: String(longitude),
+    daily: "precipitation_sum,precipitation_probability_max,temperature_2m_max,temperature_2m_min",
+    forecast_days: "7",
+    timezone: "auto",
+  });
+  const seasonalParams = new URLSearchParams({
+    latitude: String(latitude),
+    longitude: String(longitude),
+    daily: "precipitation_sum",
+    weekly: "precipitation_mean,precipitation_anomaly",
+    monthly: "precipitation_mean,precipitation_anomaly",
+    forecast_days: "183",
+    timezone: "auto",
+  });
+
+  const [forecastResult, seasonalResult] = await Promise.allSettled([
+    getWeatherProviderData(
+      "https://api.open-meteo.com/v1/forecast",
+      forecastParams,
+      signal
+    ),
+    getWeatherProviderData(
+      "https://seasonal-api.open-meteo.com/v1/seasonal",
+      seasonalParams,
+      signal
+    ),
+  ]);
+  const forecast =
+    forecastResult.status === "fulfilled" ? forecastResult.value : null;
+  const seasonal =
+    seasonalResult.status === "fulfilled" ? seasonalResult.value : null;
+
+  if (!forecast && !seasonal) {
+    throw new Error("Unable to load short-range or seasonal weather outlooks.");
+  }
+
+  return {
+    forecast,
+    seasonal,
+    forecastError:
+      forecastResult.status === "rejected"
+        ? forecastResult.reason.message
+        : "",
+    seasonalError:
+      seasonalResult.status === "rejected"
+        ? seasonalResult.reason.message
+        : "",
   };
 }
