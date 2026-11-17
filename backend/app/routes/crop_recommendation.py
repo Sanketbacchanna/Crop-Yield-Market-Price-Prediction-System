@@ -316,16 +316,16 @@ def generate_crop_recommendations(
 # -------------------------------------------------------------
 @router.post("/")
 def create_crop_recommendation(
-    user_id: int,
     crop_id: int,
     predicted_yield: float,
     forecast_price: float,
     recommendation_rank: int,
     recommendation_date: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     recommendation = CropRecommendation(
-        user_id=user_id,
+        user_id=current_user.user_id,
         crop_id=crop_id,
         predicted_yield=predicted_yield,
         forecast_price=forecast_price,
@@ -354,6 +354,11 @@ def create_crop_recommendation(
 # -------------------------------------------------------------
 @router.get("/")
 def get_crop_recommendations(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return db.query(CropRecommendation).all()
+    return (
+        db.query(CropRecommendation)
+        .filter(CropRecommendation.user_id == current_user.user_id)
+        .all()
+    )

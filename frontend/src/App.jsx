@@ -4,14 +4,18 @@ import Sidebar from "./components/Sidebar";
 import {
   clearAuthSession,
   createFarmProfile,
+  createCropHistory,
   createPriceForecast,
   createYieldPrediction,
   deleteFarmProfile,
+  deleteCropHistory,
   getAgriculturalRecords,
   getCrops,
   getCropRecommendations,
   getAdminUsers,
+  getRegionUsers,
   getCurrentUser,
+  getCropHistory,
   getFarmProfiles,
   getPriceHistory,
   getYieldDistricts,
@@ -27,6 +31,7 @@ import {
   resetPassword,
   saveAuthSession,
   updateCurrentUser,
+  updateAdminUserRole,
   updateFarmProfile,
   verifyEmail,
 } from "./services/api";
@@ -78,15 +83,22 @@ function App() {
     () => localStorage.getItem("crop_prediction_token") || ""
   );
   const [currentUser, setCurrentUser] = useState(getStoredUser);
-  const [authMode, setAuthMode] = useState("login");
+  const [passwordResetToken, setPasswordResetToken] = useState(
+    () => new URLSearchParams(window.location.search).get("reset_token") || ""
+  );
+  const [authMode, setAuthMode] = useState(() =>
+    new URLSearchParams(window.location.search).has("reset_token") ? "reset" : "login"
+  );
   const [authForm, setAuthForm] = useState({
     name: "",
     email: "",
     password: "",
     phone: "",
+    region: "",
   });
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [authNotice, setAuthNotice] = useState("");
   const isAuthenticated = Boolean(authToken && currentUser);
 
   const [cropOptions, setCropOptions] = useState([]);
@@ -115,6 +127,7 @@ function App() {
   const [yieldHistory, setYieldHistory] = useState([]);
   const [yieldHistoryLoading, setYieldHistoryLoading] = useState(true);
   const [yieldHistoryError, setYieldHistoryError] = useState("");
+  const [cropHistory, setCropHistory] = useState([]);
 
   const [recommendationResult, setRecommendationResult] = useState(null);
   const [recommendationLoading, setRecommendationLoading] = useState(false);
@@ -144,6 +157,9 @@ function App() {
     logoutUser();
     setAuthToken("");
     setCurrentUser(null);
+    setCropHistory([]);
+    setPriceHistory([]);
+    setYieldHistory([]);
   }, []);
 
   const handleLogout = () => {
@@ -153,7 +169,6 @@ function App() {
 
   useEffect(() => {
     if (!authToken) {
-      setCurrentUser(null);
       return;
     }
 
@@ -185,13 +200,31 @@ function App() {
     event.preventDefault();
     setAuthLoading(true);
     setAuthError("");
+    setAuthNotice("");
 
     try {
+      if (authMode === "forgot") {
+        const result = await requestPasswordReset(authForm.email);
+        setAuthNotice(result.message);
+        return;
+      }
+
+      if (authMode === "reset") {
+        await resetPassword(passwordResetToken, authForm.password);
+        setPasswordResetToken("");
+        window.history.replaceState({}, "", window.location.pathname);
+        setAuthMode("login");
+        setAuthForm((current) => ({ ...current, password: "" }));
+        setAuthNotice("Your password was reset. Sign in with your new password.");
+        return;
+      }
+
       const payload = {
         name: authForm.name,
         email: authForm.email,
         password: authForm.password,
         phone: authForm.phone,
+        region: authForm.region,
       };
 
       const response =
@@ -206,7 +239,10 @@ function App() {
       saveAuthSession(access_token, user);
       setAuthToken(access_token);
       setCurrentUser(user);
-      setAuthForm({ name: "", email: "", password: "", phone: "" });
+      setCropHistory([]);
+      setPriceHistory([]);
+      setYieldHistory([]);
+      setAuthForm({ name: "", email: "", password: "", phone: "", region: "" });
     } catch (error) {
       setAuthError(getErrorMessage(error, "Unable to authenticate."));
     } finally {
@@ -230,10 +266,6 @@ function App() {
 
   const handleEmailVerificationRequest = useCallback(async () => {
     return requestEmailVerification();
-  }, []);
-
-  const handlePasswordReset = useCallback(async (token, newPassword) => {
-    return resetPassword(token, newPassword);
   }, []);
 
   const handleEmailVerification = useCallback(
@@ -303,6 +335,19 @@ function App() {
       ...current,
       farms: current.farms.filter((farm) => farm.farm_id !== farmId),
     }));
+  }, []);
+
+  const handleCropHistorySave = useCallback(async (payload) => {
+    const savedHistory = await createCropHistory(payload);
+    setCropHistory((current) => [savedHistory, ...current]);
+    return savedHistory;
+  }, []);
+
+  const handleCropHistoryDelete = useCallback(async (historyId) => {
+    await deleteCropHistory(historyId);
+    setCropHistory((current) =>
+      current.filter((entry) => entry.history_id !== historyId)
+    );
   }, []);
 
   useEffect(() => {
@@ -455,6 +500,7 @@ function App() {
         getAgriculturalRecords(),
         getWeatherData(),
         getYieldDistricts(),
+        getCropHistory(),
       ]);
 
       if (!active) {
@@ -519,13 +565,17 @@ function App() {
           )
         );
       }
+
+      if (results[5].status === "fulfilled") {
+        setCropHistory(results[5].value);
+      }
     }
 
     loadInitialData();
     return () => {
       active = false;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, currentUser?.user_id]);
 
   function handlePriceChange(field, value) {
     setPrices((currentPrices) => ({
@@ -668,15 +718,19 @@ function App() {
       farmDistricts: yieldDistricts,
       farmsLoading: farmProfilesLoading,
       farmsError: farmProfilesError,
+      cropHistory,
       onFarmSave: handleFarmSave,
       onFarmDelete: handleFarmDelete,
+      onCropHistorySave: handleCropHistorySave,
+      onCropHistoryDelete: handleCropHistoryDelete,
       onProfileUpdate: handleProfileUpdate,
       onPasswordResetRequest: handlePasswordResetRequest,
-      onPasswordReset: handlePasswordReset,
       onEmailVerificationRequest: handleEmailVerificationRequest,
       onEmailVerification: handleEmailVerification,
       onLogout: handleLogout,
       loadAdminUsers: getAdminUsers,
+      loadRegionUsers: getRegionUsers,
+      onAdminUserUpdate: updateAdminUserRole,
     },
     "prediction-history": {
       yieldHistory,
@@ -693,148 +747,168 @@ function App() {
 
   if (!isAuthenticated) {
     return (
-      <div className="auth-shell" style={{ maxWidth: 540, margin: "80px auto", padding: 24 }}>
-        <div className="card" style={{ borderRadius: 16, padding: 24, background: "#fff", boxShadow: "0 16px 40px rgba(0,0,0,0.08)" }}>
-          <div style={{ marginBottom: 24 }}>
-            <h2 style={{ margin: 0, fontSize: 28 }}>AgriPredict</h2>
-            <p style={{ margin: "8px 0 0", color: "#4b5563" }}>
-              Sign in to access crop yield and market price predictions.
+      <div className="auth-shell">
+        <div className="auth-card">
+          <aside className="auth-visual">
+            <div className="auth-brand"><span aria-hidden="true">✳</span> AgriPredict</div>
+            <div>
+              <p className="auth-visual-eyebrow">GROW WITH CONFIDENCE</p>
+              <h1>Better decisions<br />start at the farm.</h1>
+              <p>Keep your farm records close and turn trusted agricultural insights into your next growing season.</p>
+            </div>
+            <div className="auth-visual-note">
+              <span aria-hidden="true">↗</span>
+              <span>Yield insights · Market forecasts · Your farm history</span>
+            </div>
+          </aside>
+
+          <section className="auth-content" aria-labelledby="auth-title">
+            <div className="auth-mobile-brand"><span aria-hidden="true">✳</span> AgriPredict</div>
+            <p className="auth-eyebrow">
+              {authMode === "register" ? "CREATE YOUR ACCOUNT" : authMode === "reset" ? "ACCOUNT RECOVERY" : "WELCOME TO AGRIPREDICT"}
             </p>
-          </div>
+            <h2 id="auth-title">
+              {authMode === "register" ? "Start growing smarter" : authMode === "forgot" ? "Forgot your password?" : authMode === "reset" ? "Choose a new password" : "Welcome back"}
+            </h2>
+            <p className="auth-intro">
+              {authMode === "register"
+                ? "Create your farmer account to save predictions and farm records."
+                : authMode === "forgot"
+                  ? "Enter your account email and we’ll send a secure reset link."
+                  : authMode === "reset"
+                    ? "Your secure reset link is ready. Set a new password below."
+                    : "Sign in to pick up where you left off."}
+            </p>
 
-          <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-            <button
-              type="button"
-              onClick={() => setAuthMode("login")}
-              style={{
-                flex: 1,
-                padding: "10px 16px",
-                borderRadius: 10,
-                border: "none",
-                background: authMode === "login" ? "#2563eb" : "#e5e7eb",
-                color: authMode === "login" ? "#fff" : "#111827",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Login
-            </button>
-            <button
-              type="button"
-              onClick={() => setAuthMode("register")}
-              style={{
-                flex: 1,
-                padding: "10px 16px",
-                borderRadius: 10,
-                border: "none",
-                background: authMode === "register" ? "#2563eb" : "#e5e7eb",
-                color: authMode === "register" ? "#fff" : "#111827",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Register
-            </button>
-          </div>
+            {(authMode === "login" || authMode === "register") && (
+              <div className="auth-tabs" role="tablist" aria-label="Account access">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={authMode === "login"}
+                  className={authMode === "login" ? "active" : ""}
+                  onClick={() => { setAuthMode("login"); setAuthError(""); setAuthNotice(""); }}
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={authMode === "register"}
+                  className={authMode === "register" ? "active" : ""}
+                  onClick={() => { setAuthMode("register"); setAuthError(""); setAuthNotice(""); }}
+                >
+                  Create account
+                </button>
+              </div>
+            )}
 
-          <form onSubmit={handleAuthSubmit}>
-            {authMode === "register" && (
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
+            <form className="auth-form" onSubmit={handleAuthSubmit}>
+              {authMode === "register" && (
+                <label className="auth-field">
                   Full name
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    value={authForm.name}
+                    onChange={(event) => setAuthForm((current) => ({ ...current, name: event.target.value }))}
+                    required
+                    placeholder="Your full name"
+                  />
                 </label>
+              )}
+
+              <label className="auth-field">
+                Email address
                 <input
-                  type="text"
-                  value={authForm.name}
-                  onChange={(event) =>
-                    setAuthForm((current) => ({ ...current, name: event.target.value }))
-                  }
-                  required={authMode === "register"}
-                  placeholder="Enter your full name"
-                  style={{ width: "100%", padding: 12, borderRadius: 10, border: "1px solid #d1d5db" }}
+                  type="email"
+                  autoComplete="email"
+                  value={authForm.email}
+                  onChange={(event) => setAuthForm((current) => ({ ...current, email: event.target.value }))}
+                  required
+                  placeholder="you@example.com"
                 />
-              </div>
+              </label>
+
+              {authMode !== "forgot" && (
+                <label className="auth-field">
+                  {authMode === "reset" ? "New password" : "Password"}
+                  <input
+                    type="password"
+                    autoComplete={authMode === "reset" ? "new-password" : authMode === "register" ? "new-password" : "current-password"}
+                    value={authForm.password}
+                    onChange={(event) => setAuthForm((current) => ({ ...current, password: event.target.value }))}
+                    required
+                    minLength={6}
+                    placeholder={authMode === "reset" ? "At least 6 characters" : "Enter your password"}
+                  />
+                </label>
+              )}
+
+              {authMode === "register" && (
+                <>
+                  <label className="auth-field">
+                    Phone number <span className="auth-optional">Optional</span>
+                    <input
+                      type="tel"
+                      autoComplete="tel"
+                      value={authForm.phone}
+                      onChange={(event) => setAuthForm((current) => ({ ...current, phone: event.target.value }))}
+                      placeholder="Your phone number"
+                    />
+                  </label>
+                  <label className="auth-field">
+                    Region <span className="auth-optional">Optional</span>
+                    <input
+                      type="text"
+                      value={authForm.region}
+                      onChange={(event) => setAuthForm((current) => ({ ...current, region: event.target.value }))}
+                      placeholder="District or region"
+                    />
+                  </label>
+                </>
+              )}
+
+              {authMode === "login" && (
+                <button
+                  type="button"
+                  className="auth-text-button auth-forgot"
+                  onClick={() => { setAuthMode("forgot"); setAuthError(""); setAuthNotice(""); }}
+                >
+                  Forgot password?
+                </button>
+              )}
+
+              {authError && <p className="auth-error" role="alert">{authError}</p>}
+              {authNotice && <p className="auth-notice" role="status">{authNotice}</p>}
+
+              <button className="auth-submit" type="submit" disabled={authLoading}>
+                {authLoading
+                  ? "Please wait..."
+                  : authMode === "register"
+                    ? "Create farmer account"
+                    : authMode === "forgot"
+                      ? "Send reset link"
+                      : authMode === "reset"
+                        ? "Reset password"
+                        : "Sign in"}
+                {!authLoading && <span aria-hidden="true">→</span>}
+              </button>
+            </form>
+
+            {(authMode === "forgot" || authMode === "reset") && (
+              <button
+                type="button"
+                className="auth-text-button auth-back"
+                onClick={() => { setAuthMode("login"); setAuthError(""); setAuthNotice(""); }}
+              >
+                ← Back to sign in
+              </button>
             )}
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
-                Email
-              </label>
-              <input
-                type="email"
-                value={authForm.email}
-                onChange={(event) =>
-                  setAuthForm((current) => ({ ...current, email: event.target.value }))
-                }
-                required
-                placeholder="you@example.com"
-                style={{ width: "100%", padding: 12, borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
-                Password
-              </label>
-              <input
-                type="password"
-                value={authForm.password}
-                onChange={(event) =>
-                  setAuthForm((current) => ({ ...current, password: event.target.value }))
-                }
-                required
-                minLength={6}
-                placeholder="Enter your password"
-                style={{ width: "100%", padding: 12, borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
-            </div>
-
             {authMode === "register" && (
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>
-                  Phone number
-                </label>
-                <input
-                  type="tel"
-                  value={authForm.phone}
-                  onChange={(event) =>
-                    setAuthForm((current) => ({ ...current, phone: event.target.value }))
-                  }
-                  placeholder="Optional"
-                  style={{ width: "100%", padding: 12, borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
-              </div>
+              <p className="auth-role-note">New accounts are created as farmers. Administrators assign staff access.</p>
             )}
-
-            {authError && (
-              <p style={{ margin: "0 0 16px", color: "#b91c1c", fontSize: 14 }}>
-                {authError}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={authLoading}
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                borderRadius: 10,
-                border: "none",
-                background: "#16a34a",
-                color: "#fff",
-                fontWeight: 700,
-                cursor: authLoading ? "not-allowed" : "pointer",
-              }}
-            >
-              {authLoading
-                ? authMode === "login"
-                  ? "Signing in..."
-                  : "Creating account..."
-                : authMode === "login"
-                  ? "Login"
-                  : "Create account"}
-            </button>
-          </form>
+          </section>
         </div>
       </div>
     );

@@ -11,6 +11,7 @@ class User(Base):
     password = Column(String(255), nullable=True)
     phone = Column(String(15), nullable=True)
     role = Column(String(30), nullable=True, default="farmer")
+    region = Column(String(100), nullable=True)
     created_at = Column(DateTime, nullable=True)
     is_email_verified = Column(Boolean, default=False, nullable=False)
     email_verification_token = Column(String(255), nullable=True)

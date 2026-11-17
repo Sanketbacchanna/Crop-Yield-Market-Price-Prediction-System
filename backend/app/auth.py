@@ -36,9 +36,11 @@ def generate_secure_token(length: int = 32) -> str:
     return secrets.token_urlsafe(length)
 
 
-def create_access_token(email: str) -> str:
+def create_access_token(email: str, user_id: int | None = None) -> str:
     expires = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {"sub": email, "exp": expires}
+    if user_id is not None:
+        payload["user_id"] = user_id
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -55,12 +57,17 @@ def get_current_user(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
-        if email is None:
+        user_id = payload.get("user_id")
+        if email is None and user_id is None:
             raise credentials_exception
     except jwt.PyJWTError as exc:
         raise credentials_exception from exc
 
-    user = db.query(User).filter(User.email == email).first()
+    user_query = db.query(User)
+    if user_id is not None:
+        user = user_query.filter(User.user_id == user_id).first()
+    else:
+        user = user_query.filter(User.email == email).first()
     if user is None:
         raise credentials_exception
 

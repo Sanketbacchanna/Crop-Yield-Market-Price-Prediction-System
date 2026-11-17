@@ -199,6 +199,12 @@ def create_yield_prediction(
 
 @router.get("/")
 def get_yield_predictions(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return db.query(YieldPrediction).all()
+    return (
+        db.query(YieldPrediction)
+        .filter(YieldPrediction.user_id == current_user.user_id)
+        .order_by(YieldPrediction.prediction_date.desc())
+        .all()
+    )

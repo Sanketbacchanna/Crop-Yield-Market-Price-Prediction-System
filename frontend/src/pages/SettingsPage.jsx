@@ -1,47 +1,40 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import FarmProfiles from "../components/FarmProfiles";
+import CropHistory from "../components/CropHistory";
 
 function SettingsPage({
   currentUser,
   onProfileUpdate,
   onPasswordResetRequest,
-  onPasswordReset,
   onEmailVerificationRequest,
   onEmailVerification,
   onLogout,
   loadAdminUsers,
+  loadRegionUsers,
+  onAdminUserUpdate,
   farms,
+  cropHistory,
   farmDistricts,
   farmsLoading,
   farmsError,
   onFarmSave,
   onFarmDelete,
+  onCropHistorySave,
+  onCropHistoryDelete,
 }) {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
+  const [form, setForm] = useState(() => ({
+    name: currentUser?.name || "",
+    email: currentUser?.email || "",
+    phone: currentUser?.phone || "",
     password: "",
-  });
+    region: currentUser?.region || "",
+  }));
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [resetToken, setResetToken] = useState("");
   const [verificationToken, setVerificationToken] = useState("");
   const [adminUsers, setAdminUsers] = useState([]);
+  const [regionEdits, setRegionEdits] = useState({});
   const [loadingUsers, setLoadingUsers] = useState(false);
-
-  useEffect(() => {
-    if (!currentUser) {
-      return;
-    }
-
-    setForm({
-      name: currentUser.name || "",
-      email: currentUser.email || "",
-      phone: currentUser.phone || "",
-      password: "",
-    });
-  }, [currentUser]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -53,6 +46,7 @@ function SettingsPage({
         name: form.name,
         email: form.email,
         phone: form.phone,
+        region: form.region,
       };
 
       if (form.password.trim()) {
@@ -73,9 +67,6 @@ function SettingsPage({
 
     try {
       const response = await onPasswordResetRequest(form.email);
-      if (response?.reset_token) {
-        setResetToken(response.reset_token);
-      }
       setStatusMessage(response?.message || "Password reset request generated.");
     } catch (error) {
       setErrorMessage(error.message || "Unable to process the password reset request.");
@@ -112,35 +103,38 @@ function SettingsPage({
     }
   };
 
-  const handleResetPassword = async () => {
-    if (!resetToken.trim()) {
-      setErrorMessage("Generate a reset token first.");
-      return;
-    }
-
-    try {
-      const response = await onPasswordReset(resetToken.trim(), form.password.trim());
-      setResetToken("");
-      setForm((current) => ({ ...current, password: "" }));
-      setStatusMessage(response?.message || "Password reset completed.");
-    } catch (error) {
-      setErrorMessage(error.message || "Unable to reset the password.");
-    }
-  };
-
   const loadUsers = async () => {
-    if (!loadAdminUsers) {
+    const load = currentUser.role === "regional_admin" ? loadRegionUsers : loadAdminUsers;
+    if (!load) {
       return;
     }
 
     try {
       setLoadingUsers(true);
-      const users = await loadAdminUsers();
+      const users = await load();
       setAdminUsers(users);
     } catch (error) {
       setErrorMessage(error.message || "Unable to load users.");
     } finally {
       setLoadingUsers(false);
+    }
+  };
+
+  const handleAdminUserUpdate = async (user) => {
+    setStatusMessage("");
+    setErrorMessage("");
+    try {
+      const updatedUser = await onAdminUserUpdate(
+        user.user_id,
+        user.role,
+        regionEdits[user.user_id] ?? user.region ?? ""
+      );
+      setAdminUsers((current) =>
+        current.map((item) => item.user_id === updatedUser.user_id ? updatedUser : item)
+      );
+      setStatusMessage(`Updated access for ${updatedUser.name || updatedUser.email}.`);
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to update user access.");
     }
   };
 
@@ -158,14 +152,24 @@ function SettingsPage({
         </div>
       </div>
 
-      <FarmProfiles
-        farms={farms}
-        districts={farmDistricts}
-        loading={farmsLoading}
-        error={farmsError}
-        onSave={onFarmSave}
-        onDelete={onFarmDelete}
-      />
+      {currentUser.role === "farmer" && (
+        <>
+          <FarmProfiles
+            farms={farms}
+            districts={farmDistricts}
+            loading={farmsLoading}
+            error={farmsError}
+            onSave={onFarmSave}
+            onDelete={onFarmDelete}
+          />
+          <CropHistory
+            history={cropHistory}
+            farms={farms}
+            onSave={onCropHistorySave}
+            onDelete={onCropHistoryDelete}
+          />
+        </>
+      )}
 
       <div style={{ display: "grid", gap: 24, gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
         <div style={{ background: "#fff", borderRadius: 16, padding: 20, boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)" }}>
@@ -200,6 +204,21 @@ function SettingsPage({
                 onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
                 style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #d1d5db" }}
               />
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Region</label>
+              <input
+                type="text"
+                value={form.region}
+                disabled={currentUser.role !== "farmer"}
+                onChange={(event) => setForm((current) => ({ ...current, region: event.target.value }))}
+                placeholder="District or region"
+                style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #d1d5db" }}
+              />
+              {currentUser.role !== "farmer" && (
+                <small>Staff regions are assigned by an administrator.</small>
+              )}
             </div>
 
             <div>
@@ -257,31 +276,11 @@ function SettingsPage({
                 cursor: "pointer",
               }}
             >
-              Generate password reset token
+              Email password reset link
             </button>
-
-            {resetToken && (
-              <div style={{ background: "#f8fafc", borderRadius: 10, padding: 10, wordBreak: "break-all" }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Reset token</div>
-                <div>{resetToken}</div>
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={handleResetPassword}
-              style={{
-                background: "#f59e0b",
-                color: "#111827",
-                border: "none",
-                borderRadius: 10,
-                padding: "11px 16px",
-                cursor: "pointer",
-                fontWeight: 700,
-              }}
-            >
-              Reset password using token
-            </button>
+            <p style={{ margin: 0, color: "#475569", fontSize: 13 }}>
+              A secure link will be sent to {form.email || "your account email"}.
+            </p>
 
             <button
               type="button"
@@ -341,10 +340,10 @@ function SettingsPage({
         </div>
       </div>
 
-      {currentUser.role === "admin" && (
+      {(currentUser.role === "admin" || currentUser.role === "regional_admin") && (
         <div style={{ marginTop: 24, background: "#fff", borderRadius: 16, padding: 20, boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <h3 style={{ margin: 0 }}>Admin access</h3>
+            <h3 style={{ margin: 0 }}>{currentUser.role === "admin" ? "User access management" : `Farmers in ${currentUser.region || "your region"}`}</h3>
             <button type="button" onClick={loadUsers} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", cursor: "pointer" }}>
               {loadingUsers ? "Loading..." : "Load users"}
             </button>
@@ -359,6 +358,35 @@ function SettingsPage({
                   <div style={{ fontWeight: 700 }}>{user.name || user.email}</div>
                   <div style={{ color: "#475569" }}>{user.email}</div>
                   <div style={{ color: "#475569" }}>Role: {user.role || "farmer"}</div>
+                  {currentUser.role === "admin" && (
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 10 }}>
+                      <select
+                        aria-label={`Role for ${user.email}`}
+                        value={user.role || "farmer"}
+                        onChange={(event) => setAdminUsers((current) =>
+                          current.map((item) => item.user_id === user.user_id
+                            ? { ...item, role: event.target.value }
+                            : item)
+                        )}
+                      >
+                        <option value="farmer">Farmer</option>
+                        <option value="regional_admin">Regional admin</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                      <input
+                        aria-label={`Assigned region for ${user.email}`}
+                        value={regionEdits[user.user_id] ?? user.region ?? ""}
+                        onChange={(event) => setRegionEdits((current) => ({
+                          ...current,
+                          [user.user_id]: event.target.value,
+                        }))}
+                        placeholder="Assigned region"
+                      />
+                      <button type="button" onClick={() => handleAdminUserUpdate(user)}>
+                        Save access
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

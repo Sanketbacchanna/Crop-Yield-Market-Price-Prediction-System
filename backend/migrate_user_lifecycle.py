@@ -1,6 +1,8 @@
 from sqlalchemy import inspect, text
 
 from app.database import engine
+from app.models.crop_history import CropHistory
+from app.models.farm_profile import FarmProfile
 
 
 USER_TABLE_COLUMNS = {
@@ -9,6 +11,7 @@ USER_TABLE_COLUMNS = {
     "email_verification_expires_at": "DATETIME NULL",
     "password_reset_token": "VARCHAR(255) NULL",
     "password_reset_expires_at": "DATETIME NULL",
+    "region": "VARCHAR(100) NULL",
 }
 
 
@@ -29,6 +32,10 @@ def migrate_user_lifecycle_columns() -> None:
                 )
             )
             print(f"Added user_table.{column_name}")
+
+    FarmProfile.__table__.create(bind=engine, checkfirst=True)
+    CropHistory.__table__.create(bind=engine, checkfirst=True)
+    print("Crop history table is ready.")
 
 
 if __name__ == "__main__":

@@ -7,19 +7,6 @@ function getAuthToken() {
   return localStorage.getItem("crop_prediction_token");
 }
 
-function getStoredUser() {
-  const storedUser = localStorage.getItem("crop_prediction_user");
-  if (!storedUser) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(storedUser);
-  } catch {
-    return null;
-  }
-}
-
 export function saveAuthSession(token, user) {
   localStorage.setItem("crop_prediction_token", token);
   localStorage.setItem("crop_prediction_user", JSON.stringify(user));
@@ -41,10 +28,10 @@ export function loginUser({ email, password }) {
   });
 }
 
-export function registerUser({ name, email, password, phone, role = "farmer" }) {
+export function registerUser({ name, email, password, phone, region }) {
   return request("/auth/register", {
     method: "POST",
-    body: JSON.stringify({ name, email, password, phone, role }),
+    body: JSON.stringify({ name, email, password, phone, region }),
   });
 }
 
@@ -60,6 +47,28 @@ export function requestPasswordReset(email) {
     method: "POST",
     body: JSON.stringify({ email }),
   });
+}
+
+export function updateAdminUserRole(userId, role, region) {
+  return request(`/auth/users/${userId}/role`, {
+    method: "PUT",
+    body: JSON.stringify({ role, region }),
+  });
+}
+
+export function getCropHistory() {
+  return getList("/crop-history/", "Could not load crop history.");
+}
+
+export function createCropHistory(payload) {
+  return request("/crop-history/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteCropHistory(historyId) {
+  return request(`/crop-history/${historyId}`, { method: "DELETE" });
 }
 
 export function requestEmailVerification() {
@@ -84,6 +93,10 @@ export function verifyEmail(token) {
 
 export function getAdminUsers() {
   return getList("/auth/users", "Could not load users.");
+}
+
+export function getRegionUsers() {
+  return getList("/auth/region/users", "Could not load regional users.");
 }
 
 export function logoutUser() {

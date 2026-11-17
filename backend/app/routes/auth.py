@@ -1,5 +1,10 @@
+import hashlib
+import os
+import smtplib
 from datetime import datetime, timedelta
+from email.message import EmailMessage
 from typing import Optional
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -24,7 +29,7 @@ class UserRegisterRequest(BaseModel):
     email: str = Field(..., min_length=3, max_length=150)
     password: str = Field(..., min_length=6, max_length=255)
     phone: Optional[str] = Field(default=None, max_length=15)
-    role: Optional[str] = Field(default="farmer", max_length=30)
+    region: Optional[str] = Field(default=None, max_length=100)
 
 
 class UserLoginRequest(BaseModel):
@@ -37,6 +42,12 @@ class UserUpdateRequest(BaseModel):
     phone: Optional[str] = Field(default=None, max_length=15)
     email: Optional[str] = Field(default=None, min_length=3, max_length=150)
     password: Optional[str] = Field(default=None, min_length=6, max_length=255)
+    region: Optional[str] = Field(default=None, max_length=100)
+
+
+class UserRoleUpdateRequest(BaseModel):
+    role: str = Field(..., min_length=1, max_length=30)
+    region: Optional[str] = Field(default=None, max_length=100)
 
 
 class PasswordResetRequest(BaseModel):
@@ -65,6 +76,7 @@ def serialize_user(user: User) -> dict:
         "email": user.email,
         "phone": user.phone,
         "role": user.role,
+        "region": user.region,
         "is_email_verified": bool(user.is_email_verified),
         "created_at": user.created_at.isoformat() if user.created_at else None,
     }
@@ -75,6 +87,60 @@ def create_verification_token(user: User) -> str:
     user.email_verification_token = token
     user.email_verification_expires_at = datetime.utcnow() + timedelta(hours=24)
     return token
+
+
+def _password_reset_email_settings():
+    host = os.getenv("SMTP_HOST", "").strip()
+    sender = os.getenv("SMTP_FROM", "").strip()
+    if not host or not sender:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Password reset email is not configured. Contact the administrator.",
+        )
+
+    try:
+        port = int(os.getenv("SMTP_PORT", "587"))
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Password reset email is not configured correctly.",
+        ) from error
+    if not 1 <= port <= 65535:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Password reset email is not configured correctly.",
+        )
+
+    return (
+        host,
+        port,
+        sender,
+        os.getenv("SMTP_USER", "").strip(),
+        os.getenv("SMTP_PASSWORD", ""),
+        os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/"),
+        os.getenv("SMTP_USE_TLS", "true").strip().lower() == "true",
+    )
+
+
+def send_password_reset_email(email: str, token: str, settings) -> None:
+    host, port, sender, username, password, frontend_url, use_tls = settings
+    reset_url = f"{frontend_url}/?reset_token={quote(token)}"
+    message = EmailMessage()
+    message["Subject"] = "Reset your AgriPredict password"
+    message["From"] = sender
+    message["To"] = email
+    message.set_content(
+        "A password reset was requested for your AgriPredict account.\n\n"
+        f"Reset your password using this link (valid for 2 hours):\n{reset_url}\n\n"
+        "If you did not request this, you can ignore this email."
+    )
+
+    with smtplib.SMTP(host, port, timeout=10) as smtp:
+        if use_tls:
+            smtp.starttls()
+        if username:
+            smtp.login(username, password)
+        smtp.send_message(message)
 
 
 @router.post("/register", response_model=AuthTokenResponse)
@@ -88,13 +154,13 @@ def register_user(payload: UserRegisterRequest, db: Session = Depends(get_db)):
             detail="An account with this email already exists.",
         )
 
-    role = (payload.role or "farmer").strip() or "farmer"
     user = User(
         name=payload.name.strip(),
         email=normalized_email,
         password=hash_password(payload.password),
         phone=payload.phone.strip() if payload.phone else None,
-        role=role,
+        role="farmer",
+        region=payload.region.strip() if payload.region else None,
         created_at=datetime.utcnow(),
         is_email_verified=False,
     )
@@ -104,7 +170,7 @@ def register_user(payload: UserRegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    access_token = create_access_token(user.email)
+    access_token = create_access_token(user.email, user.user_id)
 
     return {
         "access_token": access_token,
@@ -124,7 +190,7 @@ def login_user(payload: UserLoginRequest, db: Session = Depends(get_db)):
             detail="Incorrect email or password.",
         )
 
-    access_token = create_access_token(user.email)
+    access_token = create_access_token(user.email, user.user_id)
 
     return {
         "access_token": access_token,
@@ -166,6 +232,20 @@ def update_current_user_profile(
     if payload.password is not None:
         current_user.password = hash_password(payload.password)
 
+    if payload.region is not None:
+        requested_region = payload.region.strip() or None
+        current_region = current_user.region.strip() if current_user.region else None
+        if (
+            (current_user.role or "farmer").strip().lower() != "farmer"
+            and requested_region != current_region
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only administrators can change an assigned staff region.",
+            )
+        if (current_user.role or "farmer").strip().lower() == "farmer":
+            current_user.region = requested_region
+
     db.add(current_user)
     db.commit()
     db.refresh(current_user)
@@ -175,26 +255,37 @@ def update_current_user_profile(
 
 @router.post("/request-password-reset")
 def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    mail_settings = _password_reset_email_settings()
     normalized_email = payload.email.strip().lower()
     user = db.query(User).filter(User.email.ilike(normalized_email)).first()
     if not user:
-        return {"message": "If an account exists, a password reset link was generated."}
+        return {"message": "If an account exists, a password reset link was sent."}
 
     reset_token = generate_secure_token()
-    user.password_reset_token = reset_token
+    user.password_reset_token = hashlib.sha256(reset_token.encode("utf-8")).hexdigest()
     user.password_reset_expires_at = datetime.utcnow() + timedelta(hours=2)
     db.add(user)
     db.commit()
 
-    return {
-        "message": "If an account exists, a password reset link was generated.",
-        "reset_token": reset_token,
-    }
+    try:
+        send_password_reset_email(user.email, reset_token, mail_settings)
+    except (OSError, smtplib.SMTPException) as error:
+        user.password_reset_token = None
+        user.password_reset_expires_at = None
+        db.add(user)
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to send the password reset email. Please try again later.",
+        ) from error
+
+    return {"message": "If an account exists, a password reset link was sent."}
 
 
 @router.post("/reset-password")
 def reset_password(payload: PasswordResetConfirmRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.password_reset_token == payload.token).first()
+    reset_token_hash = hashlib.sha256(payload.token.encode("utf-8")).hexdigest()
+    user = db.query(User).filter(User.password_reset_token == reset_token_hash).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -257,4 +348,75 @@ def list_users(
     _admin: User = Depends(require_role("admin")),
 ):
     users = db.query(User).order_by(User.user_id.asc()).all()
+    return [serialize_user(user) for user in users]
+
+
+@router.put("/users/{user_id}/role")
+def update_user_role(
+    user_id: int,
+    payload: UserRoleUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+):
+    role = payload.role.strip().lower()
+    if role not in {"farmer", "regional_admin", "admin"}:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Role must be farmer, regional_admin, or admin.",
+        )
+
+    target_user = db.query(User).filter(User.user_id == user_id).first()
+    if target_user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    if target_user.user_id == current_user.user_id and role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot remove your own administrator role.",
+        )
+
+    if (target_user.role or "farmer").strip().lower() == "admin" and role != "admin":
+        admin_count = db.query(User).filter(User.role == "admin").count()
+        if admin_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="The last administrator cannot be demoted.",
+            )
+
+    if role == "regional_admin" and not (payload.region or target_user.region):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A region is required for regional administrators.",
+        )
+
+    target_user.role = role
+    if payload.region is not None:
+        target_user.region = payload.region.strip() or None
+
+    db.add(target_user)
+    db.commit()
+    db.refresh(target_user)
+    return serialize_user(target_user)
+
+
+@router.get("/region/users")
+def list_region_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("regional_admin")),
+):
+    if not current_user.region:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account does not have an assigned region.",
+        )
+
+    users = (
+        db.query(User)
+        .filter(
+            User.region == current_user.region,
+            User.role == "farmer",
+        )
+        .order_by(User.user_id.asc())
+        .all()
+    )
     return [serialize_user(user) for user in users]

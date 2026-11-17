@@ -15,6 +15,9 @@ from sqlalchemy.pool import StaticPool
 
 import app.database as database
 from app.database import Base
+from app.models.price_prediction import PricePrediction
+from app.models.user import User
+from app.models.yield_prediction import YieldPrediction
 from app.main import app
 
 engine = create_engine(
@@ -73,6 +76,18 @@ def test_register_and_login_user():
 
     assert me_response.status_code == 200, me_response.text
     assert me_response.json()["email"] == "farmer@example.com"
+    updated = client.put(
+        "/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"email": "new-farmer@example.com"},
+    )
+    assert updated.status_code == 200, updated.text
+    still_authenticated = client.get(
+        "/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert still_authenticated.status_code == 200, still_authenticated.text
+    assert still_authenticated.json()["email"] == "new-farmer@example.com"
 
 
 def test_admin_access_and_role_enforcement():
@@ -86,6 +101,16 @@ def test_admin_access_and_role_enforcement():
             "role": "admin",
         },
     )
+    admin_user = admin_response.json()["user"]
+    assert admin_user["role"] == "farmer"
+    db = database.SessionLocal()
+    try:
+        db.query(User).filter(User.user_id == admin_user["user_id"]).update(
+            {User.role: "admin"}
+        )
+        db.commit()
+    finally:
+        db.close()
     admin_token = admin_response.json()["access_token"]
 
     farmer_response = client.post(
@@ -114,7 +139,7 @@ def test_admin_access_and_role_enforcement():
     assert forbidden_response.status_code == 403, forbidden_response.text
 
 
-def test_password_reset_and_email_verification_flow():
+def test_password_reset_and_email_verification_flow(monkeypatch):
     response = client.post(
         "/auth/register",
         json={
@@ -127,17 +152,27 @@ def test_password_reset_and_email_verification_flow():
     )
     token = response.json()["access_token"]
 
+    issued_tokens = []
+    monkeypatch.setattr(
+        "app.routes.auth._password_reset_email_settings",
+        lambda: ("smtp.example.com", 587, "noreply@example.com", "", "", "http://localhost:5173", True),
+    )
+    monkeypatch.setattr(
+        "app.routes.auth.send_password_reset_email",
+        lambda email, reset_token, settings: issued_tokens.append(reset_token),
+    )
     reset_response = client.post(
         "/auth/request-password-reset",
         json={"email": "reset@example.com"},
     )
     assert reset_response.status_code == 200, reset_response.text
-    reset_token = reset_response.json()["reset_token"]
+    assert "reset_token" not in reset_response.json()
+    assert len(issued_tokens) == 1
 
     password_reset = client.post(
         "/auth/reset-password",
         json={
-            "token": reset_token,
+            "token": issued_tokens[0],
             "new_password": "new-password-456",
         },
     )
@@ -164,6 +199,146 @@ def test_password_reset_and_email_verification_flow():
         json={"token": verification_token},
     )
     assert verification_response.status_code == 200, verification_response.text
+
+
+def test_region_roles_and_admin_assignment():
+    admin_response = client.post(
+        "/auth/register",
+        json={
+            "name": "Region Admin",
+            "email": "region-admin@example.com",
+            "password": "adminpass123",
+        },
+    )
+    admin_user_id = admin_response.json()["user"]["user_id"]
+    admin_db = database.SessionLocal()
+    try:
+        admin_db.query(User).filter(User.user_id == admin_user_id).update(
+            {User.role: "admin"}
+        )
+        admin_db.commit()
+    finally:
+        admin_db.close()
+
+    farmer_response = client.post(
+        "/auth/register",
+        json={
+            "name": "Regional Farmer",
+            "email": "regional-farmer@example.com",
+            "password": "farmerpass123",
+        },
+    )
+    farmer_user = farmer_response.json()["user"]
+    admin_headers = {
+        "Authorization": f"Bearer {admin_response.json()['access_token']}"
+    }
+
+    assignment = client.put(
+        f"/auth/users/{farmer_user['user_id']}/role",
+        headers=admin_headers,
+        json={"role": "regional_admin", "region": "Mysuru"},
+    )
+    assert assignment.status_code == 200, assignment.text
+    regional_headers = {
+        "Authorization": f"Bearer {farmer_response.json()['access_token']}"
+    }
+    farmer_assignment = client.put(
+        f"/auth/users/{farmer_user['user_id']}/role",
+        headers=regional_headers,
+        json={"role": "admin"},
+    )
+    assert farmer_assignment.status_code == 403
+
+    same_region = client.post(
+        "/auth/register",
+        json={
+            "name": "Mysuru Farmer",
+            "email": "mysuru-farmer@example.com",
+            "password": "farmerpass123",
+            "region": "Mysuru",
+        },
+    )
+    regional_users = client.get(
+        "/auth/region/users",
+        headers=regional_headers,
+    )
+    assert regional_users.status_code == 200, regional_users.text
+    assert [user["email"] for user in regional_users.json()] == [
+        "mysuru-farmer@example.com"
+    ]
+    forbidden_region_change = client.put(
+        "/auth/me",
+        headers=regional_headers,
+        json={"region": "Bengaluru"},
+    )
+    assert forbidden_region_change.status_code == 403
+
+
+def test_crop_history_and_prediction_history_are_private():
+    first = client.post(
+        "/auth/register",
+        json={
+            "name": "History Owner",
+            "email": "history-owner@example.com",
+            "password": "farmerpass123",
+        },
+    ).json()
+    second = client.post(
+        "/auth/register",
+        json={
+            "name": "History Guest",
+            "email": "history-guest@example.com",
+            "password": "farmerpass123",
+        },
+    ).json()
+    first_headers = {"Authorization": f"Bearer {first['access_token']}"}
+    second_headers = {"Authorization": f"Bearer {second['access_token']}"}
+    assert client.get("/yield-prediction/").status_code == 401
+    assert client.get("/price-prediction/").status_code == 401
+    assert client.get("/crop-recommendation/").status_code == 401
+
+    crop_history = client.post(
+        "/crop-history/",
+        headers=first_headers,
+        json={
+            "crop_name": "Rice",
+            "season": "Kharif",
+            "district": "Mysuru",
+            "planted_date": "2026-06-01",
+            "area_acres": 2.5,
+        },
+    )
+    assert crop_history.status_code == 201, crop_history.text
+    assert len(client.get("/crop-history/", headers=first_headers).json()) == 1
+    assert client.get("/crop-history/", headers=second_headers).json() == []
+    foreign_delete = client.delete(
+        f"/crop-history/{crop_history.json()['history_id']}",
+        headers=second_headers,
+    )
+    assert foreign_delete.status_code == 404
+
+    db = database.SessionLocal()
+    try:
+        first_id = first["user"]["user_id"]
+        second_id = second["user"]["user_id"]
+        db.add_all(
+            [
+                YieldPrediction(user_id=first_id, predicted_yield=10),
+                YieldPrediction(user_id=second_id, predicted_yield=20),
+                PricePrediction(user_id=first_id, forecast_price=100),
+                PricePrediction(user_id=second_id, forecast_price=200),
+            ]
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    yield_history = client.get("/yield-prediction/", headers=first_headers)
+    price_history = client.get("/price-prediction/", headers=first_headers)
+    assert yield_history.status_code == 200, yield_history.text
+    assert [float(item["predicted_yield"]) for item in yield_history.json()] == [10]
+    assert price_history.status_code == 200, price_history.text
+    assert [float(item["forecast_price"]) for item in price_history.json()] == [100]
 
 
 def test_farm_profiles_are_private_and_support_crud():

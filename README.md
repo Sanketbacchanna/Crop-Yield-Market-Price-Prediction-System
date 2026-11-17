@@ -19,6 +19,13 @@ The system combines crop-yield prediction, agricultural information, weather dat
 
 ## ✨ Features
 
+**Multi-user accounts and access**
+
+- Farmers can create accounts, manage a profile and region, and keep private farm, crop-history, and prediction records.
+- Admins can assign farmer, regional-admin, or admin roles. Regional admins can view farmer accounts in their assigned region.
+- Sign-in and sign-up use animated responsive forms. Forgot-password requests send a time-limited reset link through configured SMTP.
+- Prediction and crop-history APIs return only the authenticated user’s records.
+
 **1. Crop Yield Prediction**
 
 - Uses a trained machine-learning model saved as yield_model.pkl.
@@ -160,7 +167,32 @@ the `backend` directory:
 python migrate_user_lifecycle.py
 ```
 
-The migration is safe to rerun and preserves existing user data.
+The migration adds auth lifecycle and region columns and creates the crop
+history table. It is safe to rerun and preserves existing user data.
+
+Configure password reset email delivery in `backend/.env` before enabling
+forgot-password requests:
+
+```text
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-user
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM=AgriPredict <noreply@example.com>
+SMTP_USE_TLS=true
+FRONTEND_BASE_URL=http://localhost:5173
+```
+
+Only trusted operators should grant the first administrator role. After
+registering the intended account, promote it directly in the database, then
+use Settings & Profile to manage roles:
+
+```sql
+UPDATE user_table SET role = 'admin' WHERE email = 'admin@example.com';
+```
+
+Public registration always creates a farmer account. Administrator and
+regional-admin privileges cannot be self-selected.
 
 For farmer farm profiles, create the new account-owned farm table from the
 `backend` directory:

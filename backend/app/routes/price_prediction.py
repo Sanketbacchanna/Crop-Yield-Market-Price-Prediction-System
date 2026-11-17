@@ -84,5 +84,11 @@ def generate_price_forecast(
 @router.get("/")
 def get_price_predictions(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    return db.query(PricePrediction).all()
+    return (
+        db.query(PricePrediction)
+        .filter(PricePrediction.user_id == current_user.user_id)
+        .order_by(PricePrediction.forecast_date.desc())
+        .all()
+    )

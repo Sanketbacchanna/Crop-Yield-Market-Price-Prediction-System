@@ -11,6 +11,7 @@ from app.models import (
     PricePrediction,
     CropRecommendation,
     FarmProfile,
+    CropHistory,
 )
 from fastapi import FastAPI
 from sqlalchemy import text
@@ -24,6 +25,7 @@ from app.routes.price_prediction import router as price_prediction_router
 from app.routes.crop_recommendation import router as crop_recommendation_router
 from app.routes.auth import router as auth_router
 from app.routes.farms import router as farms_router
+from app.routes.crop_history import router as crop_history_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
@@ -51,6 +53,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(farms_router)
+app.include_router(crop_history_router)
 app.include_router(crops_router)
 app.include_router(agricultural_data_router)
 app.include_router(weather_data_router)
