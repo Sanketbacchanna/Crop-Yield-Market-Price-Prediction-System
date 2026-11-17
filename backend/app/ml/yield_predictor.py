@@ -1,13 +1,11 @@
 import csv
 from functools import lru_cache
 import os
-import joblib
 import pandas as pd
+from app.ml.model_registry import load_deployed_model
 
 
-# Path to trained model
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-MODEL_PATH = os.path.join(BASE_DIR, "ml", "saved_models", "yield_model.pkl")
 DISTRICT_DATASET_PATH = os.path.join(
     BASE_DIR, "ml", "datasets", "karnataka_weather_2015_2026.csv"
 )
@@ -35,8 +33,7 @@ YIELD_SEASON_ALIASES = {
 }
 
 
-# Load model once when the application starts
-model = joblib.load(MODEL_PATH)
+model = load_deployed_model("yield", "yield_model.pkl")
 
 
 @lru_cache(maxsize=1)

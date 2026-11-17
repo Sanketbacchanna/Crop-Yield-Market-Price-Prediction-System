@@ -1,90 +1,80 @@
+import sys
+from pathlib import Path
 
-import os
-
-import joblib
 import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.impute import SimpleImputer
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
 
-# Load prepared historical data
-df = pd.read_csv("prepared_crop_price_data.csv")
-df["t"] = pd.to_datetime(df["t"])
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 
-# Create next month's price as the prediction target
-df = df.sort_values(["crop", "t"]).reset_index(drop=True)
-df["target_next_month"] = df.groupby("crop")["p_modal"].shift(-1)
+from ml.training_utils import (
+    build_estimators,
+    chronological_holdout,
+    evaluate_candidates,
+    prepare_price_training_frame,
+    print_comparison,
+    save_versioned_run,
+    sha256_file,
+)
 
-# Use only historical features available at prediction time
-df["price_previous_2_months"] = df.groupby("crop")["p_modal"].shift(2)
-df["price_previous_3_months"] = df.groupby("crop")["p_modal"].shift(3)
-
-feature_columns = [
+DATASET_PATH = PROJECT_ROOT / "prepared_crop_price_data.csv"
+FEATURE_COLUMNS = [
     "crop",
     "price_previous_month",
     "price_previous_2_months",
     "price_previous_3_months",
     "price_avg_previous_3_months",
 ]
+TARGET_COLUMN = "target_next_month"
 
-# Remove rows without a target or enough historical features
-model_df = df.dropna(
-    subset=feature_columns + ["target_next_month"]
-).copy()
 
-# Split chronologically: older months for training, newer months for testing
-split_date = pd.Timestamp("2021-01-01")
-train_df = model_df[model_df["t"] < split_date]
-test_df = model_df[model_df["t"] >= split_date]
+def main() -> None:
+    source = pd.read_csv(DATASET_PATH)
+    frame = prepare_price_training_frame(source)
+    if frame.empty:
+        raise ValueError("No price rows remain after creating next-month targets.")
 
-X_train = train_df[feature_columns]
-y_train = train_df["target_next_month"]
+    features = frame[FEATURE_COLUMNS]
+    target = frame[TARGET_COLUMN]
+    target_dates = frame["target_date"]
+    train_indices, test_indices, cutoff = chronological_holdout(target_dates)
 
-X_test = test_df[feature_columns]
-y_test = test_df["target_next_month"]
+    print(
+        f"Price dataset: {len(frame)} usable rows across "
+        f"{frame['crop'].nunique()} crops; holdout begins {cutoff.date()}."
+    )
+    evaluation = evaluate_candidates(
+        task="price",
+        features=features,
+        target=target,
+        dates=target_dates,
+        groups=frame["crop"],
+        train_indices=train_indices,
+        test_indices=test_indices,
+        estimators=build_estimators(),
+    )
+    print(f"Cross-validation: {evaluation['cv_strategy']}")
+    print_comparison(evaluation["comparison"])
 
-# Encode crop type and fill any missing numeric features
-preprocessor = ColumnTransformer(
-    transformers=[
-        ("crop", OneHotEncoder(handle_unknown="ignore"), ["crop"]),
-        (
-            "numeric",
-            SimpleImputer(strategy="median"),
-            feature_columns[1:],
-        ),
-    ]
-)
+    metadata = save_versioned_run(
+        task="price",
+        source_dataset=DATASET_PATH,
+        dataset_sha256=sha256_file(DATASET_PATH),
+        selected_model=evaluation["selected_model"],
+        selected_pipeline=evaluation["selected_pipeline"],
+        comparison=evaluation["comparison"],
+        cv_strategy=evaluation["cv_strategy"],
+        split_cutoff=cutoff,
+        train_dates=target_dates.iloc[train_indices],
+        test_dates=target_dates.iloc[test_indices],
+        feature_columns=FEATURE_COLUMNS,
+        target_name=TARGET_COLUMN,
+    )
+    print(f"Selected model: {metadata['selected_model']}")
+    print(f"Model version: {metadata['model_version']}")
+    print(f"Artifact ID: {metadata['artifact_id']}")
+    print(f"Artifacts: {PROJECT_ROOT / 'ml' / 'artifacts' / 'price' / metadata['artifact_id']}")
 
-model = Pipeline(
-    steps=[
-        ("preprocessor", preprocessor),
-        (
-            "regressor",
-            RandomForestRegressor(
-                n_estimators=200,
-                random_state=42,
-                min_samples_leaf=3,
-            ),
-        ),
-    ]
-)
 
-model.fit(X_train, y_train)
-predictions = model.predict(X_test)
-
-mae = mean_absolute_error(y_test, predictions)
-rmse = mean_squared_error(y_test, predictions) ** 0.5
-
-print("Price prediction model trained successfully!")
-print("Training rows:", len(train_df))
-print("Testing rows:", len(test_df))
-print(f"MAE: {mae:.2f}")
-print(f"RMSE: {rmse:.2f}")
-
-os.makedirs("ml/saved_models", exist_ok=True)
-model_path = os.path.join("ml", "saved_models", "price_prediction_model.pkl")
-joblib.dump(model, model_path)
-print(f"Model saved to {model_path}")
+if __name__ == "__main__":
+    main()

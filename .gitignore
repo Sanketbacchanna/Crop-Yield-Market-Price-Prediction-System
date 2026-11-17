@@ -10,3 +10,8 @@
 __pycache__/
 **/__pycache__/
 *.py[cod]
+ml/mlflow.db
+ml/mlflow.db-*
+ml/mlartifacts/
+ml/artifacts/
+ml/saved_models/*_latest.json

@@ -1,0 +1,2 @@
+-r ../backend/requirements.txt
+mlflow>=2.12,<4

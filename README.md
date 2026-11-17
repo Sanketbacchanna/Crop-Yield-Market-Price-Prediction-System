@@ -56,7 +56,7 @@ The system combines crop-yield prediction, agricultural information, weather dat
 
 - Retrieves the latest available price record for a given user and crop.
 
-**Current limitation:** The existing price-prediction API saves price values supplied to it. Automated market-price forecasting still requires a suitable historical price dataset and a trained forecasting model.
+**Current limitation:** Market forecasts use recent prices supplied by the user; the portal does not yet ingest live market prices.
 
 **4. Weather Data**
 
@@ -289,49 +289,43 @@ The exact columns and relationships are defined by the database schema and SQLAl
 
 ## 🤖 Machine Learning
 
-Crop Yield Model
+Yield and price use separate training pipelines and separately versioned models.
+Each pipeline engineers features inside the saved scikit-learn pipeline, compares
+RandomForest, XGBoost, LightGBM, and CatBoost, selects by cross-validation RMSE,
+and reports a chronological 80/20 holdout. Price cross-validation uses expanding
+date windows. The yield dataset currently contains only three crop years, so its
+final holdout is chronological while cross-validation falls back to grouped
+district/crop/season folds; this constraint is recorded in its metadata.
 
-The current trained model is stored at:
+Install training dependencies and train from the repository root in PowerShell:
 
-**ml/saved_models/yield_model.pkl**
+```powershell
+python -m pip install -r ml/requirements.txt
+python ml\train_yield.py
+python ml\train_price.py
+```
 
-The crop-yield dataset includes information such as:
+MLflow tracks parameters, per-model validation metrics, the selected model, and
+the exact dataset snapshot. By default, run metadata is stored in
+`ml/mlflow.db` and MLflow artifacts in `ml/mlartifacts`; set
+`MLFLOW_TRACKING_URI` to use a shared tracking server. Start the local UI with:
 
-- State and district
+```powershell
+mlflow ui --backend-store-uri sqlite:///ml/mlflow.db
+```
 
-- Crop
+Every successful run creates a version directory under `ml/artifacts/<task>/`
+containing `model.joblib`, `metadata.json`, `comparison.json`, and a byte-for-byte
+copy of the source dataset. Metadata records the SHA-256 dataset hash, model and
+metadata schema versions, package versions, date split, cross-validation method,
+metrics, and MLflow run ID. A latest-model pointer is updated only after the
+MLflow run succeeds; the API verifies the model and dataset bundle when loading
+it, and continues to support the original model files until a versioned run is
+created.
 
-- Crop year
-
-- Season
-
-- Area and area unit
-
-- Production unit and production
-
-- Yield
-
-The existing model is intended for crop-yield prediction. It should not be used to predict market prices because yield and price are different prediction targets.
-
-**Market-Price Forecasting — Planned Improvement**
-
-The following work is still required to implement automated price forecasting:
-
-1.Obtain reliable historical crop market prices.
-
-2.Clean and validate the data.
-
-3.Select suitable input features and a forecast target.
-
-4.Train and evaluate a separate price-prediction model.
-
-5.Save the trained model.
-
-6.Generate price forecasts through a dedicated API endpoint.
-
-7.Store generated forecasts in **price_prediction_table.**
-
-8.Integrate those forecasts into crop recommendation.
+Generated bundles, latest pointers, and MLflow stores are local outputs and are
+git-ignored. Preserve or deploy the version directory and its matching latest
+pointer together when promoting a trained model.
 
 ## 📊 Recommendation Method
 
