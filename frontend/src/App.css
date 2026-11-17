@@ -2743,6 +2743,7 @@ button {
 }
 
 .yield-location-note,
+.yield-crop-note,
 .yield-location-error {
   color: #647168;
   font-size: 11px;

@@ -1,6 +1,52 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { findKarnatakaDistrict } from "../utils/karnatakaDistrict";
 
+const KARNATAKA_YIELD_CROPS = [
+  "Arecanut",
+  "Arhar/Tur",
+  "Bajra",
+  "Banana",
+  "Black pepper",
+  "Cardamom",
+  "Castor seed",
+  "Coconut",
+  "Coriander",
+  "Cotton(lint)",
+  "Dry chillies",
+  "Garlic",
+  "Ginger",
+  "Gram",
+  "Groundnut",
+  "Horse-gram",
+  "Jowar",
+  "Linseed",
+  "Maize",
+  "Mesta",
+  "Moong(Green Gram)",
+  "Niger seed",
+  "Onion",
+  "Other Kharif pulses",
+  "Other Rabi pulses",
+  "Peas & beans (Pulses)",
+  "Potato",
+  "Ragi",
+  "Rapeseed &Mustard",
+  "Rice",
+  "Safflower",
+  "Sannhamp",
+  "Sesamum",
+  "Small millets",
+  "Soyabean",
+  "Sugarcane",
+  "Sunflower",
+  "Sweet potato",
+  "Tapioca",
+  "Tobacco",
+  "Turmeric",
+  "Urad",
+  "Wheat",
+].map((crop_name, index) => ({ crop_id: index + 1, crop_name }));
+
 function YieldPrediction({
   agriculturalRecords,
   districts,
@@ -18,13 +64,7 @@ function YieldPrediction({
   const [districtSelection, setDistrictSelection] = useState(null);
   const availableCrops = cropOptions.length
     ? cropOptions
-    : [
-        { crop_id: 1, crop_name: "Rice" },
-        { crop_id: 2, crop_name: "Wheat" },
-        { crop_id: 3, crop_name: "Maize" },
-        { crop_id: 4, crop_name: "Cotton" },
-        { crop_id: 5, crop_name: "Sugarcane" },
-      ];
+    : KARNATAKA_YIELD_CROPS;
   const [localArea, setLocalArea] = useState("");
   const currentArea = area ?? localArea;
   const [currentLocation, setCurrentLocation] = useState(null);
@@ -234,6 +274,9 @@ function YieldPrediction({
                     </option>
                   ))}
                 </select>
+                <small className="yield-crop-note">
+                  {availableCrops.length} crops with historical Karnataka yield records.
+                </small>
               </div>
               <div className="form-field yield-input-field">
                 <label htmlFor="yield-district">
