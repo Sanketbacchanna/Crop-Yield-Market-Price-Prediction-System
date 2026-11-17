@@ -79,7 +79,31 @@ function TrendChart({ values, valueKey, label, formatValue }) {
   );
 }
 
-function ReportActions({ filename, headers, rows }) {
+function ChartSkeleton({ label }) {
+  return (
+    <div className="chart-skeleton" role="status" aria-label={label}>
+      <div className="chart-skeleton-lines">
+        <span />
+        <span />
+        <span />
+      </div>
+      <div className="chart-skeleton-bars" aria-hidden="true">
+        {[38, 63, 48, 76, 57, 86, 66, 94, 72, 81, 55, 70].map((height, index) => (
+          <span key={index} style={{ height: `${height}%` }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ReportActions({
+  filename,
+  headers,
+  rows,
+  title,
+  onSave,
+  onShare,
+}) {
   return (
     <div className="report-actions page-actions">
       <button
@@ -92,6 +116,22 @@ function ReportActions({ filename, headers, rows }) {
       </button>
       <button
         type="button"
+        className="business-button secondary"
+        onClick={() => onSave({ filename, headers, rows, title })}
+        disabled={!rows.length}
+      >
+        Save report
+      </button>
+      <button
+        type="button"
+        className="business-button secondary"
+        onClick={() => onShare({ title, rowCount: rows.length })}
+        disabled={!rows.length}
+      >
+        Share report
+      </button>
+      <button
+        type="button"
         className="business-button"
         onClick={() => window.print()}
       >
@@ -101,7 +141,7 @@ function ReportActions({ filename, headers, rows }) {
   );
 }
 
-function BusinessInsightsPage({ districts = [], crops = [] }) {
+function BusinessInsightsPage({ districts = [], crops = [], userId }) {
   const [priceCrops, setPriceCrops] = useState([]);
   const [priceCropsLoading, setPriceCropsLoading] = useState(true);
   const [priceCropsError, setPriceCropsError] = useState("");
@@ -110,15 +150,39 @@ function BusinessInsightsPage({ districts = [], crops = [] }) {
   const [priceError, setPriceError] = useState({ crop: "", message: "" });
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedYieldCrop, setSelectedYieldCrop] = useState("");
+  const [selectedSeason, setSelectedSeason] = useState("All seasons");
   const [yieldResult, setYieldResult] = useState({
     district: "",
     crop: "",
+    season: "",
     values: [],
   });
   const [yieldError, setYieldError] = useState({
     district: "",
     crop: "",
+    season: "",
     message: "",
+  });
+  const savedReportsKey = userId
+    ? `crop_prediction_saved_business_reports_${userId}`
+    : "";
+  const [savedReportState, setSavedReportState] = useState(() => {
+    if (!savedReportsKey) {
+      return { items: [], message: "", isError: false };
+    }
+    try {
+      const saved = JSON.parse(localStorage.getItem(savedReportsKey) || "[]");
+      if (!Array.isArray(saved)) {
+        throw new Error("Saved reports have an invalid format.");
+      }
+      return { items: saved, message: "", isError: false };
+    } catch (error) {
+      return {
+        items: [],
+        message: error.message || "Unable to load saved reports.",
+        isError: true,
+      };
+    }
   });
 
   useEffect(() => {
@@ -154,6 +218,7 @@ function BusinessInsightsPage({ districts = [], crops = [] }) {
   const activePriceCrop = selectedPriceCrop || priceCrops[0] || "";
   const activeDistrict = selectedDistrict || districts[0] || "";
   const activeYieldCrop = selectedYieldCrop || cropNames[0] || "";
+  const activeSeason = selectedSeason;
   const priceLoading =
     priceCropsLoading ||
     (Boolean(activePriceCrop) &&
@@ -167,20 +232,22 @@ function BusinessInsightsPage({ districts = [], crops = [] }) {
     priceResult.crop === activePriceCrop ? priceResult.values : [];
   const hasCurrentYieldResult =
     yieldResult.district === activeDistrict &&
-    yieldResult.crop === activeYieldCrop;
+    yieldResult.crop === activeYieldCrop &&
+    yieldResult.season === activeSeason;
   const hasCurrentYieldError =
     yieldError.district === activeDistrict &&
-    yieldError.crop === activeYieldCrop;
+    yieldError.crop === activeYieldCrop &&
+    yieldError.season === activeSeason;
   const yieldLoading =
     Boolean(activeDistrict && activeYieldCrop) &&
     !hasCurrentYieldResult &&
     !hasCurrentYieldError;
   const yieldErrorMessage =
-    yieldError.district === activeDistrict && yieldError.crop === activeYieldCrop
+    hasCurrentYieldError
       ? yieldError.message
       : "";
   const yieldHistory =
-    yieldResult.district === activeDistrict && yieldResult.crop === activeYieldCrop
+    hasCurrentYieldResult
       ? yieldResult.values
       : [];
 
@@ -210,15 +277,25 @@ function BusinessInsightsPage({ districts = [], crops = [] }) {
   useEffect(() => {
     if (!activeDistrict || !activeYieldCrop) return undefined;
     let active = true;
-    getHistoricalYield(activeDistrict, activeYieldCrop)
+    getHistoricalYield(
+      activeDistrict,
+      activeYieldCrop,
+      activeSeason === "All seasons" ? "" : activeSeason
+    )
       .then((history) => {
         if (active) {
           setYieldResult({
             district: activeDistrict,
             crop: activeYieldCrop,
+            season: activeSeason,
             values: history,
           });
-          setYieldError({ district: "", crop: "", message: "" });
+          setYieldError({
+            district: "",
+            crop: "",
+            season: "",
+            message: "",
+          });
         }
       })
       .catch((error) => {
@@ -226,6 +303,7 @@ function BusinessInsightsPage({ districts = [], crops = [] }) {
           setYieldError({
             district: activeDistrict,
             crop: activeYieldCrop,
+            season: activeSeason,
             message:
               error.message || "Unable to load district yield history.",
           });
@@ -234,7 +312,7 @@ function BusinessInsightsPage({ districts = [], crops = [] }) {
     return () => {
       active = false;
     };
-  }, [activeDistrict, activeYieldCrop]);
+  }, [activeDistrict, activeSeason, activeYieldCrop]);
 
   const priceRows = priceHistory.map((item) => [
     item.date,
@@ -244,11 +322,97 @@ function BusinessInsightsPage({ districts = [], crops = [] }) {
   const yieldRows = yieldHistory.map((item) => [
     item.district,
     item.crop_name,
+    item.season,
     item.crop_year,
     item.yield,
     item.area,
     item.observations,
   ]);
+
+  const saveReport = ({ filename, headers, rows, title }) => {
+    if (!savedReportsKey) {
+      setSavedReportState((current) => ({
+        ...current,
+        message: "Sign in to save reports on this device.",
+        isError: true,
+      }));
+      return;
+    }
+    const report = {
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      filename,
+      title,
+      headers,
+      rows,
+      savedAt: new Date().toISOString(),
+    };
+    const nextReports = [report, ...savedReportState.items].slice(0, 10);
+    try {
+      localStorage.setItem(savedReportsKey, JSON.stringify(nextReports));
+      setSavedReportState({
+        items: nextReports,
+        message: "Report saved on this device for your account.",
+        isError: false,
+      });
+    } catch (error) {
+      setSavedReportState((current) => ({
+        ...current,
+        message: error.message || "Unable to save this report on the device.",
+        isError: true,
+      }));
+    }
+  };
+
+  const shareReport = async ({ title, rowCount }) => {
+    const text = `${title}\n${rowCount} historical observations from AgriPredict.`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text });
+        setSavedReportState((current) => ({
+          ...current,
+          message: "Report summary shared.",
+          isError: false,
+        }));
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        setSavedReportState((current) => ({
+          ...current,
+          message: "Report summary copied to the clipboard.",
+          isError: false,
+        }));
+      } else {
+        throw new Error("Sharing is not supported by this browser.");
+      }
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        setSavedReportState((current) => ({
+          ...current,
+          message: error.message || "Unable to share this report.",
+          isError: true,
+        }));
+      }
+    }
+  };
+
+  const deleteSavedReport = (reportId) => {
+    const nextReports = savedReportState.items.filter(
+      (report) => report.id !== reportId
+    );
+    try {
+      localStorage.setItem(savedReportsKey, JSON.stringify(nextReports));
+      setSavedReportState({
+        items: nextReports,
+        message: "Saved report removed.",
+        isError: false,
+      });
+    } catch (error) {
+      setSavedReportState((current) => ({
+        ...current,
+        message: error.message || "Unable to remove the saved report.",
+        isError: true,
+      }));
+    }
+  };
 
   return (
     <section className="business-insights page-section">
@@ -256,7 +420,10 @@ function BusinessInsightsPage({ districts = [], crops = [] }) {
         <div>
           <p className="section-eyebrow">MARKET & PRODUCTION DATA</p>
           <h2>Farm business insights</h2>
-          <p>Explore historical trends and download reports for your records.</p>
+          <p>
+            Filter yield history by district, crop, and season. Market-price
+            history is statewide and can be filtered by crop.
+          </p>
         </div>
       </div>
 
@@ -281,11 +448,11 @@ function BusinessInsightsPage({ districts = [], crops = [] }) {
               </select>
             </label>
           </div>
-          {priceLoading && <p role="status">Loading price history…</p>}
+          {priceLoading && <ChartSkeleton label="Loading price history chart" />}
           {priceErrorMessage && (
             <p className="business-error" role="alert">{priceErrorMessage}</p>
           )}
-          {!priceLoading && !priceError && (
+          {!priceLoading && !priceErrorMessage && (
             <>
               <TrendChart
                 values={priceHistory}
@@ -303,6 +470,9 @@ function BusinessInsightsPage({ districts = [], crops = [] }) {
                 filename={`${activePriceCrop}-price-history`}
                 headers={["Date", "Crop", "Modal price (₹)"]}
                 rows={priceRows}
+                title={`${activePriceCrop} market price history`}
+                onSave={saveReport}
+                onShare={shareReport}
               />
             </>
           )}
@@ -340,42 +510,111 @@ function BusinessInsightsPage({ districts = [], crops = [] }) {
                   ))}
                 </select>
               </label>
+              <label className="business-select">
+                <span>Season</span>
+                <select
+                  value={activeSeason}
+                  onChange={(event) => setSelectedSeason(event.target.value)}
+                >
+                  {["All seasons", "Kharif", "Rabi", "Summer", "Whole Year"].map((season) => (
+                    <option key={season} value={season}>{season}</option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
-          {yieldLoading && <p role="status">Loading district yield history…</p>}
+          {yieldLoading && (
+            <ChartSkeleton label="Loading district yield history chart" />
+          )}
           {yieldErrorMessage && (
             <p className="business-error" role="alert">{yieldErrorMessage}</p>
           )}
-          {!yieldLoading && !yieldError && (
+          {!yieldLoading && !yieldErrorMessage && (
             <>
               <TrendChart
                 values={yieldHistory}
                 valueKey="yield"
-                label={`${activeYieldCrop} historical yield for ${activeDistrict}`}
+                label={`${activeYieldCrop} historical yield for ${activeDistrict}, ${activeSeason}`}
                 formatValue={(value) => Number(value).toFixed(2)}
               />
               {yieldHistory.length > 0 && (
                 <p className="data-note">
                   {yieldHistory.length} crop years · area-weighted tonnes/hectare ·
-                  years available: {yieldHistory.map((item) => item.crop_year).join(", ")}
+                  {activeSeason} · years available: {yieldHistory.map((item) => item.crop_year).join(", ")}
                 </p>
               )}
               <ReportActions
-                filename={`${activeDistrict}-${activeYieldCrop}-yield-history`}
+                filename={`${activeDistrict}-${activeYieldCrop}-${activeSeason}-yield-history`}
                 headers={[
                   "District",
                   "Crop",
+                  "Season",
                   "Crop year",
                   "Area-weighted yield (tonnes/hectare)",
                   "Area (hectares)",
                   "Source rows",
                 ]}
                 rows={yieldRows}
+                title={`${activeDistrict} ${activeYieldCrop} yield history · ${activeSeason}`}
+                onSave={saveReport}
+                onShare={shareReport}
               />
             </>
           )}
         </section>
       </div>
+
+      {savedReportState.message && (
+        <p
+          className={savedReportState.isError ? "business-error" : "data-note"}
+          role={savedReportState.isError ? "alert" : "status"}
+        >
+          {savedReportState.message}
+        </p>
+      )}
+
+      <section className="business-panel saved-reports" aria-labelledby="saved-reports-title">
+        <div className="business-panel-heading">
+          <div>
+            <p className="section-eyebrow">YOUR DEVICE</p>
+            <h3 id="saved-reports-title">Saved reports</h3>
+            <p>Reports are stored locally for this signed-in account on this device.</p>
+          </div>
+          <span className="saved-report-count">{savedReportState.items.length} / 10</span>
+        </div>
+        {savedReportState.items.length ? (
+          <ul className="saved-report-list">
+            {savedReportState.items.map((report) => (
+              <li key={report.id}>
+                <div>
+                  <strong>{report.title}</strong>
+                  <span>{new Date(report.savedAt).toLocaleString()}</span>
+                </div>
+                <div className="saved-report-actions">
+                  <button
+                    type="button"
+                    className="business-button secondary"
+                    onClick={() =>
+                      downloadExcelCsv(report.filename, report.headers, report.rows)
+                    }
+                  >
+                    Download
+                  </button>
+                  <button
+                    type="button"
+                    className="business-button secondary"
+                    onClick={() => deleteSavedReport(report.id)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="insights-empty">Save a filtered report to keep it here.</p>
+        )}
+      </section>
 
       <p className="data-caveat">
         Historical records end at the latest date/year in the bundled datasets and

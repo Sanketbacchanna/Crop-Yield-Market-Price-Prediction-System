@@ -1,6 +1,7 @@
 import { useState } from "react";
 import FarmProfiles from "../components/FarmProfiles";
 import CropHistory from "../components/CropHistory";
+import "./SettingsPage.css";
 
 function SettingsPage({
   currentUser,
@@ -35,11 +36,13 @@ function SettingsPage({
   const [adminUsers, setAdminUsers] = useState([]);
   const [regionEdits, setRegionEdits] = useState({});
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setStatusMessage("");
     setErrorMessage("");
+    setSavingProfile(true);
 
     try {
       const payload = {
@@ -58,6 +61,8 @@ function SettingsPage({
       setStatusMessage(`Profile updated for ${updatedUser.name || updatedUser.email}.`);
     } catch (error) {
       setErrorMessage(error.message || "Unable to update profile.");
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -171,34 +176,39 @@ function SettingsPage({
         </>
       )}
 
-      <div style={{ display: "grid", gap: 24, gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
-        <div style={{ background: "#fff", borderRadius: 16, padding: 20, boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)" }}>
+      <div className="settings-grid">
+        <div className="settings-card">
           <h3 style={{ marginTop: 0 }}>Profile details</h3>
 
           <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
             <div>
-              <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Name</label>
+              <label htmlFor="settings-name" style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Name</label>
               <input
+                id="settings-name"
                 type="text"
                 value={form.name}
+                required
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                 style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #d1d5db" }}
               />
             </div>
 
             <div>
-              <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Email</label>
+              <label htmlFor="settings-email" style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Email</label>
               <input
+                id="settings-email"
                 type="email"
                 value={form.email}
+                required
                 onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
                 style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #d1d5db" }}
               />
             </div>
 
             <div>
-              <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Phone</label>
+              <label htmlFor="settings-phone" style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Phone</label>
               <input
+                id="settings-phone"
                 type="tel"
                 value={form.phone}
                 onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
@@ -207,8 +217,9 @@ function SettingsPage({
             </div>
 
             <div>
-              <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Region</label>
+              <label htmlFor="settings-region" style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>Region</label>
               <input
+                id="settings-region"
                 type="text"
                 value={form.region}
                 disabled={currentUser.role !== "farmer"}
@@ -222,8 +233,9 @@ function SettingsPage({
             </div>
 
             <div>
-              <label style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>New password</label>
+              <label htmlFor="settings-password" style={{ display: "block", marginBottom: 8, fontWeight: 600 }}>New password</label>
               <input
+                id="settings-password"
                 type="password"
                 value={form.password}
                 onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
@@ -245,6 +257,7 @@ function SettingsPage({
 
             <button
               type="submit"
+              disabled={savingProfile}
               style={{
                 background: "#2563eb",
                 color: "#fff",
@@ -255,12 +268,12 @@ function SettingsPage({
                 cursor: "pointer",
               }}
             >
-              Save profile
+              {savingProfile ? "Saving profile…" : "Save profile"}
             </button>
           </form>
         </div>
 
-        <div style={{ background: "#fff", borderRadius: 16, padding: 20, boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)" }}>
+        <div className="settings-card">
           <h3 style={{ marginTop: 0 }}>Security</h3>
 
           <div style={{ display: "grid", gap: 14 }}>
@@ -341,7 +354,7 @@ function SettingsPage({
       </div>
 
       {(currentUser.role === "admin" || currentUser.role === "regional_admin") && (
-        <div style={{ marginTop: 24, background: "#fff", borderRadius: 16, padding: 20, boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)" }}>
+        <div className="settings-card settings-admin">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <h3 style={{ margin: 0 }}>{currentUser.role === "admin" ? "User access management" : `Farmers in ${currentUser.region || "your region"}`}</h3>
             <button type="button" onClick={loadUsers} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #d1d5db", background: "#fff", cursor: "pointer" }}>
@@ -395,13 +408,13 @@ function SettingsPage({
       )}
 
       {statusMessage && (
-        <div style={{ marginTop: 20, background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 10, padding: 12, color: "#166534" }}>
+        <div className="settings-message is-success" role="status">
           {statusMessage}
         </div>
       )}
 
       {errorMessage && (
-        <div style={{ marginTop: 20, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: 12, color: "#991b1b" }}>
+        <div className="settings-message is-error" role="alert">
           {errorMessage}
         </div>
       )}

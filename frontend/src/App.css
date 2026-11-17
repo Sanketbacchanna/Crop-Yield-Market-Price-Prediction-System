@@ -581,13 +581,34 @@ button {
 }
 
 .summary-card {
+  position: relative;
+  overflow: hidden;
   min-width: 0;
-  padding: 20px;
-  background: var(--surface);
+  padding: 22px;
+  background: linear-gradient(145deg, var(--surface), var(--surface-soft));
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 20px;
   box-shadow: 0 4px 14px rgba(31, 41, 35, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.summary-card::after {
+  position: absolute;
+  top: -34px;
+  right: -28px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--card-accent, var(--primary-light));
+  content: "";
+  opacity: 0.55;
+}
+
+.summary-card-top,
+.summary-card-value,
+.summary-card p {
+  position: relative;
+  z-index: 1;
 }
 
 .summary-card:hover {
@@ -607,6 +628,7 @@ button {
 
   font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.025em;
 }
 
 .summary-card-icon {
@@ -625,7 +647,8 @@ button {
 }
 
 .summary-card-value {
-  margin-top: 20px;
+  min-height: 31px;
+  margin-top: 18px;
 
   color: var(--text);
 
@@ -636,6 +659,27 @@ button {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.summary-card-skeleton {
+  display: block;
+  width: 68%;
+  height: 25px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    var(--surface-soft) 20%,
+    var(--border) 45%,
+    var(--surface-soft) 70%
+  );
+  background-size: 220% 100%;
+  animation: card-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes card-skeleton-shimmer {
+  to {
+    background-position-x: -220%;
+  }
 }
 
 .summary-card p {
@@ -649,19 +693,39 @@ button {
 /* Card variations */
 
 .summary-card-green .summary-card-icon {
+  --card-accent: #d7edda;
   background: #e8f5e9;
 }
 
 .summary-card-orange .summary-card-icon {
+  --card-accent: #ffebc2;
   background: #fff4df;
 }
 
 .summary-card-blue .summary-card-icon {
+  --card-accent: #d7e5ff;
   background: #eaf2ff;
 }
 
 .summary-card-purple .summary-card-icon {
+  --card-accent: #e4d7ff;
   background: #f2ecff;
+}
+
+.summary-card-green {
+  --card-accent: #d7edda;
+}
+
+.summary-card-orange {
+  --card-accent: #ffebc2;
+}
+
+.summary-card-blue {
+  --card-accent: #d7e5ff;
+}
+
+.summary-card-purple {
+  --card-accent: #e4d7ff;
 }
 
 /* =========================================================
@@ -2919,11 +2983,70 @@ button {
   scroll-margin-top: 84px;
 }
 
-.page-loading {
-  min-height: 180px;
+.page-loading-skeleton {
   display: grid;
-  place-items: center;
-  color: #53645b;
+  gap: 14px;
+  min-height: 220px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.page-loading-title,
+.page-loading-subtitle,
+.page-loading-cards span {
+  display: block;
+  border-radius: 9px;
+  background: linear-gradient(
+    90deg,
+    var(--surface-soft) 20%,
+    var(--border) 45%,
+    var(--surface-soft) 70%
+  );
+  background-size: 220% 100%;
+  animation: card-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.page-loading-title {
+  width: min(320px, 70%);
+  height: 28px;
+}
+
+.page-loading-subtitle {
+  width: min(440px, 90%);
+  height: 14px;
+}
+
+.page-loading-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.page-loading-cards span {
+  min-height: 110px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+@media (max-width: 600px) {
+  .page-loading-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .page-loading-cards span:not(:first-child) {
+    display: none;
+  }
 }
 
 .footer {
@@ -3641,5 +3764,217 @@ button {
   .auth-field input,
   .auth-submit {
     transition: none;
+  }
+}
+
+.top-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.theme-toggle {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.theme-toggle:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.theme-toggle span:first-child {
+  font-size: 17px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --primary: #76c785;
+  --primary-dark: #9cdda8;
+  --primary-light: #233d2a;
+  --background: #111713;
+  --surface: #1b241e;
+  --surface-soft: #222d25;
+  --text: #edf4ee;
+  --text-secondary: #aab8ad;
+  --border: #35453a;
+  --danger: #ff9188;
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .app-layout,
+:root[data-theme="dark"] .main-area {
+  background: var(--background);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .top-header,
+:root[data-theme="dark"] .sidebar,
+:root[data-theme="dark"] .footer,
+:root[data-theme="dark"] .menu-button,
+:root[data-theme="dark"] .top-header-status,
+:root[data-theme="dark"] .summary-card,
+:root[data-theme="dark"] .content-grid > *,
+:root[data-theme="dark"] .history-table-wrapper,
+:root[data-theme="dark"] .settings-card {
+  background: var(--surface);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .top-header {
+  background: rgba(27, 36, 30, 0.96);
+}
+
+:root[data-theme="dark"] .dashboard-intro {
+  background: linear-gradient(120deg, #1a2b20, #223b2a);
+}
+
+:root[data-theme="dark"] .business-panel,
+:root[data-theme="dark"] .recommendation-card,
+:root[data-theme="dark"] .recommendation-form,
+:root[data-theme="dark"] .recommendation-result,
+:root[data-theme="dark"] .price-form-panel,
+:root[data-theme="dark"] .yield-form-panel,
+:root[data-theme="dark"] .yield-result-card,
+:root[data-theme="dark"] .crop-history-item,
+:root[data-theme="dark"] .farm-profile-card {
+  background: var(--surface);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] .business-button.secondary {
+  border-color: var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .insights-chart-scroll,
+:root[data-theme="dark"] .saved-report-list li,
+:root[data-theme="dark"] .calendar-month {
+  background: var(--surface-soft);
+}
+
+:root[data-theme="dark"] .insights-chart-point {
+  fill: var(--surface);
+}
+
+:root[data-theme="dark"] .history-table tbody tr:hover {
+  background: var(--surface-soft);
+}
+
+:root[data-theme="dark"] .summary-card-green .summary-card-icon {
+  background: #294631;
+}
+
+:root[data-theme="dark"] .summary-card-orange .summary-card-icon {
+  background: #4a3a1f;
+}
+
+:root[data-theme="dark"] .summary-card-blue .summary-card-icon {
+  background: #273a57;
+}
+
+:root[data-theme="dark"] .summary-card-purple .summary-card-icon {
+  background: #403354;
+}
+
+:root[data-theme="dark"] .auth-card,
+:root[data-theme="dark"] .auth-content {
+  background: var(--surface);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .auth-content h2,
+:root[data-theme="dark"] .auth-field,
+:root[data-theme="dark"] .auth-field label {
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .auth-tabs {
+  background: var(--surface-soft);
+}
+
+:root[data-theme="dark"] .auth-tabs button.active {
+  background: var(--surface);
+  color: var(--primary-dark);
+}
+
+:root[data-theme="dark"] #settings [style*="color: #475569"] {
+  color: var(--text-secondary) !important;
+}
+
+:root[data-theme="dark"] #settings input {
+  border-color: var(--border) !important;
+}
+
+:root[data-theme="dark"] .chart-skeleton::after {
+  background: linear-gradient(
+    105deg,
+    transparent 25%,
+    rgba(255, 255, 255, 0.08) 48%,
+    transparent 70%
+  );
+}
+
+@media (max-width: 720px) {
+  .top-header {
+    gap: 12px;
+    padding: 0 16px;
+  }
+
+  .top-header-actions {
+    gap: 8px;
+  }
+
+  .top-header-status {
+    gap: 7px;
+    padding: 10px 12px;
+  }
+
+  .theme-toggle {
+    min-height: 40px;
+    padding: 8px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .top-header-brand span,
+  .theme-toggle > span:last-child {
+    display: none;
+  }
+
+  .top-header-brand h1 {
+    font-size: 20px;
+  }
+
+  .top-header-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 22px;
+  }
+
+  .top-header {
+    min-height: 70px;
+    padding: 0 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .summary-card-skeleton,
+  .chart-skeleton::after {
+    animation: none;
   }
 }

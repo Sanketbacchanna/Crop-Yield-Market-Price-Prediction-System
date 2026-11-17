@@ -12,6 +12,8 @@ function DashboardPage({
   onYieldSubmit,
   yieldLoading,
   yieldError,
+  priceLoading,
+  recommendationLoading,
   priceResult,
   recommendationResult,
   weatherData,
@@ -71,6 +73,7 @@ function DashboardPage({
               : "Generate a recommendation"
           }
           accent="green"
+          loading={recommendationLoading}
         />
         <SummaryCard
           icon="💰"
@@ -86,6 +89,7 @@ function DashboardPage({
               : "Generate a price forecast"
           }
           accent="orange"
+          loading={priceLoading}
         />
         <SummaryCard
           icon="🌱"
@@ -101,6 +105,7 @@ function DashboardPage({
               : "Generate a yield prediction"
           }
           accent="blue"
+          loading={yieldLoading}
         />
         <SummaryCard
           icon="📍"
@@ -112,6 +117,7 @@ function DashboardPage({
               : `${formattedArea}${firstRecord ? "" : " • No farm record"}`
           }
           accent="purple"
+          loading={liveLocationLoading}
         />
         <SummaryCard
           icon="🌦️"
@@ -128,6 +134,7 @@ function DashboardPage({
                 (weatherLoading ? "Loading weather..." : "No weather data")
           }
           accent="blue"
+          loading={weatherLoading}
         />
       </section>
     </div>

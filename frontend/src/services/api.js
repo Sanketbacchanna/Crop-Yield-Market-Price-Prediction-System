@@ -175,11 +175,14 @@ export function getHistoricalPriceTrend(cropName) {
   );
 }
 
-export function getHistoricalYield(district, cropName) {
+export function getHistoricalYield(district, cropName, season = "") {
   const params = new URLSearchParams({
     district,
     crop_name: cropName,
   });
+  if (season) {
+    params.set("season", season);
+  }
   return getList(
     `/yield-prediction/historical?${params}`,
     "Could not load historical district yield."

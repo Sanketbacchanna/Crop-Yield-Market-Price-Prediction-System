@@ -30,11 +30,11 @@ function CropRecommendation({
         <div className="recommendation-icon">🌾</div>
 
         <div className="recommendation-form-content">
-          <h3>Find the best crop for your farm</h3>
+          <h3>Get a clear planting recommendation</h3>
 
           <p>
-            Select your agricultural record and let the prediction model
-            recommend the most suitable crop.
+            Choose a farm record to compare expected yields for your district and
+            season. Saved crop-price forecasts add your market outlook to the ranking.
           </p>
 
           <form onSubmit={onSubmit}>
@@ -45,6 +45,7 @@ function CropRecommendation({
             <select
               id="recommendation-agricultural-record"
               value={selectedAgriculturalId}
+              required
               onChange={(event) =>
                 onAgriculturalChange(event.target.value)
               }
@@ -53,16 +54,19 @@ function CropRecommendation({
               {agriculturalRecords.length === 0 ? (
                 <option value="">No records available</option>
               ) : (
-                agriculturalRecords.map((record) => (
-                  <option
-                    key={record.agricultural_id}
-                    value={record.agricultural_id}
-                  >
-                    {record.district || "Unknown"} •{" "}
-                    {record.season || "Unknown Season"} •{" "}
-                    {record.crop_year || "Unknown Year"}
-                  </option>
-                ))
+                <>
+                  <option value="">Select a farm record</option>
+                  {agriculturalRecords.map((record) => (
+                    <option
+                      key={record.agricultural_id}
+                      value={record.agricultural_id}
+                    >
+                      {record.district || "Unknown"} •{" "}
+                      {record.season || "Unknown Season"} •{" "}
+                      {record.crop_year || "Unknown Year"}
+                    </option>
+                  ))}
+                </>
               )}
             </select>
 
@@ -71,11 +75,11 @@ function CropRecommendation({
               className="recommendation-button"
               disabled={loading || agriculturalRecords.length === 0}
             >
-              {loading ? "Generating..." : "Generate Recommendation"}
+              {loading ? "Comparing crops…" : "Show my best crop"}
             </button>
           </form>
 
-          {error && <p className="form-error">{error}</p>}
+          {error && <p className="form-error" role="alert">{error}</p>}
         </div>
       </div>
 
@@ -152,10 +156,10 @@ function CropRecommendation({
         ) : (
           <div className="recommendation-empty">
             <div>🌿</div>
-            <h3>No recommendation yet</h3>
+            <h3>Your best crop will appear here</h3>
             <p>
-              Generate a recommendation to see the best crop for your
-              selected agricultural record.
+              Select a farm record and choose “Show my best crop” to see the
+              top option and alternatives.
             </p>
           </div>
         )}

@@ -104,6 +104,9 @@ function App() {
     () => localStorage.getItem("crop_prediction_token") || ""
   );
   const [currentUser, setCurrentUser] = useState(getStoredUser);
+  const [theme, setTheme] = useState(() =>
+    localStorage.getItem("agripredict_theme") === "dark" ? "dark" : "light"
+  );
   const [passwordResetToken, setPasswordResetToken] = useState(
     () => new URLSearchParams(window.location.search).get("reset_token") || ""
   );
@@ -121,6 +124,11 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [authNotice, setAuthNotice] = useState("");
   const isAuthenticated = Boolean(authToken && currentUser);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("agripredict_theme", theme);
+  }, [theme]);
 
   const [cropOptions, setCropOptions] = useState([]);
   const [cropId, setCropId] = useState("1");
@@ -820,6 +828,8 @@ function App() {
       onYieldSubmit: handleYieldSubmit,
       yieldLoading,
       yieldError: yieldError || agriculturalError || yieldDistrictError,
+      priceLoading,
+      recommendationLoading,
       priceResult,
       recommendationResult,
       weatherData,
@@ -878,6 +888,7 @@ function App() {
     "business-insights": {
       districts: yieldDistricts,
       crops: cropOptions,
+      userId: currentUser?.user_id,
     },
     weather: {
       weatherData,
@@ -1099,6 +1110,10 @@ function App() {
         onMenuClick={() => setMenuOpen((isOpen) => !isOpen)}
         isOnline={isOnline}
         pendingCropHistoryCount={pendingCropHistoryCount}
+        theme={theme}
+        onThemeToggle={() =>
+          setTheme((current) => (current === "dark" ? "light" : "dark"))
+        }
       />
       <div className={`app-layout ${menuOpen ? "menu-open" : "menu-closed"}`}>
         <Sidebar
@@ -1141,9 +1156,16 @@ function App() {
             )}
             <Suspense
               fallback={
-                <p className="page-loading" role="status">
-                  Loading page...
-                </p>
+                <div className="page-loading-skeleton" role="status" aria-busy="true">
+                  <span className="page-loading-title" />
+                  <span className="page-loading-subtitle" />
+                  <div className="page-loading-cards">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                  <span className="sr-only">Loading page…</span>
+                </div>
               }
             >
               <ActivePage {...pageProps[activePage]} />

@@ -3,6 +3,8 @@ function DashboardHeader({
   isMenuOpen,
   isOnline = true,
   pendingCropHistoryCount = 0,
+  theme = "light",
+  onThemeToggle,
 }) {
   return (
     <header className="top-header">
@@ -29,19 +31,31 @@ function DashboardHeader({
         </div>
       </div>
 
-      <div
-        className={`top-header-status${isOnline ? "" : " is-offline"}${pendingCropHistoryCount ? " has-pending" : ""}`}
-        role="status"
-        aria-live="polite"
-      >
-        <span className="status-dot" />
-        <span>
-          {!isOnline
-            ? "Offline mode"
-            : pendingCropHistoryCount
-              ? `${pendingCropHistoryCount} crop record${pendingCropHistoryCount === 1 ? "" : "s"} to sync`
-              : "Online"}
-        </span>
+      <div className="top-header-actions">
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={onThemeToggle}
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          aria-pressed={theme === "dark"}
+        >
+          <span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>
+          <span>{theme === "dark" ? "Light" : "Dark"}</span>
+        </button>
+        <div
+          className={`top-header-status${isOnline ? "" : " is-offline"}${pendingCropHistoryCount ? " has-pending" : ""}`}
+          role="status"
+          aria-live="polite"
+        >
+          <span className="status-dot" />
+          <span>
+            {!isOnline
+              ? "Offline mode"
+              : pendingCropHistoryCount
+                ? `${pendingCropHistoryCount} crop record${pendingCropHistoryCount === 1 ? "" : "s"} to sync`
+                : "Online"}
+          </span>
+        </div>
       </div>
     </header>
   );

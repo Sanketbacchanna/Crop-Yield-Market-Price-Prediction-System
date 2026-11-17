@@ -17,9 +17,9 @@ function CropRecommendationPage({
       <div className="section-heading">
         <div>
           <p className="section-eyebrow">SMART RECOMMENDATION</p>
-          <h2>Crop Recommendation</h2>
+          <h2>What should I plant?</h2>
           <p>
-            Find the most suitable crop based on your agricultural information.
+            Compare suitable crops for your district, season, and farm conditions.
           </p>
         </div>
       </div>
