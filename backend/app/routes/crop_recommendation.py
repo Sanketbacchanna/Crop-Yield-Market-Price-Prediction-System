@@ -164,7 +164,7 @@ def generate_crop_recommendations(
         price_prediction = (
             db.query(PricePrediction)
             .filter(
-                PricePrediction.user_id == user_id,
+                PricePrediction.user_id == current_user.user_id,
                 PricePrediction.crop_id == crop.crop_id
             )
             .order_by(
@@ -173,13 +173,11 @@ def generate_crop_recommendations(
             .first()
         )
 
-        if not price_prediction:
-            continue
-
-        if price_prediction.forecast_price is None:
-            continue
-
-        forecast_price = float(price_prediction.forecast_price)
+        forecast_price = (
+            float(price_prediction.forecast_price)
+            if price_prediction and price_prediction.forecast_price is not None
+            else None
+        )
 
         candidates.append({
             "crop_id": crop.crop_id,
@@ -195,9 +193,8 @@ def generate_crop_recommendations(
         raise HTTPException(
             status_code=404,
             detail=(
-                "No crops could be recommended. "
-                "Make sure matching crops exist and forecast "
-                "prices are available in price_prediction_table."
+                "No crops could be recommended. Make sure matching crops "
+                "exist for the selected season, soil, and yield model."
             )
         )
 
@@ -211,16 +208,15 @@ def generate_crop_recommendations(
         for item in candidates
     ]
 
-    prices = [
-        item["forecast_price"]
-        for item in candidates
-    ]
-
     min_yield = min(yields)
     max_yield = max(yields)
-
-    min_price = min(prices)
-    max_price = max(prices)
+    has_complete_price_forecasts = all(
+        item["forecast_price"] is not None for item in candidates
+    )
+    if has_complete_price_forecasts:
+        prices = [item["forecast_price"] for item in candidates]
+        min_price = min(prices)
+        max_price = max(prices)
 
     for item in candidates:
 
@@ -233,20 +229,18 @@ def generate_crop_recommendations(
                 / (max_yield - min_yield)
             )
 
-        # Normalize price between 0 and 1
-        if max_price == min_price:
-            price_score = 1.0
-        else:
+        if has_complete_price_forecasts:
             price_score = (
-                (item["forecast_price"] - min_price)
+                1.0
+                if max_price == min_price
+                else (item["forecast_price"] - min_price)
                 / (max_price - min_price)
             )
-
-        # 50% yield + 50% price
-        item["recommendation_score"] = (
-            0.5 * yield_score +
-            0.5 * price_score
-        )
+            item["recommendation_score"] = (
+                0.5 * yield_score + 0.5 * price_score
+            )
+        else:
+            item["recommendation_score"] = yield_score
 
     # ---------------------------------------------------------
     # 8. Sort crops by recommendation score
@@ -307,6 +301,11 @@ def generate_crop_recommendations(
         "season": season,
         "crop_year": crop_year,
         "cultivated_area": area,
+        "recommendation_basis": (
+            "yield_and_forecast_price"
+            if has_complete_price_forecasts
+            else "yield_only"
+        ),
         "recommendations": saved_recommendations
     }
 

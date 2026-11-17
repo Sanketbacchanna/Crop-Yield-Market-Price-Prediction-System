@@ -1,4 +1,5 @@
 import os
+from datetime import date
 
 os.environ.setdefault("DB_HOST", "localhost")
 os.environ.setdefault("DB_USER", "test")
@@ -16,6 +17,9 @@ from sqlalchemy.pool import StaticPool
 import app.database as database
 from app.database import Base
 from app.models.price_prediction import PricePrediction
+from app.models.agricultural_data import AgriculturalData
+from app.models.crop import Crop
+from app.models.weather_data import WeatherData
 from app.models.user import User
 from app.models.yield_prediction import YieldPrediction
 from app.main import app
@@ -441,3 +445,97 @@ def test_farm_profiles_require_auth_and_supported_district():
         },
     )
     assert invalid_district.status_code == 422, invalid_district.text
+
+
+def test_crop_recommendations_use_only_the_current_users_forecasts(monkeypatch):
+    farmer = client.post(
+        "/auth/register",
+        json={
+            "name": "Recommendation Farmer",
+            "email": "recommendation-farmer@example.com",
+            "password": "farmerpass123",
+        },
+    ).json()
+    other_farmer = client.post(
+        "/auth/register",
+        json={
+            "name": "Other Recommendation Farmer",
+            "email": "other-recommendation-farmer@example.com",
+            "password": "farmerpass123",
+        },
+    ).json()
+    headers = {"Authorization": f"Bearer {farmer['access_token']}"}
+
+    db = database.SessionLocal()
+    try:
+        crop = Crop(crop_name="Rice", season="Kharif")
+        db.add(crop)
+        db.flush()
+        agricultural = AgriculturalData(
+            state="Karnataka",
+            district="MYSORE",
+            season="Kharif",
+            crop_id=crop.crop_id,
+            cultivated_area=2,
+            crop_year="2001-02",
+        )
+        db.add_all(
+            [
+                agricultural,
+                WeatherData(
+                    location="MYSORE",
+                    temperature=25,
+                    rainfall=10,
+                    humidity=70,
+                    recorded_date=date.today(),
+                ),
+                PricePrediction(
+                    user_id=other_farmer["user"]["user_id"],
+                    crop_id=crop.crop_id,
+                    forecast_price=5000,
+                    forecast_date=date.today(),
+                ),
+            ]
+        )
+        db.commit()
+        agricultural_id = agricultural.agricultural_id
+        crop_id = crop.crop_id
+    finally:
+        db.close()
+
+    monkeypatch.setattr(
+        "app.routes.crop_recommendation.predict_yield",
+        lambda **kwargs: 2.5,
+    )
+    response = client.post(
+        f"/crop-recommendation/recommend?agricultural_id={agricultural_id}",
+        headers=headers,
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["recommendation_basis"] == "yield_only"
+    assert response.json()["recommendations"][0]["forecast_price"] is None
+
+    db = database.SessionLocal()
+    try:
+        db.add(
+            PricePrediction(
+                user_id=farmer["user"]["user_id"],
+                crop_id=crop_id,
+                forecast_price=4200,
+                forecast_date=date.today(),
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
+    personalized_response = client.post(
+        f"/crop-recommendation/recommend?agricultural_id={agricultural_id}",
+        headers=headers,
+    )
+    assert personalized_response.status_code == 200, personalized_response.text
+    assert (
+        personalized_response.json()["recommendation_basis"]
+        == "yield_and_forecast_price"
+    )
+    assert personalized_response.json()["recommendations"][0]["forecast_price"] == 4200

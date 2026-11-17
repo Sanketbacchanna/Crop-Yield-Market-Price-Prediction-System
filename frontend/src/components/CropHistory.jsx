@@ -156,6 +156,11 @@ function CropHistory({ history, farms, onSave, onDelete }) {
             <article key={item.history_id} className="crop-history-item">
               <div>
                 <strong>{item.crop_name}</strong>
+                {item.is_offline_pending && (
+                  <span className="crop-history-offline-status">
+                    Saved on this device · waiting to sync
+                  </span>
+                )}
                 <span>
                   {[item.season, item.district, item.planted_date]
                     .filter(Boolean)

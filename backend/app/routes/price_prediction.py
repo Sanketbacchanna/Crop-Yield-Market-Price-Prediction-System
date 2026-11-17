@@ -4,6 +4,7 @@ from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.business_data import get_historical_price_crops, get_historical_prices
 from app.auth import get_current_user
 from app.database import get_db
 from app.models.price_prediction import PricePrediction
@@ -15,6 +16,38 @@ router = APIRouter(
     prefix="/price-prediction",
     tags=["Price Prediction"]
 )
+
+
+@router.get("/historical/crops")
+def list_historical_price_crops():
+    try:
+        return get_historical_price_crops()
+    except OSError as error:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load historical crop prices.",
+        ) from error
+
+
+@router.get("/historical")
+def get_historical_price_trend(
+    crop_name: str = Query(min_length=1, max_length=100),
+):
+    if not crop_name.strip():
+        raise HTTPException(status_code=400, detail="Crop name cannot be empty.")
+    try:
+        observations = get_historical_prices(crop_name)
+    except OSError as error:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load historical crop prices.",
+        ) from error
+    if not observations:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No historical price observations found for {crop_name.strip()}.",
+        )
+    return observations
 
 
 @router.post("/forecast")

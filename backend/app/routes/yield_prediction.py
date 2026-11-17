@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.business_data import get_historical_yield
 from app.auth import get_current_user
 from app.database import get_db
 from app.models.yield_prediction import YieldPrediction
@@ -16,6 +17,32 @@ router = APIRouter(
     prefix="/yield-prediction",
     tags=["Yield Prediction"]
 )
+
+
+@router.get("/historical")
+def get_district_yield_history(
+    district: str = Query(min_length=1, max_length=45),
+    crop_name: str = Query(min_length=1, max_length=100),
+):
+    try:
+        observations = get_historical_yield(district, crop_name)
+    except OSError as error:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load historical district yields.",
+        ) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+    if not observations:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"No historical yield data found for {crop_name.strip()} "
+                f"in {district.strip()}."
+            ),
+        )
+    return observations
 
 
 @router.get("/districts")

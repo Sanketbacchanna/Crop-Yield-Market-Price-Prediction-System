@@ -484,6 +484,22 @@ button {
     0 0 0 4px rgba(67, 160, 71, 0.12);
 }
 
+.top-header-status.is-offline {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.top-header-status.is-offline .status-dot {
+  background: #ea580c;
+  box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.12);
+}
+
+.top-header-status.has-pending:not(.is-offline) .status-dot {
+  background: #d97706;
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.12);
+}
+
 /* =========================================================
    DASHBOARD INTRO
    ========================================================= */
@@ -903,6 +919,17 @@ button {
 
   padding: 24px 28px 60px;
 }
+
+.offline-sync-error {
+  margin: 0 0 18px;
+  padding: 11px 14px;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 13px;
+}
+
 /* =========================================================
    DASHBOARD SECTIONS
    ========================================================= */
@@ -1200,6 +1227,40 @@ button {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+}
+
+.recommendation-personalized-context {
+  margin: -8px 0 16px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.recommendation-alternatives {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.recommendation-alternatives h4 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.recommendation-alternative {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid #e1ebe2;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+}
+
+.recommendation-alternative span {
+  color: var(--text-secondary);
 }
 
 .recommendation-result-header span {
@@ -3465,6 +3526,11 @@ button {
 .crop-history-item strong {
   color: #253627;
   font-size: 14px;
+}
+
+.crop-history-item .crop-history-offline-status {
+  color: #9a3412;
+  font-weight: 700;
 }
 
 .crop-history-item span,

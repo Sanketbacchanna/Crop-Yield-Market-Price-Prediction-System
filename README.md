@@ -327,13 +327,44 @@ Generated bundles, latest pointers, and MLflow stores are local outputs and are
 git-ignored. Preserve or deploy the version directory and its matching latest
 pointer together when promoting a trained model.
 
+## 🌱 Farmer Business Features
+
+- **Crop calendar and field tasks:** General Karnataka month-by-month planning
+  prompts plus personal tasks saved in the browser for offline access. Confirm
+  crop-specific timing with the local KVK or agriculture office.
+- **Personalized crop recommendations:** Uses the selected district, season,
+  soil, and yield estimate. When every compared crop has a price forecast saved
+  by the signed-in farmer, the ranking combines normalized yield and price
+  scores; otherwise ranking uses yield alone and labels missing price data.
+- **Historical price trends:** Monthly modal-price charts from
+  `prepared_crop_price_data.csv`.
+- **District yield history:** Area-weighted crop yields from the bundled
+  Karnataka yield dataset; available years and observations are shown with the
+  report.
+- **Exports:** Download Excel-compatible CSV reports and use the browser's print
+  dialog to save reports or the calendar as PDF.
+- **Government resources:** Scheme/service suggestions link directly to official
+  Government of India and Karnataka portals. They are informational, do not
+  determine eligibility, and do not submit applications.
+- **Offline field use:** The production service worker caches the application
+  shell and static assets, while calendar tasks and a user-scoped crop-history
+  cache/draft queue are stored on the current device. Pending crop-history
+  records sync when the app is online and the same user signs in. API
+  responses—including authentication and private profile data—are not cached by
+  the service worker. Predictions, live weather, and government websites still
+  require a connection.
+
+The bundled price and yield histories are finite historical datasets, not live
+market quotes or current farm observations. Check dates shown in reports before
+making business decisions.
+
 ## 📊 Recommendation Method
 
-The current recommendation logic combines normalized yield and price scores:
-
-**Recommendation score = 0.5 × Yield score + 0.5 × Price score**
-
-Each score is normalized relative to the candidate crops being compared. A higher score indicates a better ranking under this formula.
+Each score is normalized against the candidate crops being compared. If
+price forecasts exist for all candidates, the score is 50% normalized yield and
+50% normalized farmer-specific forecast price. If any candidate lacks a saved
+price forecast, recommendations remain available and ranking is based on
+normalized yield; the response and UI indicate this basis.
 
 This score does not directly represent profit. Future versions could include cultivation cost, expected production, weather risks, and transportation costs to estimate profitability more realistically.
 

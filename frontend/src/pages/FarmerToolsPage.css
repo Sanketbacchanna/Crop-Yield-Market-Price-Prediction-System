@@ -1,0 +1,412 @@
+.farmer-tools {
+  display: grid;
+  gap: 20px;
+}
+
+.farmer-tools .section-heading {
+  margin-bottom: 0;
+}
+
+.farmer-tools .business-panel {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 4px 14px rgba(31, 41, 35, 0.05);
+}
+
+.farmer-tools .business-panel-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.farmer-tools .business-panel-heading h3 {
+  margin: 0 0 6px;
+  font-family: "Manrope", sans-serif;
+  font-size: 21px;
+}
+
+.farmer-tools .business-panel-heading p:not(.section-eyebrow) {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.farmer-tools .business-button {
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.farmer-tools .business-button.secondary {
+  background: #fff;
+  color: var(--primary-dark);
+}
+
+.farmer-tools .report-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.calendar-year-tools {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.calendar-year-tools label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.calendar-year-tools select {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--text);
+}
+
+.farmer-tools h3,
+.planner-section h4,
+.scheme-card h4 {
+  margin-top: 0;
+}
+
+.offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.offline-banner.is-offline {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.farmer-calendar-panel {
+  gap: 20px;
+}
+
+.calendar-month-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.calendar-month {
+  min-height: 150px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fbfdfb;
+}
+
+.calendar-month.is-current-month {
+  border-color: #85bd8b;
+  box-shadow: inset 0 0 0 1px #85bd8b;
+}
+
+.calendar-month h4 {
+  margin: 0 0 8px;
+  color: var(--primary-dark);
+  font-size: 15px;
+}
+
+.calendar-month p,
+.calendar-caveat {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.calendar-event {
+  display: block;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.calendar-event.field-record {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.planner-section {
+  display: grid;
+  gap: 14px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.planner-section h4 {
+  margin-bottom: 5px;
+}
+
+.planner-section > div:first-child p,
+.planner-section > p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.planner-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 12px;
+}
+
+.planner-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.planner-form input,
+.planner-form select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: white;
+  color: var(--text);
+}
+
+.planner-form .planner-notes {
+  grid-column: span 2;
+}
+
+.planner-task-list,
+.personal-recommendation-list {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planner-task-list li,
+.personal-recommendation-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: #fff;
+}
+
+.planner-task-list li > div,
+.personal-recommendation-list li > div {
+  display: grid;
+  gap: 4px;
+}
+
+.planner-task-list span,
+.personal-recommendation-list span,
+.recommendation-price {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.text-button {
+  border: 0;
+  background: transparent;
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.personal-recommendation-list {
+  counter-reset: recommendations;
+}
+
+.personal-recommendation-list li {
+  justify-content: flex-start;
+}
+
+.recommendation-rank {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary-dark) !important;
+  font-weight: 800;
+}
+
+.recommendation-price {
+  margin-left: auto;
+  text-align: right;
+}
+
+.schemes-panel > div:first-child > p:not(.section-eyebrow) {
+  margin-top: -6px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.scheme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.scheme-card {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  padding: 17px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fbfdfb;
+}
+
+.scheme-card > span {
+  color: var(--primary-dark);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.scheme-card h4 {
+  margin-bottom: 0;
+  font-size: 16px;
+}
+
+.scheme-card p,
+.scheme-card small {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.scheme-card a {
+  color: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.scheme-card a:hover {
+  text-decoration: underline;
+}
+
+.scheme-card .scheme-source {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 900px) {
+  .calendar-month-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .planner-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .calendar-month-grid,
+  .scheme-grid,
+  .planner-form {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-form .planner-notes {
+    grid-column: auto;
+  }
+
+  .business-panel-heading {
+    align-items: stretch;
+  }
+
+  .calendar-year-tools {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .calendar-year-tools label,
+  .calendar-year-tools select {
+    width: 100%;
+  }
+
+  .personal-recommendation-list li {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .recommendation-price {
+    width: calc(100% - 48px);
+    margin-left: 48px;
+    text-align: left;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .farmer-tools,
+  .farmer-tools * {
+    visibility: visible !important;
+  }
+
+  .farmer-tools {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
+
+  .farmer-tools .page-actions,
+  .farmer-tools button,
+  .farmer-tools input,
+  .farmer-tools select {
+    display: none !important;
+  }
+
+  .calendar-month-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

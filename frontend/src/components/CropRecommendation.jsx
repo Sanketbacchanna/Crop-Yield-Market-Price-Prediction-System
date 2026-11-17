@@ -8,6 +8,11 @@ function CropRecommendation({
   result,
 }) {
   const recommendation = result?.recommendations?.[0];
+  const additionalRecommendations = result?.recommendations?.slice(1) || [];
+  const rankingContext =
+    result?.recommendation_basis === "yield_and_forecast_price"
+      ? "Ranked using your estimated yield and your saved price forecasts."
+      : "Ranked using your district, season, soil information, and estimated yield. Save price forecasts to include your own market outlook.";
   const cropImages = {
     Rice: "/crops/Rice.png",
     Wheat: "/crops/wheat.jpg",
@@ -81,6 +86,9 @@ function CropRecommendation({
               <span>TOP RECOMMENDATION</span>
               <strong>#{recommendation.recommendation_rank}</strong>
             </div>
+            <p className="recommendation-personalized-context">
+              For {result.district} · {result.season} · {result.crop_year}. {rankingContext}
+            </p>
 
             <div className="recommended-crop">
               <div className="recommended-crop-image">
@@ -117,10 +125,29 @@ function CropRecommendation({
                     ? `₹${Number(
                       recommendation.forecast_price
                     ).toLocaleString("en-IN")}`
-                    : "—"}
+                    : "Not saved"}
                 </strong>
               </div>
             </div>
+            {additionalRecommendations.length > 0 && (
+              <div className="recommendation-alternatives">
+                <h4>Other suitable options</h4>
+                {additionalRecommendations.map((item) => (
+                  <div
+                    className="recommendation-alternative"
+                    key={`${item.crop_id}-${item.recommendation_rank}`}
+                  >
+                    <strong>#{item.recommendation_rank} {item.crop_name}</strong>
+                    <span>
+                      Yield {Number(item.predicted_yield).toFixed(2)}
+                      {item.forecast_price == null
+                        ? " · no saved price forecast"
+                        : ` · ₹${Number(item.forecast_price).toLocaleString("en-IN")}`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         ) : (
           <div className="recommendation-empty">

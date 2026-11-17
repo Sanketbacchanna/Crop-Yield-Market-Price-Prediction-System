@@ -1,4 +1,11 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import DashboardHeader from "./components/DashboardHeader";
 import Sidebar from "./components/Sidebar";
 import {
@@ -35,6 +42,13 @@ import {
   updateFarmProfile,
   verifyEmail,
 } from "./services/api";
+import {
+  getCachedCropHistory,
+  getPendingCropHistory,
+  queueOfflineCropHistory,
+  removePendingCropHistory,
+  saveCachedCropHistory,
+} from "./utils/offlineStorage";
 import "./App.css";
 
 const pages = {
@@ -42,6 +56,8 @@ const pages = {
   "market-price": lazy(() => import("./pages/MarketPricePage")),
   "yield-prediction": lazy(() => import("./pages/CropYieldPage")),
   "crop-recommendation": lazy(() => import("./pages/CropRecommendationPage")),
+  "farmer-tools": lazy(() => import("./pages/FarmerToolsPage")),
+  "business-insights": lazy(() => import("./pages/BusinessInsightsPage")),
   weather: lazy(() => import("./pages/WeatherPage")),
   "prediction-history": lazy(() => import("./pages/PredictionHistoryPage")),
   settings: lazy(() => import("./pages/SettingsPage")),
@@ -77,8 +93,13 @@ function getPageFromHash() {
 }
 
 function App() {
+  const cropHistorySyncRef = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState(getPageFromHash);
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [pendingCropHistoryCount, setPendingCropHistoryCount] = useState(0);
+  const [offlineSyncError, setOfflineSyncError] = useState("");
+  const [cropHistoryLoaded, setCropHistoryLoaded] = useState(false);
   const [authToken, setAuthToken] = useState(
     () => localStorage.getItem("crop_prediction_token") || ""
   );
@@ -158,6 +179,8 @@ function App() {
     setAuthToken("");
     setCurrentUser(null);
     setCropHistory([]);
+    setCropHistoryLoaded(false);
+    setPendingCropHistoryCount(0);
     setPriceHistory([]);
     setYieldHistory([]);
   }, []);
@@ -183,8 +206,12 @@ function App() {
 
         setCurrentUser(user);
         saveAuthSession(authToken, user);
-      } catch {
-        if (active) {
+      } catch (error) {
+        if (active && (!navigator.onLine || error instanceof TypeError)) {
+          setOfflineSyncError(
+            "Using this device's last signed-in profile while offline. Reconnect to verify your account."
+          );
+        } else if (active) {
           logoutCurrentUser();
         }
       }
@@ -194,7 +221,7 @@ function App() {
     return () => {
       active = false;
     };
-  }, [authToken, logoutCurrentUser]);
+  }, [authToken, logoutCurrentUser, isOnline]);
 
   const handleAuthSubmit = async (event) => {
     event.preventDefault();
@@ -338,17 +365,91 @@ function App() {
   }, []);
 
   const handleCropHistorySave = useCallback(async (payload) => {
-    const savedHistory = await createCropHistory(payload);
-    setCropHistory((current) => [savedHistory, ...current]);
-    return savedHistory;
-  }, []);
+    try {
+      const savedHistory = await createCropHistory(payload);
+      setCropHistory((current) => [savedHistory, ...current]);
+      return savedHistory;
+    } catch (error) {
+      if (navigator.onLine) {
+        throw error;
+      }
+      const userId = currentUser?.user_id;
+      const savedOffline = queueOfflineCropHistory(userId, payload);
+      setCropHistory((current) => [savedOffline, ...current]);
+      setPendingCropHistoryCount(getPendingCropHistory(userId).length);
+      setOfflineSyncError("");
+      return savedOffline;
+    }
+  }, [currentUser?.user_id]);
 
   const handleCropHistoryDelete = useCallback(async (historyId) => {
+    if (!navigator.onLine) {
+      throw new Error("Connect to the internet before deleting a synced crop record.");
+    }
     await deleteCropHistory(historyId);
     setCropHistory((current) =>
       current.filter((entry) => entry.history_id !== historyId)
     );
   }, []);
+
+  const syncPendingCropHistory = useCallback(async () => {
+    const userId = currentUser?.user_id;
+    if (
+      !isAuthenticated ||
+      !userId ||
+      !navigator.onLine ||
+      cropHistorySyncRef.current
+    ) {
+      return;
+    }
+    cropHistorySyncRef.current = true;
+
+    try {
+      try {
+        const pending = getPendingCropHistory(userId);
+        for (const record of pending) {
+          const {
+            history_id: localHistoryId,
+            ...payload
+          } = record;
+          const clientId = payload.client_id;
+          delete payload.client_id;
+          delete payload.is_offline_pending;
+          try {
+            const savedHistory = await createCropHistory(payload);
+            removePendingCropHistory(userId, clientId);
+            setCropHistory((current) => [
+              savedHistory,
+              ...current.filter(
+                (item) =>
+                  item.client_id !== clientId &&
+                  item.history_id !== localHistoryId
+              ),
+            ]);
+          } catch (error) {
+            setOfflineSyncError(
+              getErrorMessage(error, "Unable to sync offline crop records.")
+            );
+            break;
+          }
+        }
+      } catch (error) {
+        setOfflineSyncError(error.message || "Unable to read offline crop records.");
+      }
+
+      try {
+        const remaining = getPendingCropHistory(userId).length;
+        setPendingCropHistoryCount(remaining);
+        if (remaining === 0) {
+          setOfflineSyncError("");
+        }
+      } catch (error) {
+        setOfflineSyncError(error.message || "Unable to update offline sync status.");
+      }
+    } finally {
+      cropHistorySyncRef.current = false;
+    }
+  }, [currentUser?.user_id, isAuthenticated]);
 
   useEffect(() => {
     function handleHashChange() {
@@ -358,6 +459,33 @@ function App() {
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (currentUser?.user_id && cropHistoryLoaded) {
+      try {
+        saveCachedCropHistory(currentUser.user_id, cropHistory);
+      } catch (error) {
+        console.error("Unable to cache crop history.", error);
+      }
+    }
+  }, [cropHistory, cropHistoryLoaded, currentUser?.user_id]);
+
+  useEffect(() => {
+    if (isAuthenticated && isOnline && cropHistoryLoaded) {
+      Promise.resolve().then(syncPendingCropHistory);
+    }
+  }, [isAuthenticated, isOnline, cropHistoryLoaded, syncPendingCropHistory]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -424,7 +552,7 @@ function App() {
     }
 
     let active = true;
-    const userId = currentUser.user_id;
+    const userId = currentUser?.user_id;
 
     getFarmProfiles()
       .then((farms) => {
@@ -494,6 +622,7 @@ function App() {
     let active = true;
 
     async function loadInitialData() {
+      setCropHistoryLoaded(false);
       const results = await Promise.allSettled([
         getPriceHistory(),
         getYieldHistory(),
@@ -567,8 +696,38 @@ function App() {
       }
 
       if (results[5].status === "fulfilled") {
-        setCropHistory(results[5].value);
+        try {
+          const userId = currentUser?.user_id;
+          const pending = getPendingCropHistory(userId);
+          const serverHistory = results[5].value;
+          setCropHistory([...pending, ...serverHistory]);
+          setPendingCropHistoryCount(pending.length);
+          setOfflineSyncError("");
+        } catch (error) {
+          setOfflineSyncError(error.message || "Unable to load saved crop records.");
+          setCropHistory(results[5].value);
+        }
+      } else {
+        try {
+          const userId = currentUser.user_id;
+          const pending = getPendingCropHistory(userId);
+          const cached = getCachedCropHistory(userId);
+          const pendingIds = new Set(pending.map((record) => record.history_id));
+          setCropHistory([
+            ...pending,
+            ...cached.filter((record) => !pendingIds.has(record.history_id)),
+          ]);
+          setPendingCropHistoryCount(pending.length);
+          setOfflineSyncError(
+            navigator.onLine
+              ? "Showing the last saved crop history because it could not be refreshed."
+              : "Showing saved crop history while offline."
+          );
+        } catch (error) {
+          setOfflineSyncError(error.message || "Unable to load saved crop records.");
+        }
       }
+      setCropHistoryLoaded(true);
     }
 
     loadInitialData();
@@ -704,6 +863,22 @@ function App() {
       error: recommendationError || agriculturalError,
       result: recommendationResult,
     },
+    "farmer-tools": {
+      currentUser,
+      farms: farmProfiles,
+      cropHistory,
+      crops: cropOptions,
+      recommendations: recommendationResult,
+      onNavigate: (pageId) => {
+        window.location.hash = pageId;
+        setActivePage(pageId);
+      },
+      isOnline,
+    },
+    "business-insights": {
+      districts: yieldDistricts,
+      crops: cropOptions,
+    },
     weather: {
       weatherData,
       weatherLoading,
@@ -714,6 +889,9 @@ function App() {
     },
     settings: {
       currentUser,
+      isOnline,
+      pendingCropHistoryCount,
+      offlineSyncError,
       farms: farmProfiles,
       farmDistricts: yieldDistricts,
       farmsLoading: farmProfilesLoading,
@@ -919,6 +1097,8 @@ function App() {
       <DashboardHeader
         isMenuOpen={menuOpen}
         onMenuClick={() => setMenuOpen((isOpen) => !isOpen)}
+        isOnline={isOnline}
+        pendingCropHistoryCount={pendingCropHistoryCount}
       />
       <div className={`app-layout ${menuOpen ? "menu-open" : "menu-closed"}`}>
         <Sidebar
@@ -954,6 +1134,11 @@ function App() {
           </div>
 
           <main className="dashboard">
+            {offlineSyncError && (
+              <p className="offline-sync-error" role="status">
+                {offlineSyncError}
+              </p>
+            )}
             <Suspense
               fallback={
                 <p className="page-loading" role="status">

@@ -53,6 +53,26 @@ function Sidebar({ isOpen, activePage, onNavigate, onClose }) {
           Crop Yield
         </a>
 
+        <p className="nav-label">Farm tools</p>
+        <a
+          className={`nav-item${activePage === "farmer-tools" ? " active" : ""}`}
+          href="#farmer-tools"
+          aria-current={activePage === "farmer-tools" ? "page" : undefined}
+          onClick={() => navigateTo("farmer-tools")}
+        >
+          <span aria-hidden="true">🗓️</span>
+          Calendar & Schemes
+        </a>
+        <a
+          className={`nav-item${activePage === "business-insights" ? " active" : ""}`}
+          href="#business-insights"
+          aria-current={activePage === "business-insights" ? "page" : undefined}
+          onClick={() => navigateTo("business-insights")}
+        >
+          <span aria-hidden="true">📊</span>
+          Business Insights
+        </a>
+
         <p className="nav-label">Data</p>
         <a
           className={`nav-item${activePage === "weather" ? " active" : ""}`}

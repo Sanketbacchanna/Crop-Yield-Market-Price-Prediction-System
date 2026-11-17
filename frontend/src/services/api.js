@@ -160,6 +160,32 @@ export function getPriceHistory() {
   return getList("/price-prediction/", "Could not load prediction history.");
 }
 
+export function getHistoricalPriceCrops() {
+  return getList(
+    "/price-prediction/historical/crops",
+    "Could not load historical crop prices."
+  );
+}
+
+export function getHistoricalPriceTrend(cropName) {
+  const params = new URLSearchParams({ crop_name: cropName });
+  return getList(
+    `/price-prediction/historical?${params}`,
+    "Could not load the historical price trend."
+  );
+}
+
+export function getHistoricalYield(district, cropName) {
+  const params = new URLSearchParams({
+    district,
+    crop_name: cropName,
+  });
+  return getList(
+    `/yield-prediction/historical?${params}`,
+    "Could not load historical district yield."
+  );
+}
+
 export function getYieldHistory() {
   return getList(
     "/yield-prediction/",

@@ -1,4 +1,9 @@
-function DashboardHeader({ onMenuClick, isMenuOpen }) {
+function DashboardHeader({
+  onMenuClick,
+  isMenuOpen,
+  isOnline = true,
+  pendingCropHistoryCount = 0,
+}) {
   return (
     <header className="top-header">
       <div className="top-header-left">
@@ -24,9 +29,19 @@ function DashboardHeader({ onMenuClick, isMenuOpen }) {
         </div>
       </div>
 
-      <div className="top-header-status">
+      <div
+        className={`top-header-status${isOnline ? "" : " is-offline"}${pendingCropHistoryCount ? " has-pending" : ""}`}
+        role="status"
+        aria-live="polite"
+      >
         <span className="status-dot" />
-        <span>Prediction service</span>
+        <span>
+          {!isOnline
+            ? "Offline mode"
+            : pendingCropHistoryCount
+              ? `${pendingCropHistoryCount} crop record${pendingCropHistoryCount === 1 ? "" : "s"} to sync`
+              : "Online"}
+        </span>
       </div>
     </header>
   );
