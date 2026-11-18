@@ -23,9 +23,14 @@ router = APIRouter(
 def get_district_yield_history(
     district: str = Query(min_length=1, max_length=45),
     crop_name: str = Query(min_length=1, max_length=100),
+    season: Optional[str] = Query(default=None, max_length=45),
 ):
     try:
-        observations = get_historical_yield(district, crop_name)
+        observations = get_historical_yield(
+            district,
+            crop_name,
+            season=season,
+        )
     except OSError as error:
         raise HTTPException(
             status_code=500,
@@ -35,11 +40,14 @@ def get_district_yield_history(
         raise HTTPException(status_code=400, detail=str(error)) from error
 
     if not observations:
+        season_detail = (
+            f" during {season.strip()}" if season and season.strip() else ""
+        )
         raise HTTPException(
             status_code=404,
             detail=(
                 f"No historical yield data found for {crop_name.strip()} "
-                f"in {district.strip()}."
+                f"in {district.strip()}{season_detail}."
             ),
         )
     return observations

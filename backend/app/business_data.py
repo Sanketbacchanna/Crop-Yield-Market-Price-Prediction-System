@@ -67,10 +67,12 @@ def get_historical_yield(
     district: str,
     crop_name: str,
     dataset_path: Path = YIELD_DATASET_PATH,
+    season: str | None = None,
 ) -> list[dict]:
     district_key = district.strip().casefold()
     normalized_district = YIELD_DISTRICT_ALIASES.get(district_key, district_key)
     normalized_crop = crop_name.strip().casefold()
+    normalized_season = (season or "").strip().casefold()
     if not normalized_district or not normalized_crop:
         raise ValueError("District and crop are required.")
 
@@ -81,6 +83,7 @@ def get_historical_yield(
             "observations": 0,
             "district": district.strip(),
             "crop_name": crop_name.strip(),
+            "season": season.strip() if season else "All seasons",
         }
     )
     with dataset_path.open(encoding="utf-8-sig", newline="") as dataset:
@@ -88,6 +91,9 @@ def get_historical_yield(
             if (row.get("district") or "").strip().casefold() != normalized_district:
                 continue
             if (row.get("crop") or "").strip().casefold() != normalized_crop:
+                continue
+            row_season = (row.get("season") or "").strip()
+            if normalized_season and row_season.casefold() != normalized_season:
                 continue
 
             match = re.match(r"\s*(\d{4})", row.get("crop_year") or "")
@@ -110,6 +116,8 @@ def get_historical_yield(
             if totals[year]["observations"] == 0:
                 totals[year]["district"] = (row.get("district") or "").strip()
                 totals[year]["crop_name"] = (row.get("crop") or "").strip()
+                if normalized_season:
+                    totals[year]["season"] = row_season
             totals[year]["area"] += area
             totals[year]["production"] += area * crop_yield
             totals[year]["observations"] += 1
@@ -118,6 +126,7 @@ def get_historical_yield(
         {
             "district": values["district"],
             "crop_name": values["crop_name"],
+            "season": values["season"],
             "crop_year": year,
             "yield": round(values["production"] / values["area"], 4),
             "area": round(values["area"], 2),

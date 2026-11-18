@@ -337,12 +337,17 @@ pointer together when promoting a trained model.
   by the signed-in farmer, the ranking combines normalized yield and price
   scores; otherwise ranking uses yield alone and labels missing price data.
 - **Historical price trends:** Monthly modal-price charts from
-  `prepared_crop_price_data.csv`.
+  `prepared_crop_price_data.csv`, filterable by crop.
 - **District yield history:** Area-weighted crop yields from the bundled
-  Karnataka yield dataset; available years and observations are shown with the
-  report.
-- **Exports:** Download Excel-compatible CSV reports and use the browser's print
-  dialog to save reports or the calendar as PDF.
+  Karnataka yield dataset; filter by district, crop, and season. Available
+  years and observations are shown with the report.
+- **Reports:** Download Excel-compatible CSV reports, use the browser's print
+  dialog to save reports or the calendar as PDF, and save up to ten report
+  snapshots locally per account. Share uses the browser's native share sheet
+  or copies a short report summary.
+- **Interface preferences:** Dashboard cards show loading states, insights
+  adapt to mobile screens, and the light/dark theme preference is saved in the
+  browser.
 - **Government resources:** Scheme/service suggestions link directly to official
   Government of India and Karnataka portals. They are informational, do not
   determine eligibility, and do not submit applications.

@@ -23,6 +23,7 @@ from app.models.weather_data import WeatherData
 from app.models.user import User
 from app.models.yield_prediction import YieldPrediction
 from app.main import app
+from app.routes.crops import _get_dataset_crop_names
 
 engine = create_engine(
     "sqlite:///:memory:",
@@ -539,3 +540,13 @@ def test_crop_recommendations_use_only_the_current_users_forecasts(monkeypatch):
         == "yield_and_forecast_price"
     )
     assert personalized_response.json()["recommendations"][0]["forecast_price"] == 4200
+
+
+def test_crop_catalog_includes_all_karnataka_yield_dataset_crops():
+    expected_crops = set(_get_dataset_crop_names())
+    response = client.get("/crops/")
+
+    assert response.status_code == 200, response.text
+    actual_crops = {crop["crop_name"] for crop in response.json()}
+    assert actual_crops == expected_crops
+    assert len(expected_crops) == 43

@@ -88,6 +88,60 @@ def test_historical_yield_aggregates_area_weighted_district_values(tmp_path):
         {
             "district": "MYSORE",
             "crop_name": "Rice",
+            "season": "All seasons",
+            "crop_year": "2001",
+            "yield": 3.5,
+            "area": 4.0,
+            "observations": 2,
+        }
+    ]
+
+
+def test_historical_yield_can_filter_by_season_and_keeps_area_weighting(tmp_path):
+    dataset = tmp_path / "yield.csv"
+    _write_csv(
+        dataset,
+        ["district", "crop", "crop_year", "season", "area", "yield"],
+        [
+            {
+                "district": "MYSORE",
+                "crop": "Rice",
+                "crop_year": "2001-02",
+                "season": "Kharif",
+                "area": "1",
+                "yield": "2",
+            },
+            {
+                "district": "Mysore",
+                "crop": "Rice",
+                "crop_year": "2001-02",
+                "season": "Kharif",
+                "area": "3",
+                "yield": "4",
+            },
+            {
+                "district": "Mysore",
+                "crop": "Rice",
+                "crop_year": "2001-02",
+                "season": "Rabi",
+                "area": "2",
+                "yield": "10",
+            },
+        ],
+    )
+
+    observations = get_historical_yield(
+        "Mysuru",
+        "Rice",
+        dataset,
+        season="kharif",
+    )
+
+    assert observations == [
+        {
+            "district": "MYSORE",
+            "crop_name": "Rice",
+            "season": "Kharif",
             "crop_year": "2001",
             "yield": 3.5,
             "area": 4.0,
@@ -115,3 +169,15 @@ def test_historical_analytics_endpoints_serve_bundled_records_without_auth():
     )
     assert yield_history.status_code == 200, yield_history.text
     assert [item["crop_year"] for item in yield_history.json()] == ["2001", "2003"]
+    assert {item["season"] for item in yield_history.json()} == {"All seasons"}
+
+    seasonal_yield = client.get(
+        "/yield-prediction/historical",
+        params={
+            "district": "Bagalkot",
+            "crop_name": "Arecanut",
+            "season": "Whole Year",
+        },
+    )
+    assert seasonal_yield.status_code == 200, seasonal_yield.text
+    assert {item["season"] for item in seasonal_yield.json()} == {"Whole Year"}
