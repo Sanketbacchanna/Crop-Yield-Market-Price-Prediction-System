@@ -24,6 +24,10 @@ function MarketPricePage({
   const [district, setDistrict] = useState("");
   const [commodity, setCommodity] = useState("");
 
+  const [marketInsight, setMarketInsight] = useState(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [insightError, setInsightError] = useState("");
+
   // Filters actually used for the market-price API
   const [appliedFilters, setAppliedFilters] = useState({
     state: "Karnataka",
@@ -66,7 +70,6 @@ function MarketPricePage({
         }
 
         const data = await response.json();
-
         setStates(data.data || []);
       } catch (error) {
         console.error("State loading error:", error);
@@ -99,7 +102,6 @@ function MarketPricePage({
         }
 
         const data = await response.json();
-
         setDistricts(data.data || []);
       } catch (error) {
         console.error("District loading error:", error);
@@ -136,7 +138,6 @@ function MarketPricePage({
         }
 
         const data = await response.json();
-
         setCommodities(data.data || []);
       } catch (error) {
         console.error("Commodity loading error:", error);
@@ -183,13 +184,10 @@ function MarketPricePage({
         }
 
         const data = await response.json();
-
         setLivePrices(data.data || []);
       } catch (error) {
         console.error("Live market price error:", error);
-
         setLiveError("Unable to load live market prices.");
-
         setLivePrices([]);
       } finally {
         setLiveLoading(false);
@@ -200,17 +198,68 @@ function MarketPricePage({
   }, [appliedFilters, page, limit]);
 
   // =========================
+  // FETCH MARKET INSIGHT
+  // =========================
+
+  const fetchMarketInsight = async (filters) => {
+    if (!filters.state || !filters.district || !filters.commodity) {
+      setMarketInsight(null);
+      setInsightError("");
+      return;
+    }
+
+    try {
+      setInsightLoading(true);
+      setInsightError("");
+      setMarketInsight(null);
+
+      const params = new URLSearchParams({
+        state: filters.state,
+        district: filters.district,
+        commodity: filters.commodity,
+      });
+
+      const response = await fetch(
+        `http://127.0.0.1:8000/price-prediction/market-insight?${params.toString()}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail || "Failed to fetch market insight"
+        );
+      }
+
+      setMarketInsight(data);
+    } catch (error) {
+      console.error("Market insight error:", error);
+
+      setMarketInsight(null);
+      setInsightError(
+        error.message || "Unable to load market insight."
+      );
+    } finally {
+      setInsightLoading(false);
+    }
+  };
+
+  // =========================
   // SEARCH
   // =========================
 
   const handleSearch = () => {
-    setPage(1);
-
-    setAppliedFilters({
+    const filters = {
       state,
       district,
       commodity,
-    });
+    };
+
+    setPage(1);
+
+    setAppliedFilters(filters);
+
+    fetchMarketInsight(filters);
   };
 
   // =========================
@@ -286,6 +335,8 @@ function MarketPricePage({
                 setState(e.target.value);
                 setDistrict("");
                 setCommodity("");
+                setMarketInsight(null);
+                setInsightError("");
                 setPage(1);
               }}
             >
@@ -309,6 +360,8 @@ function MarketPricePage({
               onChange={(e) => {
                 setDistrict(e.target.value);
                 setCommodity("");
+                setMarketInsight(null);
+                setInsightError("");
                 setPage(1);
               }}
               disabled={!state}
@@ -332,6 +385,8 @@ function MarketPricePage({
               value={commodity}
               onChange={(e) => {
                 setCommodity(e.target.value);
+                setMarketInsight(null);
+                setInsightError("");
                 setPage(1);
               }}
               disabled={!district}
@@ -352,13 +407,14 @@ function MarketPricePage({
             type="button"
             className="primary-button"
             onClick={handleSearch}
+            disabled={!state || !district || !commodity}
           >
             Search
           </button>
         </div>
 
         {/* =========================
-            LOADING
+            LIVE MARKET LOADING
         ========================= */}
 
         {liveLoading && (
@@ -368,7 +424,7 @@ function MarketPricePage({
         )}
 
         {/* =========================
-            ERROR
+            LIVE MARKET ERROR
         ========================= */}
 
         {!liveLoading && liveError && (
@@ -378,7 +434,7 @@ function MarketPricePage({
         )}
 
         {/* =========================
-            NO DATA
+            NO MARKET DATA
         ========================= */}
 
         {!liveLoading &&
@@ -450,6 +506,154 @@ function MarketPricePage({
             </table>
           </div>
         )}
+
+        {/* =========================
+            MARKET INSIGHT LOADING
+        ========================= */}
+
+        {insightLoading && (
+          <div className="market-insight-status">
+            Generating market insight...
+          </div>
+        )}
+
+        {/* =========================
+            MARKET INSIGHT ERROR
+        ========================= */}
+
+        {!insightLoading && insightError && (
+          <div className="market-insight-status error">
+            {insightError}
+          </div>
+        )}
+
+        {/* =========================
+            MARKET INSIGHT CARD
+        ========================= */}
+
+        {!insightLoading &&
+          !insightError &&
+          marketInsight && (
+            <div className="market-insight-card">
+              <div className="market-insight-header">
+                <div>
+                  <p className="section-eyebrow">
+                    AI MARKET INSIGHT
+                  </p>
+
+                  <h3>
+                    {marketInsight.commodity} Price Outlook
+                  </h3>
+
+                  <p>
+                    {marketInsight.location.district},{" "}
+                    {marketInsight.location.state}
+                  </p>
+                </div>
+              </div>
+
+              <div className="market-insight-grid">
+                {/* CURRENT PRICE */}
+
+                <div className="insight-item">
+                  <span>Current Mandi Price</span>
+
+                  <strong>
+                    ₹
+                    {Number(
+                      marketInsight.current_market.modal_price
+                    ).toLocaleString("en-IN")}
+                  </strong>
+                </div>
+
+                {/* PREDICTED PRICE */}
+
+                <div className="insight-item">
+                  <span>Predicted Price</span>
+
+                  <strong>
+                    ₹
+                    {Number(
+                      marketInsight.prediction.predicted_price
+                    ).toLocaleString("en-IN")}
+                  </strong>
+                </div>
+
+                {/* PRICE CHANGE */}
+
+                <div className="insight-item">
+                  <span>Expected Change</span>
+
+                  <strong
+                    className={
+                      marketInsight.prediction.change >= 0
+                        ? "positive-value"
+                        : "negative-value"
+                    }
+                  >
+                    {marketInsight.prediction.change >= 0 ? "+" : "-"}₹
+                    {Number(
+                      Math.abs(marketInsight.prediction.change)
+                    ).toLocaleString("en-IN")}
+                  </strong>
+                </div>
+
+                {/* PERCENTAGE CHANGE */}
+
+                <div className="insight-item">
+                  <span>Expected Change %</span>
+
+                  <strong
+                    className={
+                      marketInsight.prediction.change_percent >= 0
+                        ? "positive-value"
+                        : "negative-value"
+                    }
+                  >
+                    {marketInsight.prediction.change_percent >= 0
+                      ? "+"
+                      : ""}
+                    {marketInsight.prediction.change_percent}%
+                  </strong>
+                </div>
+              </div>
+
+              {/* RECOMMENDATION */}
+
+              <div className="market-recommendation">
+                <span>Recommendation</span>
+
+                <p>
+                  {marketInsight.recommendation}
+                </p>
+              </div>
+
+              {/* CURRENT MARKET DETAILS */}
+
+              <div className="market-insight-details">
+                <div>
+                  <span>Market</span>
+                  <strong>
+                    {marketInsight.current_market.market || "-"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Variety</span>
+                  <strong>
+                    {marketInsight.current_market.variety || "-"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Arrival Date</span>
+                  <strong>
+                    {marketInsight.current_market.arrival_date || "-"}
+                  </strong>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* =========================
             PAGINATION

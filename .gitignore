@@ -15,3 +15,4 @@ ml/mlflow.db-*
 ml/mlartifacts/
 ml/artifacts/
 ml/saved_models/*_latest.json
+/karnataka_historical_mandi_prices.csv
