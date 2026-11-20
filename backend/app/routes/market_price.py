@@ -313,3 +313,278 @@ def refresh_mandi_prices_from_api(
             "message": "Failed to fetch mandi prices from Government API",
             "error": str(error),
         }
+# ---------------------------------------------------------
+# HISTORICAL MANDI PRICES
+# Supports ALL Karnataka districts, markets and commodities
+# ---------------------------------------------------------
+
+@router.get("/history")
+def get_historical_market_prices(
+    state: str | None = Query(default=None),
+    district: str | None = Query(default=None),
+    market: str | None = Query(default=None),
+    commodity: str | None = Query(default=None),
+    from_date: date | None = Query(default=None),
+    to_date: date | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=50, ge=1, le=200),
+    db: Session = Depends(get_db)
+):
+    offset = (page - 1) * limit
+
+    conditions = []
+    params = {
+        "limit": limit,
+        "offset": offset
+    }
+
+    # ---------------------------------------------
+    # Optional filters
+    # ---------------------------------------------
+
+    if state:
+        conditions.append("state = :state")
+        params["state"] = state
+
+    if district:
+        conditions.append("district = :district")
+        params["district"] = district
+
+    if market:
+        conditions.append("market = :market")
+        params["market"] = market
+
+    if commodity:
+        conditions.append("commodity = :commodity")
+        params["commodity"] = commodity
+
+    if from_date:
+        conditions.append("arrival_date >= :from_date")
+        params["from_date"] = from_date
+
+    if to_date:
+        conditions.append("arrival_date <= :to_date")
+        params["to_date"] = to_date
+
+    # ---------------------------------------------
+    # Build WHERE clause
+    # ---------------------------------------------
+
+    where_clause = ""
+
+    if conditions:
+        where_clause = "WHERE " + " AND ".join(conditions)
+
+    # ---------------------------------------------
+    # Get historical records
+    # ---------------------------------------------
+
+    query = text(f"""
+        SELECT
+            id,
+            state,
+            district,
+            market,
+            commodity,
+            variety,
+            grade,
+            arrival_date,
+            min_price,
+            max_price,
+            modal_price,
+            commodity_code,
+            source
+        FROM historical_market_prices
+        {where_clause}
+        ORDER BY arrival_date DESC, id DESC
+        LIMIT :limit OFFSET :offset
+    """)
+
+    result = db.execute(query, params)
+
+    records = [
+        dict(row)
+        for row in result.mappings().all()
+    ]
+
+    # ---------------------------------------------
+    # Get total matching records
+    # ---------------------------------------------
+
+    count_query = text(f"""
+        SELECT COUNT(*)
+        FROM historical_market_prices
+        {where_clause}
+    """)
+
+    total_result = db.execute(
+        count_query,
+        {
+            key: value
+            for key, value in params.items()
+            if key not in ("limit", "offset")
+        }
+    )
+
+    total = total_result.scalar() or 0
+
+    # ---------------------------------------------
+    # Response
+    # ---------------------------------------------
+
+    return {
+        "success": True,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "count": len(records),
+        "filters": {
+            "state": state,
+            "district": district,
+            "market": market,
+            "commodity": commodity,
+            "from_date": from_date,
+            "to_date": to_date
+        },
+        "data": records
+    }
+# ---------------------------------------------------------
+# HISTORICAL MARKET PRICE FILTERS
+# ---------------------------------------------------------
+
+@router.get("/history/filters")
+def get_historical_market_filters(
+    state: str = Query(default="Karnataka", min_length=1),
+    district: str | None = Query(default=None),
+    commodity: str | None = Query(default=None),
+    db: Session = Depends(get_db)
+):
+    # ---------------------------------------------
+    # Districts
+    # ---------------------------------------------
+
+    district_query = text("""
+        SELECT DISTINCT district
+        FROM historical_market_prices
+        WHERE state = :state
+          AND district IS NOT NULL
+          AND TRIM(district) <> ''
+        ORDER BY district
+    """)
+
+    district_result = db.execute(
+        district_query,
+        {"state": state}
+    )
+
+    districts = [
+        row[0]
+        for row in district_result.fetchall()
+    ]
+
+    # ---------------------------------------------
+    # Commodities
+    # ---------------------------------------------
+
+    commodity_conditions = [
+        "state = :state",
+        "commodity IS NOT NULL",
+        "TRIM(commodity) <> ''"
+    ]
+
+    commodity_params = {
+        "state": state
+    }
+
+    if district:
+        commodity_conditions.append(
+            "district = :district"
+        )
+        commodity_params["district"] = district
+
+    commodity_where = " AND ".join(
+        commodity_conditions
+    )
+
+    commodity_query = text(f"""
+        SELECT DISTINCT commodity
+        FROM historical_market_prices
+        WHERE {commodity_where}
+        ORDER BY commodity
+    """)
+
+    commodity_result = db.execute(
+        commodity_query,
+        commodity_params
+    )
+
+    commodities = [
+        row[0]
+        for row in commodity_result.fetchall()
+    ]
+
+    # ---------------------------------------------
+    # Markets
+    # ---------------------------------------------
+
+    market_conditions = [
+        "state = :state",
+        "market IS NOT NULL",
+        "TRIM(market) <> ''"
+    ]
+
+    market_params = {
+        "state": state
+    }
+
+    if district:
+        market_conditions.append(
+            "district = :district"
+        )
+        market_params["district"] = district
+
+    if commodity:
+        market_conditions.append(
+            "commodity = :commodity"
+        )
+        market_params["commodity"] = commodity
+
+    market_where = " AND ".join(
+        market_conditions
+    )
+
+    market_query = text(f"""
+        SELECT DISTINCT market
+        FROM historical_market_prices
+        WHERE {market_where}
+        ORDER BY market
+    """)
+
+    market_result = db.execute(
+        market_query,
+        market_params
+    )
+
+    markets = [
+        row[0]
+        for row in market_result.fetchall()
+    ]
+
+    # ---------------------------------------------
+    # Response
+    # ---------------------------------------------
+
+    return {
+        "success": True,
+        "state": state,
+        "selected_district": district,
+        "selected_commodity": commodity,
+        "districts": districts,
+        "commodities": commodities,
+        "markets": markets,
+        "counts": {
+            "districts": len(districts),
+            "commodities": len(commodities),
+            "markets": len(markets)
+        }
+    }

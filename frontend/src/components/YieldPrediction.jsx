@@ -231,33 +231,6 @@ function YieldPrediction({
       <div className="yield-form-panel">
         <div className="yield-form-content">
           <form onSubmit={(event) => onSubmit(event, cropType, district)}>
-            <div className="yield-record-field form-field">
-              <label htmlFor="yield-agricultural-record">
-                🌿 &nbsp; Farm record
-              </label>
-              <select
-                id="yield-agricultural-record"
-                value={selectedAgriculturalId}
-                onChange={(event) => onAgriculturalChange(event.target.value)}
-                disabled={loading || agriculturalRecords.length === 0}
-              >
-                {agriculturalRecords.length === 0 ? (
-                  <option value="">No records available</option>
-                ) : (
-                  agriculturalRecords.map((record) => (
-                    <option
-                      key={record.agricultural_id}
-                      value={record.agricultural_id}
-                    >
-                      {record.district || "Unknown"} ·{" "}
-                      {record.season || "Unknown Season"} ·{" "}
-                      {record.crop_year || "Unknown Year"}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-
             <div className="yield-details-form">
               <div className="form-field yield-input-field">
                 <label htmlFor="yield-crop-type">Crop type</label>

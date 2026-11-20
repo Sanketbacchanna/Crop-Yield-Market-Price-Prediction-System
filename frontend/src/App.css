@@ -3211,23 +3211,10 @@ button {
   height: auto;
 }
 
-.yield-record-field {
-  margin-bottom: 12px;
-}
-
-.yield-record-field label,
 .yield-detail-field span {
   color: #263b2b;
   font-size: 13px;
   font-weight: 700;
-}
-
-.yield-record-field select {
-  min-height: 43px;
-  padding: 9px 12px;
-  border-color: #e1e9e1;
-  border-radius: 13px;
-  color: #5e6b63;
 }
 
 .yield-details-form {

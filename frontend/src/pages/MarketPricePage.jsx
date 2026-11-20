@@ -1,62 +1,71 @@
 import { useEffect, useState } from "react";
 
-import {
-  PricePredictionForm,
-  PricePredictionResult,
-} from "../components/PricePrediction";
-
-function MarketPricePage({
-  cropId,
-  crops,
-  onCropChange,
-  prices,
-  onPriceChange,
-  onSubmit,
-  loading,
-  error,
-  result,
-}) {
-  // =========================
-  // FILTER VALUES
-  // =========================
+function MarketPricePage() {
+  // =========================================================
+  // BASIC FILTERS
+  // =========================================================
 
   const [state, setState] = useState("Karnataka");
   const [district, setDistrict] = useState("");
   const [commodity, setCommodity] = useState("");
+  const [market, setMarket] = useState("");
 
-  const [marketInsight, setMarketInsight] = useState(null);
-  const [insightLoading, setInsightLoading] = useState(false);
-  const [insightError, setInsightError] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
-  // Filters actually used for the market-price API
+  // Filters actually applied after clicking Search
   const [appliedFilters, setAppliedFilters] = useState({
     state: "Karnataka",
     district: "",
     commodity: "",
+    market: "",
+    fromDate: "",
+    toDate: "",
   });
 
-  // =========================
+  // =========================================================
   // DROPDOWN DATA
-  // =========================
+  // =========================================================
 
   const [states, setStates] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [commodities, setCommodities] = useState([]);
+  const [markets, setMarkets] = useState([]);
 
-  // =========================
+  // =========================================================
   // LIVE MARKET DATA
-  // =========================
+  // =========================================================
 
   const [livePrices, setLivePrices] = useState([]);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState("");
 
-  const [page, setPage] = useState(1);
-  const [limit] = useState(20);
+  const [livePage, setLivePage] = useState(1);
+  const [liveLimit] = useState(20);
 
-  // =========================
+  // =========================================================
+  // HISTORICAL MARKET DATA
+  // =========================================================
+
+  const [historicalPrices, setHistoricalPrices] = useState([]);
+  const [historicalLoading, setHistoricalLoading] = useState(false);
+  const [historicalError, setHistoricalError] = useState("");
+
+  const [historicalPage, setHistoricalPage] = useState(1);
+  const [historicalLimit] = useState(20);
+  const [historicalTotal, setHistoricalTotal] = useState(0);
+
+  // =========================================================
+  // AI MARKET INSIGHT
+  // =========================================================
+
+  const [marketInsight, setMarketInsight] = useState(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [insightError, setInsightError] = useState("");
+
+  // =========================================================
   // LOAD STATES
-  // =========================
+  // =========================================================
 
   useEffect(() => {
     const fetchStates = async () => {
@@ -79,78 +88,60 @@ function MarketPricePage({
     fetchStates();
   }, []);
 
-  // =========================
-  // LOAD DISTRICTS
-  // =========================
+  // =========================================================
+  // LOAD HISTORICAL FILTERS
+  // =========================================================
 
   useEffect(() => {
-    const fetchDistricts = async () => {
+    const fetchHistoricalFilters = async () => {
       if (!state) {
         setDistricts([]);
+        setCommodities([]);
+        setMarkets([]);
         return;
       }
 
       try {
+        const params = new URLSearchParams();
+
+        params.append("state", state);
+
+        if (district) {
+          params.append("district", district);
+        }
+
+        if (commodity) {
+          params.append("commodity", commodity);
+        }
+
         const response = await fetch(
-          `http://127.0.0.1:8000/market-price/districts?state=${encodeURIComponent(
-            state
-          )}`
+          `http://127.0.0.1:8000/market-price/history/filters?${params.toString()}`
         );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch districts");
+          throw new Error("Failed to fetch historical filters");
         }
 
         const data = await response.json();
-        setDistricts(data.data || []);
+
+        setDistricts(data.districts || []);
+        setCommodities(data.commodities || []);
+        setMarkets(data.markets || []);
       } catch (error) {
-        console.error("District loading error:", error);
+        console.error("Historical filter loading error:", error);
+
         setDistricts([]);
+        setCommodities([]);
+        setMarkets([]);
       }
     };
 
-    fetchDistricts();
-  }, [state]);
+    fetchHistoricalFilters();
+  }, [state, district, commodity]);
 
-  // =========================
-  // LOAD COMMODITIES
-  // =========================
-
-  useEffect(() => {
-    const fetchCommodities = async () => {
-      if (!state || !district) {
-        setCommodities([]);
-        return;
-      }
-
-      try {
-        const params = new URLSearchParams({
-          state,
-          district,
-        });
-
-        const response = await fetch(
-          `http://127.0.0.1:8000/market-price/commodities?${params.toString()}`
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch commodities");
-        }
-
-        const data = await response.json();
-        setCommodities(data.data || []);
-      } catch (error) {
-        console.error("Commodity loading error:", error);
-        setCommodities([]);
-      }
-    };
-
-    fetchCommodities();
-  }, [state, district]);
-
-  // =========================
+  // =========================================================
   // FETCH LIVE MARKET PRICES
-  // =========================
+  // =========================================================
 
   useEffect(() => {
     const fetchLivePrices = async () => {
@@ -172,8 +163,8 @@ function MarketPricePage({
           params.append("commodity", appliedFilters.commodity);
         }
 
-        params.append("page", page);
-        params.append("limit", limit);
+        params.append("page", livePage);
+        params.append("limit", liveLimit);
 
         const response = await fetch(
           `http://127.0.0.1:8000/market-price/live?${params.toString()}`
@@ -184,9 +175,11 @@ function MarketPricePage({
         }
 
         const data = await response.json();
+
         setLivePrices(data.data || []);
       } catch (error) {
         console.error("Live market price error:", error);
+
         setLiveError("Unable to load live market prices.");
         setLivePrices([]);
       } finally {
@@ -195,11 +188,79 @@ function MarketPricePage({
     };
 
     fetchLivePrices();
-  }, [appliedFilters, page, limit]);
+  }, [appliedFilters, livePage, liveLimit]);
 
-  // =========================
+  // =========================================================
+  // FETCH HISTORICAL MARKET PRICES
+  // =========================================================
+
+  useEffect(() => {
+    const fetchHistoricalPrices = async () => {
+      try {
+        setHistoricalLoading(true);
+        setHistoricalError("");
+
+        const params = new URLSearchParams();
+
+        if (appliedFilters.state) {
+          params.append("state", appliedFilters.state);
+        }
+
+        if (appliedFilters.district) {
+          params.append("district", appliedFilters.district);
+        }
+
+        if (appliedFilters.commodity) {
+          params.append("commodity", appliedFilters.commodity);
+        }
+
+        if (appliedFilters.market) {
+          params.append("market", appliedFilters.market);
+        }
+
+        if (appliedFilters.fromDate) {
+          params.append("from_date", appliedFilters.fromDate);
+        }
+
+        if (appliedFilters.toDate) {
+          params.append("to_date", appliedFilters.toDate);
+        }
+
+        params.append("page", historicalPage);
+        params.append("limit", historicalLimit);
+
+        const response = await fetch(
+          `http://127.0.0.1:8000/market-price/history?${params.toString()}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch historical market prices");
+        }
+
+        const data = await response.json();
+
+        setHistoricalPrices(data.data || []);
+        setHistoricalTotal(data.total || 0);
+      } catch (error) {
+        console.error("Historical market price error:", error);
+
+        setHistoricalError(
+          "Unable to load historical market prices."
+        );
+
+        setHistoricalPrices([]);
+        setHistoricalTotal(0);
+      } finally {
+        setHistoricalLoading(false);
+      }
+    };
+
+    fetchHistoricalPrices();
+  }, [appliedFilters, historicalPage, historicalLimit]);
+
+  // =========================================================
   // FETCH MARKET INSIGHT
-  // =========================
+  // =========================================================
 
   const fetchMarketInsight = async (filters) => {
     if (!filters.state || !filters.district || !filters.commodity) {
@@ -244,178 +305,263 @@ function MarketPricePage({
     }
   };
 
-  // =========================
+  // =========================================================
   // SEARCH
-  // =========================
+  // =========================================================
 
   const handleSearch = () => {
     const filters = {
       state,
       district,
       commodity,
+      market,
+      fromDate,
+      toDate,
     };
 
-    setPage(1);
+    setLivePage(1);
+    setHistoricalPage(1);
 
     setAppliedFilters(filters);
 
     fetchMarketInsight(filters);
   };
 
-  // =========================
+  // =========================================================
+  // STATE CHANGE
+  // =========================================================
+
+  const handleStateChange = (value) => {
+    setState(value);
+
+    setDistrict("");
+    setCommodity("");
+    setMarket("");
+
+    setMarketInsight(null);
+    setInsightError("");
+
+    setLivePage(1);
+    setHistoricalPage(1);
+  };
+
+  // =========================================================
+  // DISTRICT CHANGE
+  // =========================================================
+
+  const handleDistrictChange = (value) => {
+    setDistrict(value);
+
+    setCommodity("");
+    setMarket("");
+
+    setMarketInsight(null);
+    setInsightError("");
+
+    setLivePage(1);
+    setHistoricalPage(1);
+  };
+
+  // =========================================================
+  // COMMODITY CHANGE
+  // =========================================================
+
+  const handleCommodityChange = (value) => {
+    setCommodity(value);
+
+    setMarket("");
+
+    setMarketInsight(null);
+    setInsightError("");
+
+    setLivePage(1);
+    setHistoricalPage(1);
+  };
+
+  // =========================================================
   // RENDER
-  // =========================
+  // =========================================================
 
   return (
     <section
       className="dashboard-section page-section"
       id="market-price"
     >
-      {/* =========================
-          PRICE PREDICTION
-      ========================= */}
+      {/* =====================================================
+          PAGE HEADER
+      ===================================================== */}
 
       <div className="section-heading">
         <div>
-          <p className="section-eyebrow">PREDICTIONS</p>
+          <p className="section-eyebrow">MARKET DATA</p>
 
           <h2>Market Price</h2>
 
           <p>
-            Forecast the expected market price using recent historical prices.
+            View live mandi prices, historical market prices and
+            AI-powered market insights.
           </p>
         </div>
       </div>
 
-      <div className="content-grid">
-        <PricePredictionForm
-          cropId={cropId}
-          crops={crops}
-          onCropChange={onCropChange}
-          prices={prices}
-          onPriceChange={onPriceChange}
-          onSubmit={onSubmit}
-          loading={loading}
-          error={error}
-        />
+      {/* =====================================================
+          MARKET FILTERS
+      ===================================================== */}
 
-        <PricePredictionResult result={result} />
+      <div className="market-filters">
+        {/* STATE */}
+
+        <div className="filter-group">
+          <label>State</label>
+
+          <select
+            value={state}
+            onChange={(e) =>
+              handleStateChange(e.target.value)
+            }
+          >
+            <option value="">Select State</option>
+
+            {states.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* DISTRICT */}
+
+        <div className="filter-group">
+          <label>District</label>
+
+          <select
+            value={district}
+            onChange={(e) =>
+              handleDistrictChange(e.target.value)
+            }
+            disabled={!state}
+          >
+            <option value="">
+              All Districts
+            </option>
+
+            {districts.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* COMMODITY */}
+
+        <div className="filter-group">
+          <label>Commodity</label>
+
+          <select
+            value={commodity}
+            onChange={(e) =>
+              handleCommodityChange(e.target.value)
+            }
+            disabled={!state}
+          >
+            <option value="">
+              All Commodities
+            </option>
+
+            {commodities.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* MARKET */}
+
+        <div className="filter-group">
+          <label>Market</label>
+
+          <select
+            value={market}
+            onChange={(e) => {
+              setMarket(e.target.value);
+              setHistoricalPage(1);
+            }}
+            disabled={!state}
+          >
+            <option value="">
+              All Markets
+            </option>
+
+            {markets.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* FROM DATE */}
+
+        <div className="filter-group">
+          <label>From Date</label>
+
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) =>
+              setFromDate(e.target.value)
+            }
+          />
+        </div>
+
+        {/* TO DATE */}
+
+        <div className="filter-group">
+          <label>To Date</label>
+
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) =>
+              setToDate(e.target.value)
+            }
+          />
+        </div>
+
+        {/* SEARCH */}
+
+        <button
+          type="button"
+          className="primary-button"
+          onClick={handleSearch}
+          disabled={!state}
+        >
+          Search
+        </button>
       </div>
 
-      {/* =========================
+      {/* =====================================================
           LIVE MANDI PRICES
-      ========================= */}
+      ===================================================== */}
 
       <div className="live-market-section">
         <div className="section-heading">
           <div>
-            <p className="section-eyebrow">LIVE MARKET</p>
+            <p className="section-eyebrow">
+              LIVE MARKET
+            </p>
 
             <h2>Live Mandi Prices</h2>
 
             <p>
-              View the latest available mandi prices from AGMARKNET.
+              View the latest available mandi prices from
+              AGMARKNET.
             </p>
           </div>
         </div>
-
-        {/* =========================
-            FILTERS
-        ========================= */}
-
-        <div className="market-filters">
-          {/* STATE */}
-
-          <div className="filter-group">
-            <label>State</label>
-
-            <select
-              value={state}
-              onChange={(e) => {
-                setState(e.target.value);
-                setDistrict("");
-                setCommodity("");
-                setMarketInsight(null);
-                setInsightError("");
-                setPage(1);
-              }}
-            >
-              <option value="">Select State</option>
-
-              {states.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* DISTRICT */}
-
-          <div className="filter-group">
-            <label>District</label>
-
-            <select
-              value={district}
-              onChange={(e) => {
-                setDistrict(e.target.value);
-                setCommodity("");
-                setMarketInsight(null);
-                setInsightError("");
-                setPage(1);
-              }}
-              disabled={!state}
-            >
-              <option value="">Select District</option>
-
-              {districts.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* COMMODITY */}
-
-          <div className="filter-group">
-            <label>Commodity</label>
-
-            <select
-              value={commodity}
-              onChange={(e) => {
-                setCommodity(e.target.value);
-                setMarketInsight(null);
-                setInsightError("");
-                setPage(1);
-              }}
-              disabled={!district}
-            >
-              <option value="">Select Commodity</option>
-
-              {commodities.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* SEARCH */}
-
-          <button
-            type="button"
-            className="primary-button"
-            onClick={handleSearch}
-            disabled={!state || !district || !commodity}
-          >
-            Search
-          </button>
-        </div>
-
-        {/* =========================
-            LIVE MARKET LOADING
-        ========================= */}
 
         {liveLoading && (
           <div className="market-status">
@@ -423,268 +569,443 @@ function MarketPricePage({
           </div>
         )}
 
-        {/* =========================
-            LIVE MARKET ERROR
-        ========================= */}
-
         {!liveLoading && liveError && (
           <div className="market-status error">
             {liveError}
           </div>
         )}
 
-        {/* =========================
-            NO MARKET DATA
-        ========================= */}
-
         {!liveLoading &&
           !liveError &&
           livePrices.length === 0 && (
             <div className="market-status">
-              No market price data found for the selected filters.
+              No live market price data found.
             </div>
           )}
 
-        {/* =========================
-            MARKET TABLE
-        ========================= */}
-
-        {!liveLoading && livePrices.length > 0 && (
-          <div className="market-table-wrapper">
-            <table className="market-table">
-              <thead>
-                <tr>
-                  <th>Market</th>
-                  <th>Commodity</th>
-                  <th>Variety</th>
-                  <th>Min Price</th>
-                  <th>Max Price</th>
-                  <th>Modal Price</th>
-                  <th>Arrival Date</th>
-                  <th>Source</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {livePrices.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.market || "-"}</td>
-
-                    <td>{item.commodity || "-"}</td>
-
-                    <td>{item.variety || "-"}</td>
-
-                    <td>
-                      ₹
-                      {Number(item.min_price).toLocaleString(
-                        "en-IN"
-                      )}
-                    </td>
-
-                    <td>
-                      ₹
-                      {Number(item.max_price).toLocaleString(
-                        "en-IN"
-                      )}
-                    </td>
-
-                    <td>
-                      <strong>
-                        ₹
-                        {Number(item.modal_price).toLocaleString(
-                          "en-IN"
-                        )}
-                      </strong>
-                    </td>
-
-                    <td>{item.arrival_date || "-"}</td>
-
-                    <td>{item.source || "-"}</td>
+        {!liveLoading &&
+          !liveError &&
+          livePrices.length > 0 && (
+            <div className="market-table-wrapper">
+              <table className="market-table">
+                <thead>
+                  <tr>
+                    <th>District</th>
+                    <th>Market</th>
+                    <th>Commodity</th>
+                    <th>Variety</th>
+                    <th>Min Price</th>
+                    <th>Max Price</th>
+                    <th>Modal Price</th>
+                    <th>Arrival Date</th>
+                    <th>Source</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody>
+                  {livePrices.map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.district || "-"}</td>
+
+                      <td>{item.market || "-"}</td>
+
+                      <td>{item.commodity || "-"}</td>
+
+                      <td>{item.variety || "-"}</td>
+
+                      <td>
+                        ₹
+                        {Number(
+                          item.min_price
+                        ).toLocaleString("en-IN")}
+                      </td>
+
+                      <td>
+                        ₹
+                        {Number(
+                          item.max_price
+                        ).toLocaleString("en-IN")}
+                      </td>
+
+                      <td>
+                        <strong>
+                          ₹
+                          {Number(
+                            item.modal_price
+                          ).toLocaleString("en-IN")}
+                        </strong>
+                      </td>
+
+                      <td>
+                        {item.arrival_date || "-"}
+                      </td>
+
+                      <td>
+                        {item.source || "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+        {/* LIVE PAGINATION */}
+
+        {!liveLoading &&
+          livePrices.length > 0 && (
+            <div className="market-pagination">
+              <button
+                type="button"
+                disabled={livePage === 1}
+                onClick={() =>
+                  setLivePage(
+                    (current) => current - 1
+                  )
+                }
+              >
+                Previous
+              </button>
+
+              <span>
+                Page {livePage}
+              </span>
+
+              <button
+                type="button"
+                disabled={
+                  livePrices.length < liveLimit
+                }
+                onClick={() =>
+                  setLivePage(
+                    (current) => current + 1
+                  )
+                }
+              >
+                Next
+              </button>
+            </div>
+          )}
+      </div>
+
+      {/* =====================================================
+          HISTORICAL MARKET PRICES
+      ===================================================== */}
+
+      <div className="historical-market-section">
+        <div className="section-heading">
+          <div>
+            <p className="section-eyebrow">
+              HISTORICAL MARKET
+            </p>
+
+            <h2>Historical Market Prices</h2>
+
+            <p>
+              Explore historical mandi prices across
+              Karnataka districts, markets and commodities.
+            </p>
+          </div>
+        </div>
+
+        {historicalLoading && (
+          <div className="market-status">
+            Loading historical market prices...
           </div>
         )}
 
-        {/* =========================
-            MARKET INSIGHT LOADING
-        ========================= */}
+        {!historicalLoading &&
+          historicalError && (
+            <div className="market-status error">
+              {historicalError}
+            </div>
+          )}
 
-        {insightLoading && (
-          <div className="market-insight-status">
-            Generating market insight...
-          </div>
-        )}
+        {!historicalLoading &&
+          !historicalError &&
+          historicalPrices.length === 0 && (
+            <div className="market-status">
+              No historical market price data found
+              for the selected filters.
+            </div>
+          )}
 
-        {/* =========================
-            MARKET INSIGHT ERROR
-        ========================= */}
+        {!historicalLoading &&
+          !historicalError &&
+          historicalPrices.length > 0 && (
+            <>
+              <div className="market-table-wrapper">
+                <table className="market-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>District</th>
+                      <th>Market</th>
+                      <th>Commodity</th>
+                      <th>Variety</th>
+                      <th>Min Price</th>
+                      <th>Max Price</th>
+                      <th>Modal Price</th>
+                    </tr>
+                  </thead>
 
-        {!insightLoading && insightError && (
-          <div className="market-insight-status error">
-            {insightError}
-          </div>
-        )}
+                  <tbody>
+                    {historicalPrices.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          {item.arrival_date || "-"}
+                        </td>
 
-        {/* =========================
-            MARKET INSIGHT CARD
-        ========================= */}
+                        <td>
+                          {item.district || "-"}
+                        </td>
 
-        {!insightLoading &&
-          !insightError &&
-          marketInsight && (
-            <div className="market-insight-card">
-              <div className="market-insight-header">
-                <div>
-                  <p className="section-eyebrow">
-                    AI MARKET INSIGHT
-                  </p>
+                        <td>
+                          {item.market || "-"}
+                        </td>
 
-                  <h3>
-                    {marketInsight.commodity} Price Outlook
-                  </h3>
+                        <td>
+                          {item.commodity || "-"}
+                        </td>
 
-                  <p>
-                    {marketInsight.location.district},{" "}
-                    {marketInsight.location.state}
-                  </p>
-                </div>
+                        <td>
+                          {item.variety || "-"}
+                        </td>
+
+                        <td>
+                          ₹
+                          {Number(
+                            item.min_price
+                          ).toLocaleString("en-IN")}
+                        </td>
+
+                        <td>
+                          ₹
+                          {Number(
+                            item.max_price
+                          ).toLocaleString("en-IN")}
+                        </td>
+
+                        <td>
+                          <strong>
+                            ₹
+                            {Number(
+                              item.modal_price
+                            ).toLocaleString("en-IN")}
+                          </strong>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
-              <div className="market-insight-grid">
-                {/* CURRENT PRICE */}
+              {/* HISTORICAL PAGINATION */}
 
-                <div className="insight-item">
-                  <span>Current Mandi Price</span>
+              <div className="market-pagination">
+                <button
+                  type="button"
+                  disabled={
+                    historicalPage === 1
+                  }
+                  onClick={() =>
+                    setHistoricalPage(
+                      (current) => current - 1
+                    )
+                  }
+                >
+                  Previous
+                </button>
 
-                  <strong>
-                    ₹
-                    {Number(
-                      marketInsight.current_market.modal_price
-                    ).toLocaleString("en-IN")}
-                  </strong>
-                </div>
+                <span>
+                  Page {historicalPage}
+                </span>
 
-                {/* PREDICTED PRICE */}
+                <span>
+                  {historicalTotal.toLocaleString(
+                    "en-IN"
+                  )}{" "}
+                  records
+                </span>
 
-                <div className="insight-item">
-                  <span>Predicted Price</span>
-
-                  <strong>
-                    ₹
-                    {Number(
-                      marketInsight.prediction.predicted_price
-                    ).toLocaleString("en-IN")}
-                  </strong>
-                </div>
-
-                {/* PRICE CHANGE */}
-
-                <div className="insight-item">
-                  <span>Expected Change</span>
-
-                  <strong
-                    className={
-                      marketInsight.prediction.change >= 0
-                        ? "positive-value"
-                        : "negative-value"
-                    }
-                  >
-                    {marketInsight.prediction.change >= 0 ? "+" : "-"}₹
-                    {Number(
-                      Math.abs(marketInsight.prediction.change)
-                    ).toLocaleString("en-IN")}
-                  </strong>
-                </div>
-
-                {/* PERCENTAGE CHANGE */}
-
-                <div className="insight-item">
-                  <span>Expected Change %</span>
-
-                  <strong
-                    className={
-                      marketInsight.prediction.change_percent >= 0
-                        ? "positive-value"
-                        : "negative-value"
-                    }
-                  >
-                    {marketInsight.prediction.change_percent >= 0
-                      ? "+"
-                      : ""}
-                    {marketInsight.prediction.change_percent}%
-                  </strong>
-                </div>
+                <button
+                  type="button"
+                  disabled={
+                    historicalPage *
+                      historicalLimit >=
+                    historicalTotal
+                  }
+                  onClick={() =>
+                    setHistoricalPage(
+                      (current) => current + 1
+                    )
+                  }
+                >
+                  Next
+                </button>
               </div>
+            </>
+          )}
+      </div>
 
-              {/* RECOMMENDATION */}
+      {/* =====================================================
+          AI MARKET INSIGHT
+      ===================================================== */}
 
-              <div className="market-recommendation">
-                <span>Recommendation</span>
+      {insightLoading && (
+        <div className="market-insight-status">
+          Generating market insight...
+        </div>
+      )}
+
+      {!insightLoading && insightError && (
+        <div className="market-insight-status error">
+          {insightError}
+        </div>
+      )}
+
+      {!insightLoading &&
+        !insightError &&
+        marketInsight && (
+          <div className="market-insight-card">
+            <div className="market-insight-header">
+              <div>
+                <p className="section-eyebrow">
+                  AI MARKET INSIGHT
+                </p>
+
+                <h3>
+                  {marketInsight.commodity}{" "}
+                  Price Outlook
+                </h3>
 
                 <p>
-                  {marketInsight.recommendation}
+                  {marketInsight.location.district},{" "}
+                  {marketInsight.location.state}
                 </p>
               </div>
+            </div>
 
-              {/* CURRENT MARKET DETAILS */}
+            <div className="market-insight-grid">
+              <div className="insight-item">
+                <span>
+                  Current Mandi Price
+                </span>
 
-              <div className="market-insight-details">
-                <div>
-                  <span>Market</span>
-                  <strong>
-                    {marketInsight.current_market.market || "-"}
-                  </strong>
-                </div>
+                <strong>
+                  ₹
+                  {Number(
+                    marketInsight.current_market
+                      .modal_price
+                  ).toLocaleString("en-IN")}
+                </strong>
+              </div>
 
-                <div>
-                  <span>Variety</span>
-                  <strong>
-                    {marketInsight.current_market.variety || "-"}
-                  </strong>
-                </div>
+              <div className="insight-item">
+                <span>
+                  Predicted Price
+                </span>
 
-                <div>
-                  <span>Arrival Date</span>
-                  <strong>
-                    {marketInsight.current_market.arrival_date || "-"}
-                  </strong>
-                </div>
+                <strong>
+                  ₹
+                  {Number(
+                    marketInsight.prediction
+                      .predicted_price
+                  ).toLocaleString("en-IN")}
+                </strong>
+              </div>
+
+              <div className="insight-item">
+                <span>
+                  Expected Change
+                </span>
+
+                <strong
+                  className={
+                    marketInsight.prediction
+                      .change >= 0
+                      ? "positive-value"
+                      : "negative-value"
+                  }
+                >
+                  {marketInsight.prediction.change >=
+                  0
+                    ? "+"
+                    : "-"}
+                  ₹
+                  {Number(
+                    Math.abs(
+                      marketInsight.prediction
+                        .change
+                    )
+                  ).toLocaleString("en-IN")}
+                </strong>
+              </div>
+
+              <div className="insight-item">
+                <span>
+                  Expected Change %
+                </span>
+
+                <strong
+                  className={
+                    marketInsight.prediction
+                      .change_percent >= 0
+                      ? "positive-value"
+                      : "negative-value"
+                  }
+                >
+                  {marketInsight.prediction
+                    .change_percent >= 0
+                    ? "+"
+                    : ""}
+                  {
+                    marketInsight.prediction
+                      .change_percent
+                  }
+                  %
+                </strong>
               </div>
             </div>
-          )}
 
-        {/* =========================
-            PAGINATION
-        ========================= */}
+            <div className="market-recommendation">
+              <span>Recommendation</span>
 
-        {!liveLoading && livePrices.length > 0 && (
-          <div className="market-pagination">
-            <button
-              type="button"
-              disabled={page === 1}
-              onClick={() =>
-                setPage((current) => current - 1)
-              }
-            >
-              Previous
-            </button>
+              <p>
+                {marketInsight.recommendation}
+              </p>
+            </div>
 
-            <span>Page {page}</span>
+            <div className="market-insight-details">
+              <div>
+                <span>Market</span>
 
-            <button
-              type="button"
-              disabled={livePrices.length < limit}
-              onClick={() =>
-                setPage((current) => current + 1)
-              }
-            >
-              Next
-            </button>
+                <strong>
+                  {marketInsight.current_market
+                    .market || "-"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Variety</span>
+
+                <strong>
+                  {marketInsight.current_market
+                    .variety || "-"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Arrival Date</span>
+
+                <strong>
+                  {marketInsight.current_market
+                    .arrival_date || "-"}
+                </strong>
+              </div>
+            </div>
           </div>
         )}
-      </div>
     </section>
   );
 }
