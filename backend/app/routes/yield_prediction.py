@@ -71,6 +71,9 @@ def create_yield_prediction(
     district_override: Optional[str] = Query(
         default=None, alias="district", max_length=45
     ),
+    area_override: Optional[float] = Query(
+        default=None, alias="area", gt=0
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -112,7 +115,7 @@ def create_yield_prediction(
             detail="Season is missing in agricultural data"
         )
 
-    if agricultural.cultivated_area is None:
+    if area_override is None and agricultural.cultivated_area is None:
         raise HTTPException(
             status_code=400,
             detail="Cultivated area is missing in agricultural data"
@@ -173,7 +176,12 @@ def create_yield_prediction(
     crop_name = crop.crop_name
     crop_year = agricultural.crop_year
     season = agricultural.season
-    area = float(agricultural.cultivated_area)
+    area_acres = float(area_override) if area_override is not None else None
+    area = (
+        area_acres * 0.404686
+        if area_acres is not None
+        else float(agricultural.cultivated_area)
+    )
 
     # ---------------------------------------------------------
     # 5. Generate prediction using yield_model.pkl
@@ -225,6 +233,7 @@ def create_yield_prediction(
         "crop_year": crop_year,
 
         "cultivated_area": area,
+        "area_acres": area_acres,
 
         "predicted_yield": float(predicted_yield),
 

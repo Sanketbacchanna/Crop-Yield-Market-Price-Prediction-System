@@ -1759,10 +1759,68 @@ button {
 
 .market-filters {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   align-items: end;
   margin-bottom: 24px;
+}
+
+.market-price-summary {
+  margin-bottom: 28px;
+  padding: 20px;
+  border: 1px solid #dfe7df;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ffffff, #f7fbf6);
+}
+
+.market-summary-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.market-summary-heading h3 {
+  margin: 0;
+  color: #263326;
+  font-size: 20px;
+}
+
+.market-summary-heading span {
+  color: #687568;
+  font-size: 12px;
+}
+
+.market-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.market-summary-card {
+  display: grid;
+  gap: 8px;
+  min-height: 92px;
+  padding: 14px;
+  border: 1px solid #e2ebe1;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.market-summary-card span,
+.market-summary-card small {
+  color: #718071;
+  font-size: 11px;
+}
+
+.market-summary-card strong {
+  color: #28752d;
+  font-size: 21px;
+}
+
+.market-summary-card strong.negative {
+  color: #b42318;
 }
 
 .filter-group {
@@ -1963,6 +2021,10 @@ button {
     grid-template-columns: 1fr 1fr;
   }
 
+  .market-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .market-filters .primary-button {
     width: 100%;
   }
@@ -1975,6 +2037,15 @@ button {
 
   .market-filters {
     grid-template-columns: 1fr;
+  }
+
+  .market-summary-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .market-summary-grid {
+    grid-template-columns: 1fr 1fr;
   }
 
   .market-table {
@@ -3307,6 +3378,12 @@ button {
   text-decoration: underline;
 }
 
+.yield-location-note,
+.yield-location-retry,
+.yield-location-error {
+  display: none;
+}
+
 .yield-prediction-button {
   min-height: 46px;
   margin-top: 12px;
@@ -3324,6 +3401,37 @@ button {
     radial-gradient(circle at 54% 36%, rgba(213, 250, 195, 0.68), transparent 30%),
     linear-gradient(145deg, #f2faee, #eaf8e5);
   border-color: #dcefd8;
+}
+
+.yield-market-preview {
+  grid-column: 1 / -1;
+  padding: 18px;
+  border: 1px solid #dce8dd;
+  border-radius: 17px;
+  background: #fbfdfb;
+}
+
+.yield-market-preview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.yield-market-preview-heading h3 {
+  margin: 0;
+  color: #173c22;
+  font-size: 17px;
+}
+
+.yield-market-preview-heading > span {
+  color: #52715b;
+  font-size: 13px;
+}
+
+.yield-market-preview .market-table-wrapper {
+  margin-top: 0;
 }
 
 .yield-result-header {
@@ -3372,6 +3480,15 @@ button {
 .yield-unit {
   color: #267c36;
   font-size: 15px;
+}
+
+.yield-result-explanation {
+  margin: 5px auto 14px;
+  max-width: 330px;
+  color: #4d6d55;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
 }
 
 .yield-details {

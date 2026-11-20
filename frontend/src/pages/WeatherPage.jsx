@@ -230,6 +230,22 @@ function WeatherPage({
     outlook?.nowcast?.Message ||
     outlook?.nowcast?.Consolidated_Warning ||
     "";
+  const providerErrors = [
+    outlook?.forecastError,
+    outlook?.warningsError,
+    outlook?.nowcastError,
+  ].filter(Boolean);
+  const imdKeyMissing =
+    currentWeather?.fallbackReason === "IMD_API_KEY is not configured." ||
+    providerErrors.includes("IMD_API_KEY is not configured.");
+  const districtProviderErrors = [
+    ...new Set(
+      [outlook?.warningsError, outlook?.nowcastError].filter(
+        (error) =>
+          error && error !== "IMD_API_KEY is not configured."
+      )
+    ),
+  ];
   const seasonalDaily = seasonal?.daily;
   const rainfallNext30Days = sumRainfall(
     seasonalDaily?.precipitation_sum?.slice(0, 30)
@@ -387,7 +403,8 @@ function WeatherPage({
           {(outlook?.warnings ||
             outlook?.nowcast ||
             outlook?.warningsError ||
-            outlook?.nowcastError) && (
+            outlook?.nowcastError ||
+            imdKeyMissing) && (
             <section className="weather-panel">
               <div className="weather-panel-heading">
                 <div>
@@ -399,6 +416,14 @@ function WeatherPage({
                   </p>
                 </div>
               </div>
+              {imdKeyMissing && (
+                <p className="weather-message">
+                  Add your issued IMD API key as{" "}
+                  <code>IMD_API_KEY</code> in <code>backend/.env</code>, then
+                  restart FastAPI. Open-Meteo is providing fallback weather
+                  until IMD access is configured.
+                </p>
+              )}
               {districtWarnings.length > 0 && (
                 <ul className="weather-warning-list">
                   {districtWarnings.map((warning) => (
@@ -419,11 +444,9 @@ function WeatherPage({
                   District nowcast is available from IMD.
                 </p>
               )}
-              {(outlook?.warningsError || outlook?.nowcastError) && (
+              {districtProviderErrors.length > 0 && (
                 <p className="weather-panel-error">
-                  {[outlook.warningsError, outlook.nowcastError]
-                    .filter(Boolean)
-                    .join(" ")}
+                  {districtProviderErrors.join(" ")}
                 </p>
               )}
             </section>
@@ -433,9 +456,13 @@ function WeatherPage({
             <div className="weather-panel-heading">
               <div>
                 <h3>Next 7 days</h3>
-                <p>IMD daily outlook and temperature range</p>
+                <p>
+                  {outlook?.source === "IMD"
+                    ? "IMD daily outlook and temperature range"
+                    : "Open-Meteo fallback forecast and temperature range"}
+                </p>
               </div>
-              {outlook?.forecastError && (
+              {outlook?.forecastError && !imdKeyMissing && (
                 <span className="weather-panel-error">
                   {outlook.forecastError}
                 </span>

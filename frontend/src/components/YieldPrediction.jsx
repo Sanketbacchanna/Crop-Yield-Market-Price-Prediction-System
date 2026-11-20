@@ -47,18 +47,25 @@ const KARNATAKA_YIELD_CROPS = [
   "Wheat",
 ].map((crop_name, index) => ({ crop_id: index + 1, crop_name }));
 
+const YIELD_UNIT_BY_CROP = {
+  Coconut: "nuts",
+  "Cotton(lint)": "bales",
+};
+
 function YieldPrediction({
   agriculturalRecords,
   districts,
   cropOptions = [],
   selectedAgriculturalId,
-  onAgriculturalChange,
   onSubmit,
   loading,
   error,
   result,
   area,
   onAreaChange,
+  marketPricePreview = [],
+  marketPricePreviewLoading = false,
+  marketPricePreviewError = "",
 }) {
   const [cropType, setCropType] = useState("");
   const [districtSelection, setDistrictSelection] = useState(null);
@@ -69,11 +76,11 @@ function YieldPrediction({
   const currentArea = area ?? localArea;
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(true);
-  const [locationError, setLocationError] = useState("");
-  const [locationName, setLocationName] = useState("");
+  const [locationError] = useState("");
+  const [locationName] = useState("");
   const [locationDetails, setLocationDetails] = useState(null);
   const [locationLookupLoading, setLocationLookupLoading] = useState(false);
-  const [locationLookupError, setLocationLookupError] = useState("");
+  const [locationLookupError] = useState("");
   const locationRequested = useRef(false);
   const selectedRecord = agriculturalRecords.find(
     (record) => String(record.agricultural_id) === String(selectedAgriculturalId)
@@ -105,21 +112,27 @@ function YieldPrediction({
     !currentLocation
       ? matchingDistrict || ""
       : "");
+  const predictedYield = Number(result?.predicted_yield);
+  const areaAcres = Number(currentArea || result?.cultivated_area);
+  const yieldUnit = YIELD_UNIT_BY_CROP[result?.crop_name] || "tonnes";
+  const perAcreYield = Number.isFinite(predictedYield)
+    ? predictedYield * 0.404686
+    : null;
+  const totalYield =
+    perAcreYield !== null && Number.isFinite(areaAcres) && areaAcres > 0
+      ? perAcreYield * areaAcres
+      : null;
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      setLocationError("Location is not supported by this browser.");
       setLocationLoading(false);
       return;
     }
 
     setLocationLoading(true);
-    setLocationError("");
     setLocationLookupLoading(false);
-    setLocationLookupError("");
     setCurrentLocation(null);
     setLocationDetails(null);
-    setLocationName("");
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         setCurrentLocation({
@@ -128,15 +141,7 @@ function YieldPrediction({
         });
         setLocationLoading(false);
       },
-      (error) => {
-        const messages = {
-          1: "Allow location access in your browser, then retry.",
-          2: "Your location is currently unavailable.",
-          3: "Location request timed out. Please retry.",
-        };
-        setLocationError(
-          messages[error.code] || "Unable to get your current location."
-        );
+      () => {
         setLocationLoading(false);
       },
       { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 }
@@ -160,8 +165,6 @@ function YieldPrediction({
     const controller = new AbortController();
     const lookupArea = async () => {
       setLocationLookupLoading(true);
-      setLocationLookupError("");
-      setLocationName("");
 
       try {
         const params = new URLSearchParams({
@@ -182,18 +185,6 @@ function YieldPrediction({
 
         const data = await response.json();
         const address = data.address || {};
-        const areaName =
-          address.neighbourhood ||
-          address.suburb ||
-          address.village ||
-          address.hamlet ||
-          address.town ||
-          address.city_district ||
-          address.city ||
-          address.municipality ||
-          address.county ||
-          address.state_district;
-
         setLocationDetails({
           state: address.state || "",
           countryCode: address.country_code || "",
@@ -204,16 +195,9 @@ function YieldPrediction({
           ].filter((candidate) => typeof candidate === "string"),
         });
 
-        if (!areaName) {
-          throw new Error("No nearby area name was returned.");
-        }
-
-        setLocationName(areaName);
       } catch (error) {
         if (error.name !== "AbortError") {
-          setLocationLookupError(
-            "Area name unavailable. Your coordinates are shown below."
-          );
+          setLocationDetails(null);
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -230,7 +214,7 @@ function YieldPrediction({
     <div className="yield-prediction-card">
       <div className="yield-form-panel">
         <div className="yield-form-content">
-          <form onSubmit={(event) => onSubmit(event, cropType, district)}>
+          <form onSubmit={(event) => onSubmit(event, cropType, district, currentArea)}>
             <div className="yield-details-form">
               <div className="form-field yield-input-field">
                 <label htmlFor="yield-crop-type">Crop type</label>
@@ -247,9 +231,6 @@ function YieldPrediction({
                     </option>
                   ))}
                 </select>
-                <small className="yield-crop-note">
-                  {availableCrops.length} crops with historical Karnataka yield records.
-                </small>
               </div>
               <div className="form-field yield-input-field">
                 <label htmlFor="yield-district">
@@ -382,12 +363,22 @@ function YieldPrediction({
 
             <div className="yield-result-plant" aria-hidden="true">🌱</div>
             <div className="yield-result-value">
-              {result.predicted_yield != null
-                ? Number(result.predicted_yield).toFixed(2)
-                : "—"}
-
-              <span className="yield-unit"> units</span>
+              {totalYield !== null
+                ? totalYield.toLocaleString("en-IN", { maximumFractionDigits: 2 })
+                : perAcreYield !== null
+                  ? perAcreYield.toLocaleString("en-IN", { maximumFractionDigits: 2 })
+                  : "—"}
+              <span className="yield-unit"> {yieldUnit}</span>
             </div>
+            <p className="yield-result-explanation">
+              {perAcreYield !== null
+                ? `${perAcreYield.toLocaleString("en-IN", { maximumFractionDigits: 2 })} ${yieldUnit} per acre${
+                    totalYield !== null
+                      ? ` · ${totalYield.toLocaleString("en-IN", { maximumFractionDigits: 2 })} ${yieldUnit} estimated for ${areaAcres} acres`
+                      : ""
+                  }`
+                : "Enter the cultivated area to estimate total production."}
+            </p>
 
             <div className="yield-details">
               <div>
@@ -422,6 +413,52 @@ function YieldPrediction({
           </div>
         )}
       </div>
+
+      {result && (
+        <section className="yield-market-preview" aria-live="polite">
+          <div className="yield-market-preview-heading">
+            <div>
+              <p className="section-eyebrow">MARKET PRICE</p>
+              <h3>{result.crop_name} prices for {result.district}</h3>
+            </div>
+            {marketPricePreviewLoading && <span>Loading market prices...</span>}
+          </div>
+          {marketPricePreviewError && (
+            <p className="market-status error">{marketPricePreviewError}</p>
+          )}
+          {!marketPricePreviewLoading &&
+            !marketPricePreviewError &&
+            marketPricePreview.length === 0 && (
+              <p className="market-status">No matching market prices found.</p>
+            )}
+          {!marketPricePreviewLoading &&
+            !marketPricePreviewError &&
+            marketPricePreview.length > 0 && (
+              <div className="market-table-wrapper">
+                <table className="market-table">
+                  <thead>
+                    <tr>
+                      <th>Market</th>
+                      <th>Variety</th>
+                      <th>Date</th>
+                      <th>Modal price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {marketPricePreview.map((price) => (
+                      <tr key={price.id}>
+                        <td>{price.market}</td>
+                        <td>{price.variety || "—"}</td>
+                        <td>{price.arrival_date}</td>
+                        <td><strong>₹{Number(price.modal_price).toLocaleString("en-IN")}</strong></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+        </section>
+      )}
     </div>
   );
 }

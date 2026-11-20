@@ -70,6 +70,30 @@ const INITIAL_PRICES = {
   averagePrice: "2750",
 };
 
+const MARKET_COMMODITY_NAMES = {
+  Bajra: "Bajra (Pearl Millet/Cumbu)",
+  Arecanut: "Arecanut (Betelnut/Supari)",
+  "Black pepper": "Black pepper",
+  "Cotton(lint)": "Cotton",
+  "Dry chillies": "Dry Chillies",
+  Groundnut: "Ground Nut Seed",
+  "Horse-gram": "Kulthi (Horse Gram)",
+  Rice: "Rice",
+  Sunflower: "Sunflower/Sunflower Seed",
+};
+
+const MARKET_DISTRICT_NAMES = {
+  "Dakshina Kannada": "Mangalore (Dakshin Kannad)",
+  "Bengaluru Urban": "Bangalore",
+  Ballari: "Bellary",
+  Belagavi: "Belgaum",
+  Kalaburagi: "Kalburgi",
+  Mysuru: "Mysore",
+  Shivamogga: "Shimoga",
+  Tumakuru: "Tumkur",
+  Vijayapura: "Bijapur",
+};
+
 function getStoredUser() {
   const storedUser = localStorage.getItem("crop_prediction_user");
   if (!storedUser) {
@@ -151,6 +175,10 @@ function App() {
   });
 
   const [yieldResult, setYieldResult] = useState(null);
+  const [marketPricePrefill, setMarketPricePrefill] = useState(null);
+  const [marketPricePreview, setMarketPricePreview] = useState([]);
+  const [marketPricePreviewLoading, setMarketPricePreviewLoading] = useState(false);
+  const [marketPricePreviewError, setMarketPricePreviewError] = useState("");
   const [yieldLoading, setYieldLoading] = useState(false);
   const [yieldError, setYieldError] = useState("");
   const [yieldHistory, setYieldHistory] = useState([]);
@@ -767,7 +795,7 @@ function App() {
     }
   }
 
-  async function handleYieldSubmit(event, cropName, district) {
+  async function handleYieldSubmit(event, cropName, district, area) {
     event.preventDefault();
     if (!selectedAgriculturalId) {
       setYieldError("Please select an agricultural record.");
@@ -777,11 +805,57 @@ function App() {
     setYieldLoading(true);
     setYieldError("");
     setYieldResult(null);
+    setMarketPricePreview([]);
+    setMarketPricePreviewError("");
 
     try {
-      setYieldResult(
-        await createYieldPrediction(selectedAgriculturalId, cropName, district)
+      const prediction = await createYieldPrediction(
+        selectedAgriculturalId,
+        cropName,
+        district,
+        area
       );
+      setYieldResult(prediction);
+      setMarketPricePrefill({
+        state: "Karnataka",
+        district:
+          MARKET_DISTRICT_NAMES[prediction.district || district] ||
+          prediction.district ||
+          district,
+        commodity:
+          MARKET_COMMODITY_NAMES[prediction.crop_name || cropName] ||
+          prediction.crop_name ||
+          cropName,
+      });
+
+      const marketParams = new URLSearchParams({
+        state: "Karnataka",
+        district:
+          MARKET_DISTRICT_NAMES[prediction.district || district] ||
+          prediction.district ||
+          district,
+        commodity:
+          MARKET_COMMODITY_NAMES[prediction.crop_name || cropName] ||
+          prediction.crop_name ||
+          cropName,
+        page: "1",
+        limit: "5",
+      });
+      setMarketPricePreviewLoading(true);
+      try {
+        const marketResponse = await fetch(
+          `http://127.0.0.1:8000/market-price/history?${marketParams}`
+        );
+        if (!marketResponse.ok) throw new Error("Market prices are unavailable.");
+        const marketData = await marketResponse.json();
+        setMarketPricePreview(marketData.data || []);
+      } catch (marketError) {
+        setMarketPricePreviewError(
+          marketError.message || "Unable to load market prices."
+        );
+      } finally {
+        setMarketPricePreviewLoading(false);
+      }
       await loadYieldHistory();
     } catch (error) {
       setYieldError(getErrorMessage(error, "Unable to predict crop yield."));
@@ -839,8 +913,12 @@ function App() {
       liveLocation,
       liveWeather,
       liveLocationLoading,
+      marketPricePreview,
+      marketPricePreviewLoading,
+      marketPricePreviewError,
     },
     "market-price": {
+      initialFilters: marketPricePrefill,
       cropId,
       crops: cropOptions,
       onCropChange: setCropId,
@@ -863,6 +941,9 @@ function App() {
       loading: yieldLoading,
       error: yieldError || agriculturalError || yieldDistrictError,
       result: yieldResult,
+      marketPricePreview,
+      marketPricePreviewLoading,
+      marketPricePreviewError,
     },
     "crop-recommendation": {
       agriculturalRecords,

@@ -150,6 +150,14 @@ of trusted frontend origins (the defaults are `http://localhost:5173` and
 `http://127.0.0.1:5173`).
 Never commit `backend/.env` or put real credentials in `.env.example`.
 
+Weather requests go through FastAPI. Set `IMD_API_KEY` in `backend/.env` to
+the bearer key issued by the [IMD API Management Platform](https://api.imd.gov.in/);
+the key is sent to IMD only by the backend. IMD supplies current observations,
+seven-day city forecasts, district warnings, and district nowcasts. When IMD
+is not configured or a request fails, current conditions and the seven-day
+forecast fall back to Open-Meteo. Current observations are saved to
+`weather_data_table`; seasonal outlooks continue to use Open-Meteo.
+
 The repository previously tracked `backend/.env`; it is now ignored. Remove
 it from Git tracking while keeping your local copy with:
 

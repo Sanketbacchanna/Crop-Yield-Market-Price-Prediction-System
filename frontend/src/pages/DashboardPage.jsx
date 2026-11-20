@@ -23,6 +23,9 @@ function DashboardPage({
   liveLocation,
   liveWeather,
   liveLocationLoading,
+  marketPricePreview,
+  marketPricePreviewLoading,
+  marketPricePreviewError,
 }) {
   const firstRecord = agriculturalRecords[0];
   const firstRecommendation = recommendationResult?.recommendations?.[0];
@@ -59,6 +62,9 @@ function DashboardPage({
           loading={yieldLoading}
           error={yieldError}
           result={yieldResult}
+          marketPricePreview={marketPricePreview}
+          marketPricePreviewLoading={marketPricePreviewLoading}
+          marketPricePreviewError={marketPricePreviewError}
         />
       </section>
 

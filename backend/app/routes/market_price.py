@@ -225,6 +225,7 @@ def get_live_market_prices(
     district: str | None = Query(default=None),
     market: str | None = Query(default=None),
     commodity: str | None = Query(default=None),
+    variety: str | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=50, ge=1, le=200),
     db: Session = Depends(get_db)
@@ -252,6 +253,10 @@ def get_live_market_prices(
     if commodity:
         conditions.append("commodity = :commodity")
         params["commodity"] = commodity
+
+    if variety:
+        conditions.append("variety = :variety")
+        params["variety"] = variety
 
     where_clause = ""
 
@@ -324,6 +329,7 @@ def get_historical_market_prices(
     district: str | None = Query(default=None),
     market: str | None = Query(default=None),
     commodity: str | None = Query(default=None),
+    variety: str | None = Query(default=None),
     from_date: date | None = Query(default=None),
     to_date: date | None = Query(default=None),
     page: int = Query(default=1, ge=1),
@@ -357,6 +363,10 @@ def get_historical_market_prices(
     if commodity:
         conditions.append("commodity = :commodity")
         params["commodity"] = commodity
+
+    if variety:
+        conditions.append("variety = :variety")
+        params["variety"] = variety
 
     if from_date:
         conditions.append("arrival_date >= :from_date")
@@ -443,6 +453,7 @@ def get_historical_market_prices(
             "district": district,
             "market": market,
             "commodity": commodity,
+            "variety": variety,
             "from_date": from_date,
             "to_date": to_date
         },
@@ -456,19 +467,30 @@ def get_historical_market_prices(
 def get_historical_market_filters(
     state: str = Query(default="Karnataka", min_length=1),
     district: str | None = Query(default=None),
+    market: str | None = Query(default=None),
     commodity: str | None = Query(default=None),
     db: Session = Depends(get_db)
 ):
+    # The live snapshot contains the same filter dimensions and is small enough
+    # to serve dropdown options without scanning millions of historical rows.
+    # Historical results remain available through /history below.
+    filter_table = "live_market_prices"
+    selected_filter_table = (
+        "historical_market_prices"
+        if district or market or commodity
+        else filter_table
+    )
+
     # ---------------------------------------------
     # Districts
     # ---------------------------------------------
 
-    district_query = text("""
+    district_query = text(f"""
         SELECT DISTINCT district
-        FROM historical_market_prices
+        FROM {filter_table}
         WHERE state = :state
           AND district IS NOT NULL
-          AND TRIM(district) <> ''
+          AND district <> ''
         ORDER BY district
     """)
 
@@ -489,7 +511,7 @@ def get_historical_market_filters(
     commodity_conditions = [
         "state = :state",
         "commodity IS NOT NULL",
-        "TRIM(commodity) <> ''"
+        "commodity <> ''"
     ]
 
     commodity_params = {
@@ -502,13 +524,17 @@ def get_historical_market_filters(
         )
         commodity_params["district"] = district
 
+    if market:
+        commodity_conditions.append("market = :market")
+        commodity_params["market"] = market
+
     commodity_where = " AND ".join(
         commodity_conditions
     )
 
     commodity_query = text(f"""
         SELECT DISTINCT commodity
-        FROM historical_market_prices
+        FROM {selected_filter_table}
         WHERE {commodity_where}
         ORDER BY commodity
     """)
@@ -530,7 +556,7 @@ def get_historical_market_filters(
     market_conditions = [
         "state = :state",
         "market IS NOT NULL",
-        "TRIM(market) <> ''"
+        "market <> ''"
     ]
 
     market_params = {
@@ -555,7 +581,7 @@ def get_historical_market_filters(
 
     market_query = text(f"""
         SELECT DISTINCT market
-        FROM historical_market_prices
+        FROM {selected_filter_table}
         WHERE {market_where}
         ORDER BY market
     """)
@@ -570,6 +596,33 @@ def get_historical_market_filters(
         for row in market_result.fetchall()
     ]
 
+    # Varieties are the final level in the filter hierarchy.
+    variety_conditions = [
+        "state = :state",
+        "variety IS NOT NULL",
+        "variety <> ''"
+    ]
+    variety_params = {"state": state}
+
+    if district:
+        variety_conditions.append("district = :district")
+        variety_params["district"] = district
+    if market:
+        variety_conditions.append("market = :market")
+        variety_params["market"] = market
+    if commodity:
+        variety_conditions.append("commodity = :commodity")
+        variety_params["commodity"] = commodity
+
+    variety_query = text(f"""
+        SELECT DISTINCT variety
+        FROM {selected_filter_table}
+        WHERE {' AND '.join(variety_conditions)}
+        ORDER BY variety
+    """)
+    variety_result = db.execute(variety_query, variety_params)
+    varieties = [row[0] for row in variety_result.fetchall()]
+
     # ---------------------------------------------
     # Response
     # ---------------------------------------------
@@ -579,12 +632,84 @@ def get_historical_market_filters(
         "state": state,
         "selected_district": district,
         "selected_commodity": commodity,
+        "selected_market": market,
         "districts": districts,
         "commodities": commodities,
         "markets": markets,
+        "varieties": varieties,
         "counts": {
             "districts": len(districts),
             "commodities": len(commodities),
-            "markets": len(markets)
+            "markets": len(markets),
+            "varieties": len(varieties)
         }
+    }
+
+
+@router.get("/summary")
+def get_market_price_summary(
+    state: str | None = Query(default=None),
+    district: str | None = Query(default=None),
+    market: str | None = Query(default=None),
+    commodity: str | None = Query(default=None),
+    variety: str | None = Query(default=None),
+    db: Session = Depends(get_db)
+):
+    """Return comparable modal-price metrics for the selected market slice."""
+    conditions = ["modal_price IS NOT NULL"]
+    params = {}
+    for name, value in (("state", state), ("district", district),
+                        ("market", market), ("commodity", commodity),
+                        ("variety", variety)):
+        if value:
+            conditions.append(f"{name} = :{name}")
+            params[name] = value
+    where_clause = " AND ".join(conditions)
+
+    latest = db.execute(text(f"""
+        SELECT arrival_date FROM historical_market_prices
+        WHERE {where_clause}
+          AND arrival_date IS NOT NULL
+        ORDER BY arrival_date DESC, id DESC
+        LIMIT 1
+    """), params).scalar()
+    if latest is None:
+        return {"success": True, "latest_date": None, "today": None,
+                "yesterday": None, "average_7_day": None,
+                "average_30_day": None, "change_percent": None}
+
+    def average(extra_clause):
+        return db.execute(text(f"""
+            SELECT AVG(modal_price) FROM historical_market_prices
+            WHERE {where_clause} AND {extra_clause}
+        """), {**params, "latest_date": latest}).scalar()
+
+    today = average("arrival_date = :latest_date")
+    previous_date = db.execute(text(f"""
+        SELECT arrival_date FROM historical_market_prices
+        WHERE {where_clause} AND arrival_date < :latest_date
+        ORDER BY arrival_date DESC, id DESC
+        LIMIT 1
+    """), {**params, "latest_date": latest}).scalar()
+    yesterday = None
+    if previous_date:
+        # Reuse the helper with the previous date without changing the base filters.
+        yesterday = db.execute(text(f"""
+            SELECT AVG(modal_price) FROM historical_market_prices
+            WHERE {where_clause} AND arrival_date = :previous_date
+        """), {**params, "previous_date": previous_date}).scalar()
+
+    average_7_day = average("arrival_date BETWEEN DATE_SUB(:latest_date, INTERVAL 6 DAY) AND :latest_date")
+    average_30_day = average("arrival_date BETWEEN DATE_SUB(:latest_date, INTERVAL 29 DAY) AND :latest_date")
+    change_percent = ((float(today) - float(yesterday)) / float(yesterday) * 100
+                      if today is not None and yesterday not in (None, 0) else None)
+
+    return {
+        "success": True,
+        "latest_date": latest,
+        "today": today,
+        "yesterday": yesterday,
+        "average_7_day": average_7_day,
+        "average_30_day": average_30_day,
+        "change_percent": change_percent,
     }

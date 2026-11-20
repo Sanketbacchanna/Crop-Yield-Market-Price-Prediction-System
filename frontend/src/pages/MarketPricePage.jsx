@@ -1,26 +1,29 @@
 import { useEffect, useState } from "react";
 
-function MarketPricePage() {
+function MarketPricePage({ initialFilters }) {
+  const prefill = initialFilters || {};
   // =========================================================
   // BASIC FILTERS
   // =========================================================
 
-  const [state, setState] = useState("Karnataka");
-  const [district, setDistrict] = useState("");
-  const [commodity, setCommodity] = useState("");
-  const [market, setMarket] = useState("");
+  const [state, setState] = useState(prefill.state || "Karnataka");
+  const [district, setDistrict] = useState(prefill.district || "");
+  const [commodity, setCommodity] = useState(prefill.commodity || "");
+  const [market, setMarket] = useState(prefill.market || "");
+  const [variety, setVariety] = useState(prefill.variety || "");
 
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [fromDate, setFromDate] = useState(prefill.fromDate || "");
+  const [toDate, setToDate] = useState(prefill.toDate || "");
 
   // Filters actually applied after clicking Search
   const [appliedFilters, setAppliedFilters] = useState({
-    state: "Karnataka",
-    district: "",
-    commodity: "",
-    market: "",
-    fromDate: "",
-    toDate: "",
+    state: prefill.state || "Karnataka",
+    district: prefill.district || "",
+    commodity: prefill.commodity || "",
+    market: prefill.market || "",
+    variety: prefill.variety || "",
+    fromDate: prefill.fromDate || "",
+    toDate: prefill.toDate || "",
   });
 
   // =========================================================
@@ -31,6 +34,7 @@ function MarketPricePage() {
   const [districts, setDistricts] = useState([]);
   const [commodities, setCommodities] = useState([]);
   const [markets, setMarkets] = useState([]);
+  const [varieties, setVarieties] = useState([]);
 
   // =========================================================
   // LIVE MARKET DATA
@@ -54,6 +58,8 @@ function MarketPricePage() {
   const [historicalPage, setHistoricalPage] = useState(1);
   const [historicalLimit] = useState(20);
   const [historicalTotal, setHistoricalTotal] = useState(0);
+  const [priceSummary, setPriceSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   // =========================================================
   // AI MARKET INSIGHT
@@ -62,6 +68,14 @@ function MarketPricePage() {
   const [marketInsight, setMarketInsight] = useState(null);
   const [insightLoading, setInsightLoading] = useState(false);
   const [insightError, setInsightError] = useState("");
+
+  const withSelectedOption = (options, selected) =>
+    selected && !options.includes(selected) ? [selected, ...options] : options;
+
+  const districtOptions = withSelectedOption(districts, district);
+  const marketOptions = withSelectedOption(markets, market);
+  const commodityOptions = withSelectedOption(commodities, commodity);
+  const varietyOptions = withSelectedOption(varieties, variety);
 
   // =========================================================
   // LOAD STATES
@@ -114,6 +128,10 @@ function MarketPricePage() {
           params.append("commodity", commodity);
         }
 
+        if (market) {
+          params.append("market", market);
+        }
+
         const response = await fetch(
           `http://127.0.0.1:8000/market-price/history/filters?${params.toString()}`
         );
@@ -127,17 +145,19 @@ function MarketPricePage() {
         setDistricts(data.districts || []);
         setCommodities(data.commodities || []);
         setMarkets(data.markets || []);
+        setVarieties(data.varieties || []);
       } catch (error) {
         console.error("Historical filter loading error:", error);
 
         setDistricts([]);
         setCommodities([]);
         setMarkets([]);
+        setVarieties([]);
       }
     };
 
     fetchHistoricalFilters();
-  }, [state, district, commodity]);
+  }, [state, district, market, commodity]);
 
   // =========================================================
   // FETCH LIVE MARKET PRICES
@@ -159,8 +179,16 @@ function MarketPricePage() {
           params.append("district", appliedFilters.district);
         }
 
+        if (appliedFilters.market) {
+          params.append("market", appliedFilters.market);
+        }
+
         if (appliedFilters.commodity) {
           params.append("commodity", appliedFilters.commodity);
+        }
+
+        if (appliedFilters.variety) {
+          params.append("variety", appliedFilters.variety);
         }
 
         params.append("page", livePage);
@@ -218,6 +246,10 @@ function MarketPricePage() {
           params.append("market", appliedFilters.market);
         }
 
+        if (appliedFilters.variety) {
+          params.append("variety", appliedFilters.variety);
+        }
+
         if (appliedFilters.fromDate) {
           params.append("from_date", appliedFilters.fromDate);
         }
@@ -257,6 +289,30 @@ function MarketPricePage() {
 
     fetchHistoricalPrices();
   }, [appliedFilters, historicalPage, historicalLimit]);
+
+  useEffect(() => {
+    const fetchPriceSummary = async () => {
+      setSummaryLoading(true);
+      try {
+        const params = new URLSearchParams();
+        Object.entries(appliedFilters).forEach(([key, value]) => {
+          const apiKey = key === "fromDate" || key === "toDate" ? null : key;
+          if (apiKey && value) params.append(apiKey, value);
+        });
+        const response = await fetch(
+          `http://127.0.0.1:8000/market-price/summary?${params.toString()}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch price summary");
+        setPriceSummary(await response.json());
+      } catch (error) {
+        console.error("Price summary error:", error);
+        setPriceSummary(null);
+      } finally {
+        setSummaryLoading(false);
+      }
+    };
+    fetchPriceSummary();
+  }, [appliedFilters]);
 
   // =========================================================
   // FETCH MARKET INSIGHT
@@ -315,6 +371,7 @@ function MarketPricePage() {
       district,
       commodity,
       market,
+      variety,
       fromDate,
       toDate,
     };
@@ -337,6 +394,7 @@ function MarketPricePage() {
     setDistrict("");
     setCommodity("");
     setMarket("");
+    setVariety("");
 
     setMarketInsight(null);
     setInsightError("");
@@ -354,6 +412,7 @@ function MarketPricePage() {
 
     setCommodity("");
     setMarket("");
+    setVariety("");
 
     setMarketInsight(null);
     setInsightError("");
@@ -362,21 +421,33 @@ function MarketPricePage() {
     setHistoricalPage(1);
   };
 
-  // =========================================================
-  // COMMODITY CHANGE
-  // =========================================================
+  const handleMarketChange = (value) => {
+    setMarket(value);
+    setVariety("");
+    setMarketInsight(null);
+    setInsightError("");
+    setLivePage(1);
+    setHistoricalPage(1);
+  };
 
   const handleCommodityChange = (value) => {
     setCommodity(value);
-
-    setMarket("");
-
+    setVariety("");
     setMarketInsight(null);
     setInsightError("");
-
     setLivePage(1);
     setHistoricalPage(1);
   };
+
+  const formatPrice = (value) =>
+    value === null || value === undefined
+      ? "—"
+      : `₹${Number(value).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+
+  const formatChange = (value) =>
+    value === null || value === undefined
+      ? "—"
+      : `${Number(value) >= 0 ? "+" : ""}${Number(value).toFixed(1)}%`;
 
   // =========================================================
   // RENDER
@@ -446,31 +517,7 @@ function MarketPricePage() {
               All Districts
             </option>
 
-            {districts.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* COMMODITY */}
-
-        <div className="filter-group">
-          <label>Commodity</label>
-
-          <select
-            value={commodity}
-            onChange={(e) =>
-              handleCommodityChange(e.target.value)
-            }
-            disabled={!state}
-          >
-            <option value="">
-              All Commodities
-            </option>
-
-            {commodities.map((item) => (
+            {districtOptions.map((item) => (
               <option key={item} value={item}>
                 {item}
               </option>
@@ -485,20 +532,50 @@ function MarketPricePage() {
 
           <select
             value={market}
-            onChange={(e) => {
-              setMarket(e.target.value);
-              setHistoricalPage(1);
-            }}
+            onChange={(e) => handleMarketChange(e.target.value)}
             disabled={!state}
           >
             <option value="">
               All Markets
             </option>
 
-            {markets.map((item) => (
+            {marketOptions.map((item) => (
               <option key={item} value={item}>
                 {item}
               </option>
+            ))}
+          </select>
+        </div>
+
+        {/* COMMODITY */}
+
+        <div className="filter-group">
+          <label>Commodity</label>
+
+          <select
+            value={commodity}
+            onChange={(e) => handleCommodityChange(e.target.value)}
+            disabled={!state}
+          >
+            <option value="">All Commodities</option>
+            {commodityOptions.map((item) => (
+              <option key={item} value={item}>{item}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* VARIETY */}
+
+        <div className="filter-group">
+          <label>Variety</label>
+          <select
+            value={variety}
+            onChange={(e) => setVariety(e.target.value)}
+            disabled={!commodity}
+          >
+            <option value="">All Varieties</option>
+            {varietyOptions.map((item) => (
+              <option key={item} value={item}>{item}</option>
             ))}
           </select>
         </div>
@@ -541,6 +618,35 @@ function MarketPricePage() {
         >
           Search
         </button>
+      </div>
+
+      <div className="market-price-summary" aria-live="polite">
+        <div className="market-summary-heading">
+          <div>
+            <p className="section-eyebrow">PRICE SNAPSHOT</p>
+            <h3>Market price trend</h3>
+          </div>
+          {priceSummary?.latest_date && (
+            <span>Latest available: {priceSummary.latest_date}</span>
+          )}
+        </div>
+        <div className="market-summary-grid">
+          {[
+            ["Today's price", priceSummary?.today, "price"],
+            ["Yesterday", priceSummary?.yesterday, "price"],
+            ["7-day average", priceSummary?.average_7_day, "price"],
+            ["30-day average", priceSummary?.average_30_day, "price"],
+            ["Price change", priceSummary?.change_percent, "change"],
+          ].map(([label, value, type]) => (
+            <div className="market-summary-card" key={label}>
+              <span>{label}</span>
+              <strong className={type === "change" && Number(value) < 0 ? "negative" : ""}>
+                {summaryLoading ? "…" : type === "change" ? formatChange(value) : formatPrice(value)}
+              </strong>
+              {type === "change" && <small>vs. previous available day</small>}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* =====================================================

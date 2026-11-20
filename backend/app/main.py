@@ -19,6 +19,7 @@ from app.routes.crops import router as crops_router
 from app.database import engine
 from app.routes.agricultural_data import router as agricultural_data_router
 from app.routes.weather_data import router as weather_data_router
+from app.routes.weather import router as weather_router
 from app.routes.market_price import router as market_price_router
 from app.routes.yield_prediction import router as yield_prediction_router
 from app.routes.price_prediction import router as price_prediction_router
@@ -57,6 +58,7 @@ app.include_router(crop_history_router)
 app.include_router(crops_router)
 app.include_router(agricultural_data_router)
 app.include_router(weather_data_router)
+app.include_router(weather_router)
 app.include_router(market_price_router)
 app.include_router(yield_prediction_router)
 app.include_router(price_prediction_router)

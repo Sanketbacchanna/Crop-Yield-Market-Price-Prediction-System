@@ -10,6 +10,9 @@ function CropYieldPage({
   loading,
   error,
   result,
+  marketPricePreview,
+  marketPricePreviewLoading,
+  marketPricePreviewError,
 }) {
   return (
     <section
@@ -34,6 +37,9 @@ function CropYieldPage({
         loading={loading}
         error={error}
         result={result}
+        marketPricePreview={marketPricePreview}
+        marketPricePreviewLoading={marketPricePreviewLoading}
+        marketPricePreviewError={marketPricePreviewError}
       />
     </section>
   );

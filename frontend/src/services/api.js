@@ -244,12 +244,13 @@ export function createPriceForecast({ cropId, prices }) {
   return request(`/price-prediction/forecast?${params}`, { method: "POST" });
 }
 
-export function createYieldPrediction(agriculturalId, cropName, district) {
+export function createYieldPrediction(agriculturalId, cropName, district, area) {
   const params = new URLSearchParams({
     agricultural_id: agriculturalId,
     crop_name: cropName,
     district,
   });
+  if (area) params.set("area", area);
 
   return request(`/yield-prediction/?${params}`, { method: "POST" });
 }
@@ -331,7 +332,7 @@ async function getWeatherProviderData(baseUrl, params, signal) {
   return data;
 }
 
-export async function getWeatherOutlook(latitude, longitude, district, signal) {
+async function getWeatherForecast(latitude, longitude, district, signal) {
   const weatherParams = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
@@ -339,6 +340,40 @@ export async function getWeatherOutlook(latitude, longitude, district, signal) {
   if (district) {
     weatherParams.set("district", district);
   }
+
+  try {
+    return await request(`/weather/outlook?${weatherParams}`, { signal });
+  } catch (error) {
+    if (signal?.aborted || error.name === "AbortError") {
+      throw error;
+    }
+
+    const fallbackParams = new URLSearchParams({
+      latitude: String(latitude),
+      longitude: String(longitude),
+      daily:
+        "precipitation_sum,precipitation_probability_max,temperature_2m_max,temperature_2m_min",
+      forecast_days: "7",
+      timezone: "Asia/Kolkata",
+    });
+    const fallback = await getWeatherProviderData(
+      "https://api.open-meteo.com/v1/forecast",
+      fallbackParams,
+      signal
+    );
+    return {
+      forecast: { ...fallback, source: "Open-Meteo" },
+      source: "Open-Meteo",
+      forecastError: "",
+      warnings: null,
+      nowcast: null,
+      warningsError: "",
+      nowcastError: "",
+    };
+  }
+}
+
+export async function getWeatherOutlook(latitude, longitude, district, signal) {
   const seasonalParams = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
@@ -350,7 +385,7 @@ export async function getWeatherOutlook(latitude, longitude, district, signal) {
   });
 
   const [forecastResult, seasonalResult] = await Promise.allSettled([
-    request(`/weather/outlook?${weatherParams}`, { signal }),
+    getWeatherForecast(latitude, longitude, district, signal),
     getWeatherProviderData(
       "https://seasonal-api.open-meteo.com/v1/seasonal",
       seasonalParams,
