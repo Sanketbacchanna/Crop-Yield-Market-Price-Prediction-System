@@ -4,6 +4,24 @@ import { getWeatherOutlook } from "../services/api";
 import "./WeatherPage.css";
 
 const HEAVY_RAINFALL_MM = 64.5;
+const IMD_WARNING_CODES = {
+  2: "Heavy rain",
+  3: "Heavy snow",
+  4: "Thunderstorm and lightning",
+  5: "Hailstorm",
+  6: "Dust storm",
+  7: "Dust-raising winds",
+  8: "Strong surface winds",
+  9: "Heat wave",
+  10: "Hot day",
+  11: "Warm night",
+  12: "Cold wave",
+  13: "Cold day",
+  14: "Ground frost",
+  15: "Fog",
+  16: "Very heavy rain",
+  17: "Extremely heavy rain",
+};
 
 function sumRainfall(values = []) {
   return values.reduce((total, value) => {
@@ -56,7 +74,25 @@ function getDailyForecast(forecast) {
     probability: daily.precipitation_probability_max?.[index],
     minTemperature: daily.temperature_2m_min?.[index],
     maxTemperature: daily.temperature_2m_max?.[index],
+    description: daily.weather_description?.[index],
   }));
+}
+
+function getDistrictWarnings(warnings) {
+  if (!warnings) {
+    return [];
+  }
+
+  return Array.from({ length: 5 }, (_, index) => {
+    const day = index + 1;
+    const codes = String(warnings[`Day_${day}`] || "")
+      .split(",")
+      .map((code) => code.trim())
+      .filter((code) => code && code !== "1");
+    return codes.map(
+      (code) => `Day ${day}: ${IMD_WARNING_CODES[code] || `Warning ${code}`}`
+    );
+  }).flat();
 }
 
 function getRainfallSignal(seasonal, dailyForecast) {
@@ -99,9 +135,12 @@ function getRainfallSignal(seasonal, dailyForecast) {
       day.rainfall >= HEAVY_RAINFALL_MM &&
       (!Number.isFinite(day.probability) || day.probability >= 50)
   );
-  const nextSevenDayRainfall = sumRainfall(
-    dailyForecast.slice(0, 7).map((day) => day.rainfall)
-  );
+  const nextSevenDayValues = dailyForecast
+    .slice(0, 7)
+    .map((day) => day.rainfall);
+  const nextSevenDayRainfall = nextSevenDayValues.some(Number.isFinite)
+    ? sumRainfall(nextSevenDayValues)
+    : null;
 
   return {
     anomalyPercent,
@@ -116,7 +155,8 @@ function getRainfallSignal(seasonal, dailyForecast) {
             ? "watch"
             : "low",
     wetLevel:
-      heavyRainDays.length > 0 || nextSevenDayRainfall >= 100
+      heavyRainDays.length > 0 ||
+      (nextSevenDayRainfall != null && nextSevenDayRainfall >= 100)
         ? "elevated"
         : anomalyPercent != null && anomalyPercent >= 25
           ? "watch"
@@ -139,6 +179,7 @@ function WeatherPage({
   });
   const latitude = liveLocation?.latitude;
   const longitude = liveLocation?.longitude;
+  const district = liveLocation?.district;
   const hasCoordinates =
     Number.isFinite(latitude) && Number.isFinite(longitude);
   const locationKey = hasCoordinates ? `${latitude},${longitude}` : null;
@@ -151,7 +192,7 @@ function WeatherPage({
     let active = true;
     const controller = new AbortController();
 
-    getWeatherOutlook(latitude, longitude, controller.signal)
+    getWeatherOutlook(latitude, longitude, district, controller.signal)
       .then((data) => {
         if (active) {
           setOutlookState({ key: locationKey, data, error: "" });
@@ -171,7 +212,7 @@ function WeatherPage({
       active = false;
       controller.abort();
     };
-  }, [latitude, longitude, locationKey]);
+  }, [latitude, longitude, district, locationKey]);
 
   const currentWeather = liveWeather || weatherData[0];
   const locationName =
@@ -183,6 +224,12 @@ function WeatherPage({
   const dailyForecast = getDailyForecast(outlook?.forecast);
   const seasonal = outlook?.seasonal;
   const rainfallSignal = getRainfallSignal(seasonal, dailyForecast);
+  const districtWarnings = getDistrictWarnings(outlook?.warnings);
+  const nowcastMessage =
+    outlook?.nowcast?.message ||
+    outlook?.nowcast?.Message ||
+    outlook?.nowcast?.Consolidated_Warning ||
+    "";
   const seasonalDaily = seasonal?.daily;
   const rainfallNext30Days = sumRainfall(
     seasonalDaily?.precipitation_sum?.slice(0, 30)
@@ -337,11 +384,56 @@ function WeatherPage({
             </div>
           </section>
 
+          {(outlook?.warnings ||
+            outlook?.nowcast ||
+            outlook?.warningsError ||
+            outlook?.nowcastError) && (
+            <section className="weather-panel">
+              <div className="weather-panel-heading">
+                <div>
+                  <h3>IMD district warnings and nowcast</h3>
+                  <p>
+                    {district
+                      ? `Official alerts for ${district}`
+                      : "District-level alerts need a district match for your location."}
+                  </p>
+                </div>
+              </div>
+              {districtWarnings.length > 0 && (
+                <ul className="weather-warning-list">
+                  {districtWarnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              )}
+              {outlook?.warnings && districtWarnings.length === 0 && (
+                <p className="weather-empty-state">
+                  No active district warnings were reported by IMD.
+                </p>
+              )}
+              {nowcastMessage && (
+                <p className="weather-nowcast-message">{nowcastMessage}</p>
+              )}
+              {!nowcastMessage && outlook?.nowcast && (
+                <p className="weather-nowcast-message">
+                  District nowcast is available from IMD.
+                </p>
+              )}
+              {(outlook?.warningsError || outlook?.nowcastError) && (
+                <p className="weather-panel-error">
+                  {[outlook.warningsError, outlook.nowcastError]
+                    .filter(Boolean)
+                    .join(" ")}
+                </p>
+              )}
+            </section>
+          )}
+
           <section className="weather-panel">
             <div className="weather-panel-heading">
               <div>
                 <h3>Next 7 days</h3>
-                <p>Daily rainfall, rain chance, and temperature range</p>
+                <p>IMD daily outlook and temperature range</p>
               </div>
               {outlook?.forecastError && (
                 <span className="weather-panel-error">
@@ -369,18 +461,28 @@ function WeatherPage({
                           day: "numeric",
                         })}
                       </strong>
-                      <div className="weather-rain-bar" aria-hidden="true">
-                        <span style={{ height: `${barHeight}px` }} />
-                      </div>
-                      <span className="weather-day-rain">
-                        {formatMillimeters(day.rainfall)}
-                      </span>
-                      <span>
-                        Rain chance{" "}
-                        {Number.isFinite(day.probability)
-                          ? `${day.probability}%`
-                          : "—"}
-                      </span>
+                      {Number.isFinite(day.rainfall) ? (
+                        <>
+                          <div className="weather-rain-bar" aria-hidden="true">
+                            <span style={{ height: `${barHeight}px` }} />
+                          </div>
+                          <span className="weather-day-rain">
+                            {formatMillimeters(day.rainfall)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="weather-day-description">
+                          Rainfall amount unavailable
+                        </span>
+                      )}
+                      {day.description && (
+                        <span className="weather-day-description">
+                          {day.description}
+                        </span>
+                      )}
+                      {Number.isFinite(day.probability) && (
+                        <span>Rain chance {day.probability}%</span>
+                      )}
                       <span>
                         {Number.isFinite(day.minTemperature)
                           ? `${day.minTemperature.toFixed(0)}°`
@@ -468,13 +570,15 @@ function WeatherPage({
       )}
 
       <p className="weather-source-note">
-        Source:{" "}
+        Current/forecast source:{" "}
+        {outlook?.source || currentWeather?.source || "IMD"}; Open-Meteo is the
+        fallback. Seasonal outlook:{" "}
         <a
-          href="https://open-meteo.com/en/docs"
+          href="https://api.imd.gov.in/public/api_reference.html"
           target="_blank"
           rel="noreferrer"
         >
-          Open-Meteo forecasts
+          India Meteorological Department
         </a>
         {" · "}
         <a
@@ -482,7 +586,7 @@ function WeatherPage({
           target="_blank"
           rel="noreferrer"
         >
-          ECMWF seasonal outlook
+          Open-Meteo seasonal outlook
         </a>
         . Seasonal predictions are broad and uncertain. Risk signals use
         rainfall only and are not official warnings or full drought/flood

@@ -147,6 +147,26 @@
   font-weight: 700;
 }
 
+.weather-day-description {
+  white-space: normal;
+}
+
+.weather-warning-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.weather-nowcast-message {
+  margin: 12px 0 0;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .weather-rain-bar {
   display: flex;
   width: 100%;

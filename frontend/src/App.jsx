@@ -28,7 +28,7 @@ import {
   getYieldDistricts,
   getYieldHistory,
   getLiveWeather,
-  getLocationName,
+  getLocationDetails,
   getWeatherData,
   loginUser,
   logoutUser,
@@ -522,17 +522,17 @@ function App() {
           setLiveLocation(currentLocation);
 
           try {
-            const [locationName, weather] = await Promise.all([
-              getLocationName(coords.latitude, coords.longitude),
+            const [locationDetails, weather] = await Promise.all([
+              getLocationDetails(coords.latitude, coords.longitude),
               getLiveWeather(coords.latitude, coords.longitude),
             ]);
 
             setLiveLocation({
               latitude: coords.latitude,
               longitude: coords.longitude,
-              name: locationName,
+              ...locationDetails,
             });
-            setLiveWeather({ ...weather, location: locationName });
+            setLiveWeather({ ...weather, location: locationDetails.name });
           } catch {
             setLiveLocation(currentLocation);
           } finally {

@@ -269,7 +269,7 @@ export function getWeatherData() {
   );
 }
 
-export async function getLocationName(latitude, longitude) {
+export async function getLocationDetails(latitude, longitude) {
   const params = new URLSearchParams({
     format: "jsonv2",
     lat: String(latitude),
@@ -294,46 +294,30 @@ export async function getLocationName(latitude, longitude) {
   const data = await response.json();
   const address = data.address || {};
 
-  return (
-    address.neighbourhood ||
-    address.suburb ||
-    address.village ||
-    address.hamlet ||
-    address.town ||
-    address.city_district ||
-    address.city ||
-    address.municipality ||
-    address.county ||
-    address.state_district ||
-    "Current location"
-  );
+  return {
+    name:
+      address.neighbourhood ||
+      address.suburb ||
+      address.village ||
+      address.hamlet ||
+      address.town ||
+      address.city_district ||
+      address.city ||
+      address.municipality ||
+      address.county ||
+      address.state_district ||
+      "Current location",
+    district: address.state_district || address.county || "",
+  };
 }
 
-export async function getLiveWeather(latitude, longitude) {
+export function getLiveWeather(latitude, longitude) {
   const params = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
-    current: "temperature_2m,relative_humidity_2m,precipitation",
-    timezone: "auto",
   });
 
-  const response = await fetch(
-    `https://api.open-meteo.com/v1/forecast?${params}`
-  );
-
-  if (!response.ok) {
-    throw new Error("Unable to fetch live weather data.");
-  }
-
-  const data = await response.json();
-  const current = data.current || {};
-
-  return {
-    temperature: current.temperature_2m,
-    humidity: current.relative_humidity_2m,
-    rainfall: current.precipitation,
-    location: "Current location",
-  };
+  return request(`/weather/current?${params}`);
 }
 
 async function getWeatherProviderData(baseUrl, params, signal) {
@@ -347,14 +331,14 @@ async function getWeatherProviderData(baseUrl, params, signal) {
   return data;
 }
 
-export async function getWeatherOutlook(latitude, longitude, signal) {
-  const forecastParams = new URLSearchParams({
+export async function getWeatherOutlook(latitude, longitude, district, signal) {
+  const weatherParams = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
-    daily: "precipitation_sum,precipitation_probability_max,temperature_2m_max,temperature_2m_min",
-    forecast_days: "7",
-    timezone: "auto",
   });
+  if (district) {
+    weatherParams.set("district", district);
+  }
   const seasonalParams = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
@@ -366,33 +350,29 @@ export async function getWeatherOutlook(latitude, longitude, signal) {
   });
 
   const [forecastResult, seasonalResult] = await Promise.allSettled([
-    getWeatherProviderData(
-      "https://api.open-meteo.com/v1/forecast",
-      forecastParams,
-      signal
-    ),
+    request(`/weather/outlook?${weatherParams}`, { signal }),
     getWeatherProviderData(
       "https://seasonal-api.open-meteo.com/v1/seasonal",
       seasonalParams,
       signal
     ),
   ]);
-  const forecast =
+  const weather =
     forecastResult.status === "fulfilled" ? forecastResult.value : null;
   const seasonal =
     seasonalResult.status === "fulfilled" ? seasonalResult.value : null;
 
-  if (!forecast && !seasonal) {
+  if (!weather && !seasonal) {
     throw new Error("Unable to load short-range or seasonal weather outlooks.");
   }
 
   return {
-    forecast,
+    ...weather,
     seasonal,
     forecastError:
       forecastResult.status === "rejected"
         ? forecastResult.reason.message
-        : "",
+        : weather?.forecastError || "",
     seasonalError:
       seasonalResult.status === "rejected"
         ? seasonalResult.reason.message
