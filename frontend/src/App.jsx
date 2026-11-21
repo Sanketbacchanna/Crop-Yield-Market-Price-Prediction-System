@@ -866,10 +866,6 @@ function App() {
 
   async function handleCropRecommendation(event) {
     event.preventDefault();
-    if (!selectedAgriculturalId) {
-      setRecommendationError("Please select an agricultural record.");
-      return;
-    }
 
     setRecommendationLoading(true);
     setRecommendationError("");
@@ -877,7 +873,7 @@ function App() {
 
     try {
       setRecommendationResult(
-        await getCropRecommendations(selectedAgriculturalId)
+        await getCropRecommendations()
       );
     } catch (error) {
       setRecommendationError(

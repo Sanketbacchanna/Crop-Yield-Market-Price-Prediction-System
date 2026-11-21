@@ -255,11 +255,8 @@ export function createYieldPrediction(agriculturalId, cropName, district, area) 
   return request(`/yield-prediction/?${params}`, { method: "POST" });
 }
 
-export function getCropRecommendations(agriculturalId) {
-  const params = new URLSearchParams({
-    agricultural_id: agriculturalId,
-  });
-  return request(`/crop-recommendation/recommend?${params}`, {
+export function getCropRecommendations() {
+  return request("/crop-recommendation/recommend", {
     method: "POST",
   });
 }

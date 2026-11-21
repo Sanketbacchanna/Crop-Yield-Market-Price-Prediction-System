@@ -1,7 +1,4 @@
 function CropRecommendation({
-  agriculturalRecords,
-  selectedAgriculturalId,
-  onAgriculturalChange,
   onSubmit,
   loading,
   error,
@@ -54,42 +51,13 @@ function CropRecommendation({
             profitability.
           </p>
 
-          <form onSubmit={onSubmit}>
-            <select
-              id="recommendation-agricultural-record"
-              aria-label="Agricultural record"
-              value={selectedAgriculturalId}
-              required
-              onChange={(event) =>
-                onAgriculturalChange(event.target.value)
-              }
-              disabled={loading || agriculturalRecords.length === 0}
-            >
-              {agriculturalRecords.length === 0 ? (
-                <option value="">No records available</option>
-              ) : (
-                <>
-                  <option value="">Select a farm record</option>
-                  {agriculturalRecords.map((record) => (
-                    <option
-                      key={record.agricultural_id}
-                      value={record.agricultural_id}
-                    >
-                      {record.district || "Unknown"} •{" "}
-                      {record.season || "Unknown Season"} •{" "}
-                      {record.crop_year || "Unknown Year"}
-                    </option>
-                  ))}
-                </>
-              )}
-            </select>
-
+            <form onSubmit={onSubmit}>
             <button
               type="submit"
               className="recommendation-button"
-              disabled={loading || agriculturalRecords.length === 0}
+              disabled={loading}
             >
-              {loading ? "Comparing crops…" : "Show my best crop"}
+              {loading ? "Analyzing historical data…" : "Show best crops"}
             </button>
           </form>
 
@@ -105,7 +73,7 @@ function CropRecommendation({
               <strong>#{recommendation.recommendation_rank}</strong>
             </div>
             <p className="recommendation-personalized-context">
-              For {result.district} · {result.season} · {result.crop_year}. {rankingContext}
+              {rankingContext}
             </p>
 
             <div className="recommended-crop">
@@ -126,31 +94,6 @@ function CropRecommendation({
               </div>
             </div>
 
-            <div className="recommendation-stats">
-              <div>
-                <span>Recommendation Score</span>
-                <strong>{Number(recommendation.recommendation_score).toFixed(1)}%</strong>
-              </div>
-              <div>
-                <span>Predicted Yield</span>
-                <strong>
-                  {recommendation.predicted_yield != null
-                    ? Number(recommendation.predicted_yield).toFixed(2)
-                    : "—"}
-                </strong>
-              </div>
-
-              <div>
-                <span>Forecast Price</span>
-                <strong>
-                  {recommendation.forecast_price != null
-                    ? `₹${Number(
-                      recommendation.forecast_price
-                    ).toLocaleString("en-IN")}`
-                    : "Not saved"}
-                </strong>
-              </div>
-            </div>
             <div className="recommendation-factor-breakdown">
               <div className="recommendation-factor-heading">
                 <h4>Why this crop ranks first</h4>
@@ -179,10 +122,7 @@ function CropRecommendation({
                     <strong>#{item.recommendation_rank} {item.crop_name}</strong>
                     <span>
                       Score {Number(item.recommendation_score).toFixed(1)}% · {" "}
-                      Yield {Number(item.predicted_yield).toFixed(2)}
-                      {item.forecast_price == null
-                        ? " · no saved price forecast"
-                        : ` · ₹${Number(item.forecast_price).toLocaleString("en-IN")}`}
+                      {item.historical_observations} historical records
                     </span>
                   </div>
                 ))}
