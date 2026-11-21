@@ -34,6 +34,121 @@
   background: var(--surface);
 }
 
+.weather-location-panel {
+  background: linear-gradient(135deg, var(--surface), var(--surface-soft));
+}
+
+.weather-location-breadcrumb {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.weather-location-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.weather-location-fields label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.weather-location-fields select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.weather-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.weather-tab {
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.weather-tab.active {
+  border-color: #2477bd;
+  background: #eaf5ff;
+  color: #1769aa;
+}
+
+.weather-current-detail {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.weather-current-icon {
+  font-size: 42px;
+}
+
+.weather-current-detail div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px 20px;
+}
+
+.weather-current-detail strong {
+  color: var(--text);
+  font-size: 32px;
+}
+
+.weather-current-detail span:not(.weather-current-icon) {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.weather-hour-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.weather-hour-grid article {
+  display: grid;
+  min-height: 118px;
+  justify-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.weather-hour-grid article strong,
+.weather-hour-grid article b { color: var(--text); }
+.weather-hour-icon { font-size: 22px; }
+.weather-horizon-summary { display: flex; flex-wrap: wrap; gap: 10px; color: var(--text-secondary); font-size: 13px; }
+.weather-horizon-summary span { padding: 8px 11px; border-radius: 8px; background: var(--surface-soft); }
+
 .weather-panel-heading {
   display: flex;
   align-items: flex-start;

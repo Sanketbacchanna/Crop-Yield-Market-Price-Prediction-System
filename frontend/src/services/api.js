@@ -321,6 +321,27 @@ export function getLiveWeather(latitude, longitude) {
   return request(`/weather/current?${params}`);
 }
 
+export async function getTalukCoordinates(taluk, district, signal) {
+  const params = new URLSearchParams({
+    format: "jsonv2",
+    q: `${taluk}, ${district}, Karnataka, India`,
+    limit: "1",
+    addressdetails: "1",
+  });
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+    signal,
+    headers: { "Accept-Language": "en" },
+  });
+  if (!response.ok) throw new Error("Unable to locate the selected taluk.");
+  const result = (await response.json())?.[0];
+  const latitude = Number(result?.lat);
+  const longitude = Number(result?.lon);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    throw new Error("No coordinates were found for the selected taluk.");
+  }
+  return { latitude, longitude };
+}
+
 async function getWeatherProviderData(baseUrl, params, signal) {
   const response = await fetch(`${baseUrl}?${params}`, { signal });
   const data = await response.json();
@@ -351,6 +372,8 @@ async function getWeatherForecast(latitude, longitude, district, signal) {
     const fallbackParams = new URLSearchParams({
       latitude: String(latitude),
       longitude: String(longitude),
+      hourly:
+        "temperature_2m,relative_humidity_2m,precipitation,precipitation_probability,weather_code",
       daily:
         "precipitation_sum,precipitation_probability_max,temperature_2m_max,temperature_2m_min",
       forecast_days: "7",

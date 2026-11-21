@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import SummaryCard from "../components/SummaryCard";
-import { getWeatherOutlook } from "../services/api";
+import {
+  getLiveWeather,
+  getTalukCoordinates,
+  getWeatherOutlook,
+} from "../services/api";
+import { KARNATAKA_WEATHER_LOCATIONS } from "../utils/karnatakaWeatherLocations";
 import "./WeatherPage.css";
 
 const HEAVY_RAINFALL_MM = 64.5;
@@ -76,6 +81,25 @@ function getDailyForecast(forecast) {
     maxTemperature: daily.temperature_2m_max?.[index],
     description: daily.weather_description?.[index],
   }));
+}
+
+function getHourlyForecast(forecast, hours = 24) {
+  const hourly = forecast?.hourly;
+  if (!hourly?.time) return [];
+  return hourly.time.slice(0, hours).map((time, index) => ({
+    time,
+    temperature: hourly.temperature_2m?.[index],
+    humidity: hourly.relative_humidity_2m?.[index],
+    rainfall: hourly.precipitation?.[index],
+    probability: hourly.precipitation_probability?.[index],
+    code: hourly.weather_code?.[index],
+  }));
+}
+
+function weatherIcon(item) {
+  if (item?.rainfall > 0 || item?.probability >= 60) return "🌧️";
+  if (item?.code === 0 || item?.code === 1) return "☀️";
+  return "☁️";
 }
 
 const WEATHER_ALERT_ICONS = {
@@ -181,17 +205,45 @@ function WeatherPage({
   liveWeather,
   liveLocationLoading,
 }) {
+  const defaultDistrict =
+    KARNATAKA_WEATHER_LOCATIONS.find(
+      (item) => item.district === "Dakshina Kannada"
+    ) || KARNATAKA_WEATHER_LOCATIONS[0];
+  const [selectedDistrict, setSelectedDistrict] = useState(defaultDistrict.district);
+  const [selectedTaluk, setSelectedTaluk] = useState(defaultDistrict.taluks[0].name);
+  const [selectedFarm, setSelectedFarm] = useState(defaultDistrict.taluks[0].farms[0].name);
+  const [selectedCoordinates, setSelectedCoordinates] = useState({
+    latitude: defaultDistrict.taluks[0].farms[0].latitude,
+    longitude: defaultDistrict.taluks[0].farms[0].longitude,
+  });
+  const [selectedWeather, setSelectedWeather] = useState(null);
+  const [forecastView, setForecastView] = useState("current");
   const [outlookState, setOutlookState] = useState({
     key: null,
     data: null,
     error: "",
   });
-  const latitude = liveLocation?.latitude;
-  const longitude = liveLocation?.longitude;
-  const district = liveLocation?.district;
+  const districtData = KARNATAKA_WEATHER_LOCATIONS.find((item) => item.district === selectedDistrict) || defaultDistrict;
+  const talukData = districtData.taluks.find((item) => item.name === selectedTaluk) || districtData.taluks[0];
+  const farmData = talukData.farms.find((item) => item.name === selectedFarm) || talukData.farms[0];
+  const latitude = selectedCoordinates?.latitude ?? farmData.latitude;
+  const longitude = selectedCoordinates?.longitude ?? farmData.longitude;
+  const district = selectedDistrict;
   const hasCoordinates =
     Number.isFinite(latitude) && Number.isFinite(longitude);
-  const locationKey = hasCoordinates ? `${latitude},${longitude}` : null;
+  const locationKey = hasCoordinates ? `${selectedDistrict}:${selectedTaluk}:${selectedFarm}` : null;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getTalukCoordinates(selectedTaluk, selectedDistrict, controller.signal)
+      .then(setSelectedCoordinates)
+      .catch((error) => {
+        if (error.name !== "AbortError") {
+          setSelectedCoordinates({ latitude: farmData.latitude, longitude: farmData.longitude });
+        }
+      });
+    return () => controller.abort();
+  }, [selectedDistrict, selectedTaluk, farmData.latitude, farmData.longitude]);
 
   useEffect(() => {
     if (!locationKey) {
@@ -201,36 +253,37 @@ function WeatherPage({
     let active = true;
     const controller = new AbortController();
 
-    getWeatherOutlook(latitude, longitude, district, controller.signal)
-      .then((data) => {
+    Promise.allSettled([
+      getWeatherOutlook(latitude, longitude, district, controller.signal),
+      getLiveWeather(latitude, longitude),
+    ]).then(([outlookResult, currentResult]) => {
         if (active) {
-          setOutlookState({ key: locationKey, data, error: "" });
+          if (outlookResult.status === "fulfilled") {
+            setOutlookState({ key: locationKey, data: outlookResult.value, error: "" });
+          } else if (outlookResult.reason?.name !== "AbortError") {
+            setOutlookState({ key: locationKey, data: null, error: outlookResult.reason?.message || "Unable to load weather outlooks." });
+          }
+          if (currentResult.status === "fulfilled") {
+            setSelectedWeather({ ...currentResult.value, location: selectedFarm });
+          }
         }
       })
-      .catch((error) => {
-        if (active && error.name !== "AbortError") {
-          setOutlookState({
-            key: locationKey,
-            data: null,
-            error: error.message || "Unable to load weather outlooks.",
-          });
-        }
-      });
 
     return () => {
       active = false;
       controller.abort();
     };
-  }, [latitude, longitude, district, locationKey]);
+  }, [latitude, longitude, district, locationKey, selectedFarm]);
 
-  const currentWeather = liveWeather || weatherData[0];
+  const currentWeather = selectedWeather || liveWeather || weatherData[0];
   const locationName =
-    liveLocation?.name || currentWeather?.location || "Current location";
+    selectedFarm || liveLocation?.name || currentWeather?.location || "Current location";
   const hasCurrentOutlook = outlookState.key === locationKey;
   const outlook = hasCurrentOutlook ? outlookState.data : null;
   const outlookError = hasCurrentOutlook ? outlookState.error : "";
   const outlookLoading = Boolean(locationKey && !hasCurrentOutlook);
   const dailyForecast = getDailyForecast(outlook?.forecast);
+  const hourlyForecast = getHourlyForecast(outlook?.forecast);
   const farmingAlerts = outlook?.alerts || [];
   const seasonal = outlook?.seasonal;
   const rainfallSignal = getRainfallSignal(seasonal, dailyForecast);
@@ -289,6 +342,21 @@ function WeatherPage({
     )
   );
 
+  const handleDistrictChange = (event) => {
+    const nextDistrict = KARNATAKA_WEATHER_LOCATIONS.find((item) => item.district === event.target.value) || defaultDistrict;
+    setSelectedDistrict(nextDistrict.district);
+    setSelectedTaluk(nextDistrict.taluks[0].name);
+    setSelectedFarm(nextDistrict.taluks[0].farms[0].name);
+    setSelectedCoordinates(null);
+  };
+
+  const handleTalukChange = (event) => {
+    const nextTaluk = districtData.taluks.find((item) => item.name === event.target.value) || districtData.taluks[0];
+    setSelectedTaluk(nextTaluk.name);
+    setSelectedFarm(nextTaluk.farms[0].name);
+    setSelectedCoordinates(null);
+  };
+
   return (
     <section className="dashboard-section page-section weather-page" id="weather">
       <div className="section-heading weather-page-heading">
@@ -303,6 +371,32 @@ function WeatherPage({
           <span className="weather-loading-label">Updating outlook…</span>
         )}
       </div>
+
+      <section className="weather-panel weather-location-panel" aria-labelledby="weather-location-title">
+        <div className="weather-panel-heading">
+          <div>
+            <h3 id="weather-location-title">Choose your farm location</h3>
+            <p>District-level weather and IMD alerts for Karnataka</p>
+          </div>
+          <span className="weather-location-breadcrumb">Karnataka › {selectedDistrict} › {selectedTaluk}</span>
+        </div>
+        <div className="weather-location-fields">
+          <label>State<select value="Karnataka" disabled><option>Karnataka</option></select></label>
+          <label>District<select value={selectedDistrict} onChange={handleDistrictChange}>{KARNATAKA_WEATHER_LOCATIONS.map((item) => <option key={item.district}>{item.district}</option>)}</select></label>
+          <label>Taluk<select value={talukData.name} onChange={handleTalukChange}>{districtData.taluks.map((item) => <option key={item.name}>{item.name}</option>)}</select></label>
+          <label>Farm location<select value={farmData.name} onChange={(event) => setSelectedFarm(event.target.value)}>{talukData.farms.map((item) => <option key={item.name}>{item.name}</option>)}</select></label>
+        </div>
+      </section>
+
+      <section className="weather-panel weather-horizon-panel">
+        <div className="weather-tabs" role="tablist" aria-label="Weather forecast horizon">
+          {[['current', 'Current'], ['6h', 'Next 6 hours'], ['24h', 'Next 24 hours'], ['5d', 'Next 5 days']].map(([value, label]) => <button key={value} className={forecastView === value ? "weather-tab active" : "weather-tab"} onClick={() => setForecastView(value)} role="tab" aria-selected={forecastView === value}>{label}</button>)}
+        </div>
+        {forecastView === "current" && <div className="weather-current-detail"><span className="weather-current-icon">🌦️</span><div><strong>{currentWeather?.temperature ?? "—"}°C</strong><span>Humidity {currentWeather?.humidity ?? "—"}%</span><span>Rainfall {currentWeather?.rainfall ?? "—"} mm</span></div></div>}
+        {forecastView !== "current" && hourlyForecast.length > 0 && <div className="weather-hour-grid">{hourlyForecast.slice(0, forecastView === "6h" ? 6 : 24).map((item) => <article key={item.time}><strong>{new Intl.DateTimeFormat([], { hour: "numeric" }).format(new Date(item.time))}</strong><span className="weather-hour-icon">{weatherIcon(item)}</span><b>{item.temperature ?? "—"}°</b><small>{item.probability ?? 0}% rain</small></article>)}</div>}
+        {forecastView === "5d" && dailyForecast.length > 0 && <div className="weather-horizon-summary">{dailyForecast.slice(0, 5).map((day) => <span key={day.date}>{formatForecastDate(day.date, { weekday: "short" })}: {day.probability ?? 0}% rain</span>)}</div>}
+        {forecastView !== "current" && hourlyForecast.length === 0 && <p className="weather-empty-state">Short-range hourly data is unavailable for this farm point.</p>}
+      </section>
 
       <div className="weather-summary-grid">
         <SummaryCard
