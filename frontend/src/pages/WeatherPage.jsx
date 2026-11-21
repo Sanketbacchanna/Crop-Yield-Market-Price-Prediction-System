@@ -78,6 +78,15 @@ function getDailyForecast(forecast) {
   }));
 }
 
+const WEATHER_ALERT_ICONS = {
+  heavy_rain: "🌧️",
+  drought_risk: "🌾",
+  heat_stress: "☀️",
+  thunderstorm: "⛈️",
+  strong_wind: "💨",
+  flood_risk: "🌊",
+};
+
 function getDistrictWarnings(warnings) {
   if (!warnings) {
     return [];
@@ -222,6 +231,7 @@ function WeatherPage({
   const outlookError = hasCurrentOutlook ? outlookState.error : "";
   const outlookLoading = Boolean(locationKey && !hasCurrentOutlook);
   const dailyForecast = getDailyForecast(outlook?.forecast);
+  const farmingAlerts = outlook?.alerts || [];
   const seasonal = outlook?.seasonal;
   const rainfallSignal = getRainfallSignal(seasonal, dailyForecast);
   const districtWarnings = getDistrictWarnings(outlook?.warnings);
@@ -337,6 +347,45 @@ function WeatherPage({
 
       {hasCoordinates && (
         <>
+          <section className="weather-panel farming-alerts-panel">
+            <div className="weather-panel-heading">
+              <div>
+                <h3>🌦️ Farming alerts</h3>
+                <p>Weather translated into practical farm actions</p>
+              </div>
+            </div>
+            {farmingAlerts.length > 0 ? (
+              <div className="farming-alert-list">
+                {farmingAlerts.map((alert) => (
+                  <article
+                    className={`farming-alert farming-alert-${alert.severity}`}
+                    key={`${alert.type}-${alert.title}`}
+                  >
+                    <div className="farming-alert-title-row">
+                      <span className="farming-alert-icon" aria-hidden="true">
+                        {WEATHER_ALERT_ICONS[alert.type] || "⚠️"}
+                      </span>
+                      <div>
+                        <span className="farming-alert-severity">
+                          {alert.severity === "high" ? "Important alert" : "Advisory"}
+                        </span>
+                        <h4>{alert.title}</h4>
+                      </div>
+                    </div>
+                    <p>{alert.message}</p>
+                    <strong>Recommendation</strong>
+                    <p>{alert.recommendation}</p>
+                    <small>Source: {alert.source}</small>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="weather-empty-state">
+                No immediate farming weather alerts detected for this forecast.
+              </p>
+            )}
+          </section>
+
           <section className="weather-panel">
             <div className="weather-panel-heading">
               <div>

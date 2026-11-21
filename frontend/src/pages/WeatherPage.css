@@ -112,6 +112,74 @@
   background: var(--surface-soft);
 }
 
+.farming-alert-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.farming-alert {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fffaf0;
+}
+
+.farming-alert-high {
+  border-color: #f0b6ad;
+  background: #fff3f1;
+}
+
+.farming-alert-watch {
+  border-color: #efd28e;
+  background: #fff9e9;
+}
+
+.farming-alert-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.farming-alert-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.farming-alert-severity {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.farming-alert h4 {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 16px;
+}
+
+.farming-alert p {
+  margin: 10px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.farming-alert strong {
+  display: block;
+  margin-top: 12px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.farming-alert small {
+  display: block;
+  margin-top: 12px;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
 .weather-day-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(105px, 1fr));

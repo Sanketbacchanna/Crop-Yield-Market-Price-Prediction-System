@@ -126,3 +126,37 @@ def test_weather_outlook_returns_district_alerts(monkeypatch):
     assert outlook["source"] == "IMD"
     assert outlook["warnings"]["Day_1"] == "2"
     assert outlook["nowcast"]["message"] == "Rain likely"
+
+
+def test_build_weather_alerts_uses_imd_warning_codes():
+    alerts = weather_service.build_weather_alerts(
+        {"daily": {"time": ["2026-07-01"], "precipitation_sum": [0]}},
+        {"Day_1": "2,4,8"},
+        {"Cat12": "12"},
+    )
+
+    alert_types = {alert["type"] for alert in alerts}
+    assert {"heavy_rain", "thunderstorm", "strong_wind"}.issubset(alert_types)
+    assert any("Avoid irrigation" in alert["recommendation"] for alert in alerts)
+
+
+def test_build_weather_alerts_detects_dry_spell_and_heat_stress():
+    alerts = weather_service.build_weather_alerts(
+        {
+            "daily": {
+                "time": [
+                    "2026-05-01",
+                    "2026-05-02",
+                    "2026-05-03",
+                    "2026-05-04",
+                    "2026-05-05",
+                ],
+                "precipitation_sum": [0, 0, 0, 0, 0],
+                "temperature_2m_max": [39, 40, 39, 38, 39],
+            }
+        }
+    )
+
+    alert_types = {alert["type"] for alert in alerts}
+    assert "drought_risk" in alert_types
+    assert "heat_stress" in alert_types
