@@ -296,6 +296,7 @@ export async function getLocationDetails(latitude, longitude) {
   const address = data.address || {};
 
   return {
+    state: address.state || "",
     name:
       address.neighbourhood ||
       address.suburb ||
@@ -309,6 +310,15 @@ export async function getLocationDetails(latitude, longitude) {
       address.state_district ||
       "Current location",
     district: address.state_district || address.county || "",
+    taluk: address.county || address.subdistrict || address.taluk || "",
+    village:
+      address.village ||
+      address.hamlet ||
+      address.town ||
+      address.suburb ||
+      address.city_district ||
+      address.city ||
+      "",
   };
 }
 

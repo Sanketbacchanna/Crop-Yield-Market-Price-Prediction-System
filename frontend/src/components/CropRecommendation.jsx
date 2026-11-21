@@ -9,10 +9,26 @@ function CropRecommendation({
 }) {
   const recommendation = result?.recommendations?.[0];
   const additionalRecommendations = result?.recommendations?.slice(1) || [];
+  const factorLabels = result?.score_factor_labels || {
+    expected_yield: "Expected yield",
+    expected_market_price: "Expected market price",
+    weather_suitability: "Weather suitability",
+    soil_suitability: "Soil suitability",
+    water_requirement: "Water requirement",
+    historical_profitability: "Historical profitability",
+  };
+  const scoreWeights = result?.score_weights || {
+    expected_yield: 25,
+    expected_market_price: 25,
+    weather_suitability: 15,
+    soil_suitability: 15,
+    water_requirement: 10,
+    historical_profitability: 10,
+  };
   const rankingContext =
     result?.recommendation_basis === "yield_and_forecast_price"
-      ? "Ranked using your estimated yield and your saved price forecasts."
-      : "Ranked using your district, season, soil information, and estimated yield. Save price forecasts to include your own market outlook.";
+      ? "Ranked using six weighted factors, including your estimated yield and saved price forecasts."
+      : "Ranked using six weighted factors; historical market prices fill in where a saved forecast is unavailable.";
   const cropImages = {
     Rice: "/crops/Rice.png",
     Wheat: "/crops/wheat.jpg",
@@ -33,17 +49,15 @@ function CropRecommendation({
           <h3>Get a clear planting recommendation</h3>
 
           <p>
-            Choose a farm record to compare expected yields for your district and
-            season. Saved crop-price forecasts add your market outlook to the ranking.
+            Choose a farm record to score crops for your district and season. The
+            ranking combines yield, market price, weather, soil, water, and historical
+            profitability.
           </p>
 
           <form onSubmit={onSubmit}>
-            <label htmlFor="recommendation-agricultural-record">
-              Agricultural Record
-            </label>
-
             <select
               id="recommendation-agricultural-record"
+              aria-label="Agricultural record"
               value={selectedAgriculturalId}
               required
               onChange={(event) =>
@@ -114,6 +128,10 @@ function CropRecommendation({
 
             <div className="recommendation-stats">
               <div>
+                <span>Recommendation Score</span>
+                <strong>{Number(recommendation.recommendation_score).toFixed(1)}%</strong>
+              </div>
+              <div>
                 <span>Predicted Yield</span>
                 <strong>
                   {recommendation.predicted_yield != null
@@ -133,6 +151,23 @@ function CropRecommendation({
                 </strong>
               </div>
             </div>
+            <div className="recommendation-factor-breakdown">
+              <div className="recommendation-factor-heading">
+                <h4>Why this crop ranks first</h4>
+                <span>Weighted score</span>
+              </div>
+              {Object.entries(recommendation.score_factors || {}).map(([factor, score]) => (
+                <div className="recommendation-factor" key={factor}>
+                  <div className="recommendation-factor-label">
+                    <span>{factorLabels[factor] || factor} ({scoreWeights[factor] || 0}% weight)</span>
+                    <strong>{Number(score).toFixed(0)}%</strong>
+                  </div>
+                  <div className="recommendation-factor-track">
+                    <span style={{ width: `${Math.max(0, Math.min(100, Number(score)))}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
             {additionalRecommendations.length > 0 && (
               <div className="recommendation-alternatives">
                 <h4>Other suitable options</h4>
@@ -143,6 +178,7 @@ function CropRecommendation({
                   >
                     <strong>#{item.recommendation_rank} {item.crop_name}</strong>
                     <span>
+                      Score {Number(item.recommendation_score).toFixed(1)}% · {" "}
                       Yield {Number(item.predicted_yield).toFixed(2)}
                       {item.forecast_price == null
                         ? " · no saved price forecast"

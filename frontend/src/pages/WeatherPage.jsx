@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SummaryCard from "../components/SummaryCard";
 import {
   getLiveWeather,
@@ -212,10 +212,12 @@ function WeatherPage({
   const [selectedDistrict, setSelectedDistrict] = useState(defaultDistrict.district);
   const [selectedTaluk, setSelectedTaluk] = useState(defaultDistrict.taluks[0].name);
   const [selectedFarm, setSelectedFarm] = useState(defaultDistrict.taluks[0].farms[0].name);
+  const [selectedVillage, setSelectedVillage] = useState("Bantwal");
   const [selectedCoordinates, setSelectedCoordinates] = useState({
     latitude: defaultDistrict.taluks[0].farms[0].latitude,
     longitude: defaultDistrict.taluks[0].farms[0].longitude,
   });
+  const liveLocationApplied = useRef(false);
   const [selectedWeather, setSelectedWeather] = useState(null);
   const [forecastView, setForecastView] = useState("current");
   const [outlookState, setOutlookState] = useState({
@@ -234,6 +236,27 @@ function WeatherPage({
   const locationKey = hasCoordinates ? `${selectedDistrict}:${selectedTaluk}:${selectedFarm}` : null;
 
   useEffect(() => {
+    if (liveLocationApplied.current) return;
+    if (!liveLocation?.latitude || !liveLocation?.longitude) return;
+    const normalize = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const districtMatch = KARNATAKA_WEATHER_LOCATIONS.find(
+      (item) => normalize(item.district) === normalize(liveLocation.district)
+    );
+    const nextDistrict = districtMatch || defaultDistrict;
+    const talukMatch = nextDistrict.taluks.find(
+      (item) => normalize(item.name) === normalize(liveLocation.taluk)
+    );
+    const nextTaluk = talukMatch || nextDistrict.taluks[0];
+    setSelectedDistrict(nextDistrict.district);
+    setSelectedTaluk(nextTaluk.name);
+    setSelectedFarm(nextTaluk.farms[0].name);
+    setSelectedVillage(liveLocation.village || liveLocation.name || nextTaluk.name);
+    setSelectedCoordinates({ latitude: liveLocation.latitude, longitude: liveLocation.longitude });
+    liveLocationApplied.current = true;
+  }, [liveLocation?.latitude, liveLocation?.longitude, liveLocation?.district, liveLocation?.taluk, liveLocation?.village]);
+
+  useEffect(() => {
+    if (liveLocationApplied.current) return undefined;
     const controller = new AbortController();
     getTalukCoordinates(selectedTaluk, selectedDistrict, controller.signal)
       .then(setSelectedCoordinates)
@@ -243,7 +266,7 @@ function WeatherPage({
         }
       });
     return () => controller.abort();
-  }, [selectedDistrict, selectedTaluk, farmData.latitude, farmData.longitude]);
+  }, [selectedDistrict, selectedTaluk, farmData.latitude, farmData.longitude, liveLocation?.district, liveLocation?.taluk]);
 
   useEffect(() => {
     if (!locationKey) {
@@ -277,7 +300,7 @@ function WeatherPage({
 
   const currentWeather = selectedWeather || liveWeather || weatherData[0];
   const locationName =
-    selectedFarm || liveLocation?.name || currentWeather?.location || "Current location";
+    selectedVillage || liveLocation?.name || currentWeather?.location || "Current location";
   const hasCurrentOutlook = outlookState.key === locationKey;
   const outlook = hasCurrentOutlook ? outlookState.data : null;
   const outlookError = hasCurrentOutlook ? outlookState.error : "";
@@ -343,17 +366,21 @@ function WeatherPage({
   );
 
   const handleDistrictChange = (event) => {
+    liveLocationApplied.current = false;
     const nextDistrict = KARNATAKA_WEATHER_LOCATIONS.find((item) => item.district === event.target.value) || defaultDistrict;
     setSelectedDistrict(nextDistrict.district);
     setSelectedTaluk(nextDistrict.taluks[0].name);
     setSelectedFarm(nextDistrict.taluks[0].farms[0].name);
+    setSelectedVillage(nextDistrict.taluks[0].name);
     setSelectedCoordinates(null);
   };
 
   const handleTalukChange = (event) => {
+    liveLocationApplied.current = false;
     const nextTaluk = districtData.taluks.find((item) => item.name === event.target.value) || districtData.taluks[0];
     setSelectedTaluk(nextTaluk.name);
     setSelectedFarm(nextTaluk.farms[0].name);
+    setSelectedVillage(nextTaluk.name);
     setSelectedCoordinates(null);
   };
 
@@ -384,7 +411,7 @@ function WeatherPage({
           <label>State<select value="Karnataka" disabled><option>Karnataka</option></select></label>
           <label>District<select value={selectedDistrict} onChange={handleDistrictChange}>{KARNATAKA_WEATHER_LOCATIONS.map((item) => <option key={item.district}>{item.district}</option>)}</select></label>
           <label>Taluk<select value={talukData.name} onChange={handleTalukChange}>{districtData.taluks.map((item) => <option key={item.name}>{item.name}</option>)}</select></label>
-          <label>Farm location<select value={farmData.name} onChange={(event) => setSelectedFarm(event.target.value)}>{talukData.farms.map((item) => <option key={item.name}>{item.name}</option>)}</select></label>
+          <label>Village<select value={selectedVillage} onChange={(event) => setSelectedVillage(event.target.value)}><option>{selectedVillage}</option></select></label>
         </div>
       </section>
 
