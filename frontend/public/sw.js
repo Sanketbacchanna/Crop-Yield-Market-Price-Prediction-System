@@ -1,10 +1,13 @@
-const CACHE_NAME = "agripredict-shell-v1";
+const CACHE_NAME = "agripredict-shell-v2";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/favicon.svg",
   "/icons.svg",
   "/manifest.webmanifest",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/crop-yield-portal-logo.png",
   "/offline-assets.json",
 ];
 const API_PREFIXES = [

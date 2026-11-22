@@ -148,8 +148,8 @@ function SettingsPage({
   }
 
   return (
-    <section className="dashboard-section page-section" id="settings">
-      <div className="section-heading">
+    <section className="dashboard-section page-section settings-page" id="settings">
+      <div className="section-heading settings-heading">
         <div>
           <p className="section-eyebrow">PROFILE</p>
           <h2>Settings & Profile</h2>
@@ -157,8 +157,57 @@ function SettingsPage({
         </div>
       </div>
 
+      <div className="settings-hero">
+        <div className="settings-avatar" aria-hidden="true">
+          {(currentUser.name || currentUser.email || "U").slice(0, 1).toUpperCase()}
+        </div>
+        <div className="settings-hero-copy">
+          <span className="settings-hero-kicker">Account center</span>
+          <h3>{currentUser.name || "Your profile"}</h3>
+          <p>{currentUser.email}</p>
+        </div>
+        <div className="settings-hero-badges">
+          <span className="settings-role-badge">{currentUser.role || "farmer"}</span>
+          <span className={`settings-verified-badge${currentUser.is_email_verified ? " is-verified" : ""}`}>
+            <span aria-hidden="true">{currentUser.is_email_verified ? "✓" : "!"}</span>
+            {currentUser.is_email_verified ? "Email verified" : "Email pending"}
+          </span>
+        </div>
+      </div>
+
+      <div className="settings-summary" aria-label="Account summary">
+        <div className="settings-summary-card settings-summary-primary">
+          <span className="settings-summary-icon" aria-hidden="true">⌂</span>
+          <div>
+            <strong>{farms?.length || 0}</strong>
+            <span>Farm profiles</span>
+          </div>
+        </div>
+        <div className="settings-summary-card settings-summary-blue">
+          <span className="settings-summary-icon" aria-hidden="true">▦</span>
+          <div>
+            <strong>{cropHistory?.length || 0}</strong>
+            <span>Crop records</span>
+          </div>
+        </div>
+        <div className="settings-summary-card settings-summary-gold">
+          <span className="settings-summary-icon" aria-hidden="true">✦</span>
+          <div>
+            <strong>{currentUser.is_email_verified ? "Ready" : "Action"}</strong>
+            <span>Account status</span>
+          </div>
+        </div>
+      </div>
+
       {currentUser.role === "farmer" && (
         <>
+          <div className="settings-section-heading">
+            <span className="settings-section-number">01</span>
+            <div>
+              <p>FARM WORKSPACE</p>
+              <h3>Farm profiles & crop history</h3>
+            </div>
+          </div>
           <FarmProfiles
             farms={farms}
             districts={farmDistricts}
@@ -176,6 +225,13 @@ function SettingsPage({
         </>
       )}
 
+      <div className="settings-section-heading settings-account-heading">
+        <span className="settings-section-number">02</span>
+        <div>
+          <p>ACCOUNT CONTROL</p>
+          <h3>Profile details & security</h3>
+        </div>
+      </div>
       <div className="settings-grid">
         <div className="settings-card">
           <h3 style={{ marginTop: 0 }}>Profile details</h3>

@@ -2,6 +2,7 @@
   "name": "AgriPredict",
   "short_name": "AgriPredict",
   "description": "Farm planning, crop records, and agricultural insights for Karnataka.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -9,8 +10,14 @@
   "theme_color": "#2e7d32",
   "icons": [
     {
-      "src": "/crop-yield-portal-logo.png",
-      "sizes": "1152x768",
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }

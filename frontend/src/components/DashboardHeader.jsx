@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 function DashboardHeader({
   onMenuClick,
   isMenuOpen,
@@ -5,7 +7,14 @@ function DashboardHeader({
   pendingCropHistoryCount = 0,
   theme = "light",
   onThemeToggle,
+  onProfileClick,
+  onLogout,
+  currentUser,
+  canInstall = false,
+  onInstall,
 }) {
+  const [profileOpen, setProfileOpen] = useState(false);
+
   return (
     <header className="top-header">
       <div className="top-header-left">
@@ -38,6 +47,74 @@ function DashboardHeader({
       <div className="top-header-actions">
         <button
           type="button"
+          className="profile-button"
+          onClick={() => setProfileOpen((isOpen) => !isOpen)}
+          aria-label="Open profile menu"
+          aria-expanded={profileOpen}
+          aria-controls="profile-menu"
+          title="Profile"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.25" />
+            <path d="M5.5 20c.7-3.25 3.1-5 6.5-5s5.8 1.75 6.5 5" />
+          </svg>
+        </button>
+        {profileOpen && (
+          <div className="profile-menu" id="profile-menu">
+            <div className="profile-menu-heading">
+              <strong>{currentUser?.name || "Your profile"}</strong>
+              <span>{currentUser?.email || "Signed-in account"}</span>
+            </div>
+            <div
+              className={`profile-menu-status${isOnline ? "" : " is-offline"}${pendingCropHistoryCount ? " has-pending" : ""}`}
+              role="status"
+              aria-live="polite"
+            >
+              <span className="status-dot" />
+              <span>
+                {!isOnline
+                  ? "Offline mode"
+                  : pendingCropHistoryCount
+                    ? `${pendingCropHistoryCount} crop record${pendingCropHistoryCount === 1 ? "" : "s"} to sync`
+                    : "Online"}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="profile-menu-link"
+              onClick={() => {
+                setProfileOpen(false);
+                onProfileClick?.();
+              }}
+            >
+              Profile settings
+            </button>
+            {canInstall && (
+              <button
+                type="button"
+                className="profile-menu-install"
+                onClick={() => {
+                  setProfileOpen(false);
+                  onInstall?.();
+                }}
+              >
+                Install AgriPredict
+              </button>
+            )}
+            <button
+              type="button"
+              className="profile-menu-logout"
+              onClick={() => {
+                setProfileOpen(false);
+                onLogout?.();
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        )}
+        <button
+          type="button"
           className="theme-toggle"
           onClick={onThemeToggle}
           aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
@@ -46,20 +123,6 @@ function DashboardHeader({
           <span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>
           <span>{theme === "dark" ? "Light" : "Dark"}</span>
         </button>
-        <div
-          className={`top-header-status${isOnline ? "" : " is-offline"}${pendingCropHistoryCount ? " has-pending" : ""}`}
-          role="status"
-          aria-live="polite"
-        >
-          <span className="status-dot" />
-          <span>
-            {!isOnline
-              ? "Offline mode"
-              : pendingCropHistoryCount
-                ? `${pendingCropHistoryCount} crop record${pendingCropHistoryCount === 1 ? "" : "s"} to sync`
-                : "Online"}
-          </span>
-        </div>
       </div>
     </header>
   );

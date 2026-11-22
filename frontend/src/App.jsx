@@ -128,6 +128,7 @@ function App() {
     () => localStorage.getItem("crop_prediction_token") || ""
   );
   const [currentUser, setCurrentUser] = useState(getStoredUser);
+  const [installPrompt, setInstallPrompt] = useState(null);
   const [theme, setTheme] = useState(() =>
     localStorage.getItem("agripredict_theme") === "dark" ? "dark" : "light"
   );
@@ -148,6 +149,29 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [authNotice, setAuthNotice] = useState("");
   const isAuthenticated = Boolean(authToken && currentUser);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+    };
+    const handleAppInstalled = () => setInstallPrompt(null);
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!installPrompt) {
+      return;
+    }
+    await installPrompt.prompt();
+    setInstallPrompt(null);
+  };
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -1191,7 +1215,15 @@ function App() {
         onMenuClick={() => setMenuOpen((isOpen) => !isOpen)}
         isOnline={isOnline}
         pendingCropHistoryCount={pendingCropHistoryCount}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        canInstall={Boolean(installPrompt)}
+        onInstall={handleInstallApp}
         theme={theme}
+        onProfileClick={() => {
+          window.location.hash = "settings";
+          setActivePage("settings");
+        }}
         onThemeToggle={() =>
           setTheme((current) => (current === "dark" ? "light" : "dark"))
         }
@@ -1212,23 +1244,6 @@ function App() {
           />
         )}
         <div className="main-area">
-          <div style={{ display: "flex", justifyContent: "flex-end", padding: "16px 24px 0" }}>
-            <button
-              type="button"
-              onClick={handleLogout}
-              style={{
-                border: "none",
-                borderRadius: 10,
-                background: "#111827",
-                color: "#fff",
-                padding: "8px 12px",
-                cursor: "pointer",
-              }}
-            >
-              Logout ({currentUser?.name || currentUser?.email || "User"})
-            </button>
-          </div>
-
           <main className="dashboard">
             {offlineSyncError && (
               <p className="offline-sync-error" role="status">
