@@ -10,6 +10,7 @@ import DashboardHeader from "./components/DashboardHeader";
 import Sidebar from "./components/Sidebar";
 import {
   clearAuthSession,
+  API_BASE_URL,
   createFarmProfile,
   createCropHistory,
   createPriceForecast,
@@ -868,7 +869,7 @@ function App() {
       setMarketPricePreviewLoading(true);
       try {
         const marketResponse = await fetch(
-          `http://127.0.0.1:8000/market-price/history?${marketParams}`
+          `${API_BASE_URL}/market-price/history?${marketParams}`
         );
         if (!marketResponse.ok) throw new Error("Market prices are unavailable.");
         const marketData = await marketResponse.json();

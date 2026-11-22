@@ -58,6 +58,7 @@ from app.services.mandi_service import load_mandi_csv
 from app.database import get_db
 from app.models.market_price import MarketPrice
 from app.services.mandi_api_service import fetch_mandi_prices
+from app.services.nearest_mandi_service import market_aliases, nearest_markets
 
 router = APIRouter(
     prefix="/market-price",
@@ -294,6 +295,82 @@ def get_live_market_prices(
         "limit": limit,
         "count": len(records),
         "data": records
+    }
+
+
+@router.get("/nearest")
+def get_nearest_mandi_markets(
+    latitude: float = Query(ge=11.5, le=18.5),
+    longitude: float = Query(ge=73.0, le=78.5),
+    commodity: str | None = Query(default=None, max_length=100),
+    limit: int = Query(default=5, ge=1, le=10),
+    db: Session = Depends(get_db),
+):
+    """Return nearby Karnataka markets with their latest matching modal price."""
+    nearby = nearest_markets(latitude, longitude, limit)
+    price_rows = []
+
+    if commodity:
+        price_rows = db.execute(
+            text("""
+                SELECT market, district, commodity, modal_price, arrival_date
+                FROM (
+                    SELECT id, market, district, commodity, modal_price, arrival_date
+                    FROM live_market_prices
+                    WHERE state = 'Karnataka'
+                      AND commodity = :commodity
+                      AND modal_price IS NOT NULL
+                    UNION ALL
+                    SELECT id, market, district, commodity, modal_price, arrival_date
+                    FROM historical_market_prices
+                    WHERE state = 'Karnataka'
+                      AND commodity = :commodity
+                      AND modal_price IS NOT NULL
+                ) AS available_prices
+                ORDER BY arrival_date DESC, id DESC
+            """),
+            {"commodity": commodity.strip()},
+        ).mappings().all()
+
+    results = []
+    for market in nearby:
+        aliases = market_aliases(market)
+        price = next(
+            (
+                row for row in price_rows
+                if str(row["market"] or "").strip().casefold() in aliases
+            ),
+            None,
+        )
+        results.append(
+            {
+                "market": market["name"],
+                "district": market["district"],
+                "distance_km": market["distance_km"],
+                "latitude": market["latitude"],
+                "longitude": market["longitude"],
+                "commodity": commodity,
+                "modal_price": float(price["modal_price"]) if price else None,
+                "arrival_date": price["arrival_date"] if price else None,
+                "price_available": price is not None,
+            }
+        )
+
+    priced_markets = [item for item in results if item["price_available"]]
+    best_market = max(priced_markets, key=lambda item: item["modal_price"], default=None)
+
+    return {
+        "success": True,
+        "latitude": latitude,
+        "longitude": longitude,
+        "commodity": commodity,
+        "data": results,
+        "best_market": best_market,
+        "message": (
+            "Prices are unavailable for the nearby markets."
+            if commodity and not priced_markets
+            else None
+        ),
     }
 @router.post("/refresh-api")
 def refresh_mandi_prices_from_api(

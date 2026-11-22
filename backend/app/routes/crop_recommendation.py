@@ -22,15 +22,17 @@ router = APIRouter(
 )
 
 SCORING_WEIGHTS = {
-    "expected_yield": 0.25,
-    "expected_market_price": 0.25,
-    "weather_suitability": 0.15,
-    "soil_suitability": 0.15,
-    "water_requirement": 0.10,
-    "historical_profitability": 0.10,
+    "expected_profit": 0.55,
+    "expected_yield": 0.10,
+    "expected_market_price": 0.10,
+    "weather_suitability": 0.10,
+    "soil_suitability": 0.05,
+    "water_requirement": 0.05,
+    "historical_profitability": 0.05,
 }
 
 SCORE_FACTOR_LABELS = {
+    "expected_profit": "Expected profit",
     "expected_yield": "Expected yield",
     "expected_market_price": "Expected market price",
     "weather_suitability": "Weather suitability",
@@ -46,6 +48,59 @@ CROP_PROFILES = {
     "groundnut": {"temperature": (20, 30), "rainfall": (45, 100), "water": "low"},
     "wheat": {"temperature": (15, 25), "rainfall": (30, 90), "water": "medium"},
     "sugarcane": {"temperature": (20, 35), "rainfall": (100, 250), "water": "high"},
+}
+
+# Planning estimates in INR per acre. These are intentionally returned with
+# every recommendation so farmers can see exactly what drives profitability.
+CROP_COSTS_PER_ACRE = {
+    "maize": {
+        "seed": 2500,
+        "fertilizer": 5500,
+        "pesticide": 2500,
+        "labour": 9000,
+        "irrigation": 5000,
+        "transportation": 7000,
+    },
+    "rice": {
+        "seed": 2200,
+        "fertilizer": 6000,
+        "pesticide": 3000,
+        "labour": 12000,
+        "irrigation": 5500,
+        "transportation": 6500,
+    },
+    "wheat": {
+        "seed": 1800,
+        "fertilizer": 4800,
+        "pesticide": 1800,
+        "labour": 7000,
+        "irrigation": 4200,
+        "transportation": 5000,
+    },
+    "cotton": {
+        "seed": 3200,
+        "fertilizer": 6200,
+        "pesticide": 5000,
+        "labour": 10000,
+        "irrigation": 4800,
+        "transportation": 6500,
+    },
+    "sugarcane": {
+        "seed": 6500,
+        "fertilizer": 9000,
+        "pesticide": 3500,
+        "labour": 14000,
+        "irrigation": 9000,
+        "transportation": 11000,
+    },
+}
+DEFAULT_COSTS_PER_ACRE = {
+    "seed": 2500,
+    "fertilizer": 5500,
+    "pesticide": 3000,
+    "labour": 9000,
+    "irrigation": 5000,
+    "transportation": 6500,
 }
 
 
@@ -96,6 +151,51 @@ def _soil_score(crop, soil_type):
     if not soil_type or not crop.soil_type:
         return 0.5
     return 1.0 if crop.soil_type.casefold() == soil_type.casefold() else 0.15
+
+
+def _profitability_estimate(
+    crop_name: str,
+    yield_tonnes_per_hectare: float | None,
+    price_per_quintal: float | None,
+    area_acres: float,
+) -> dict:
+    """Return an acreage-aware profit estimate in INR.
+
+    The yield dataset stores yield as tonnes/hectare. One acre is 0.404686
+    hectares and one tonne is 10 quintals, while mandi prices are per quintal.
+    """
+    costs_per_acre = CROP_COSTS_PER_ACRE.get(
+        crop_name.casefold(), DEFAULT_COSTS_PER_ACRE
+    )
+    expense_breakdown = {
+        key: round(value * area_acres, 2)
+        for key, value in costs_per_acre.items()
+    }
+    estimated_expenses = round(sum(expense_breakdown.values()), 2)
+    expected_yield_quintals = (
+        round(yield_tonnes_per_hectare * area_acres * 0.404686 * 10, 2)
+        if yield_tonnes_per_hectare is not None
+        else None
+    )
+    expected_revenue = (
+        round(expected_yield_quintals * price_per_quintal, 2)
+        if expected_yield_quintals is not None and price_per_quintal is not None
+        else None
+    )
+    expected_profit = (
+        round(expected_revenue - estimated_expenses, 2)
+        if expected_revenue is not None
+        else None
+    )
+    return {
+        "area_acres": round(area_acres, 2),
+        "expected_yield_quintals": expected_yield_quintals,
+        "expected_price_per_quintal": price_per_quintal,
+        "expected_revenue": expected_revenue,
+        "estimated_expenses": estimated_expenses,
+        "expense_breakdown": expense_breakdown,
+        "expected_profit": expected_profit,
+    }
 
 
 @router.post("/recommend-legacy")
@@ -249,17 +349,27 @@ def generate_crop_recommendations_legacy(
             if historical_prices
             else None
         )
-        candidates.append({
+        expected_price = forecast_price or historical_average_price
+        candidate = {
             "crop_id": crop.crop_id,
             "crop_name": crop.crop_name,
             "predicted_yield": predicted_yield,
-            "forecast_price": forecast_price
-            ,"historical_average_price": historical_average_price,
+            "forecast_price": forecast_price,
+            "historical_average_price": historical_average_price,
             "season_suitable": not crop.season or crop.season.casefold() == season.casefold(),
             "soil_score": _soil_score(crop, agricultural.soil_type),
             "weather_score": _weather_score(crop.crop_name, temperature, rainfall, humidity),
             "water_score": _water_score(crop.crop_name, rainfall),
-        })
+        }
+        candidate.update(
+            _profitability_estimate(
+                crop.crop_name,
+                predicted_yield,
+                expected_price,
+                area / 0.404686,
+            )
+        )
+        candidates.append(candidate)
 
     # ---------------------------------------------------------
     # 6. Check whether enough candidates are available
@@ -281,24 +391,18 @@ def generate_crop_recommendations_legacy(
         else item["historical_average_price"]
         for item in candidates
     ]
-    profitability = [
-        (
-            item["historical_average_price"] * item["predicted_yield"]
-            if item["historical_average_price"] is not None
-            and item["predicted_yield"] is not None
-            else None
-        )
-        for item in candidates
-    ]
+    profitability = [item["expected_profit"] for item in candidates]
     has_complete_price_forecasts = all(item["forecast_price"] is not None for item in candidates)
 
     for item, price, profit in zip(candidates, prices, profitability):
         yield_score = _min_max(item["predicted_yield"], yields)
         price_score = _min_max(price, prices)
+        expected_profit_score = _min_max(profit, profitability)
         historical_profitability_score = _min_max(profit, profitability)
         season_score = 1.0 if item["season_suitable"] else 0.2
         weather_score = item["weather_score"] * season_score
         factors = {
+            "expected_profit": round(expected_profit_score * 100, 1),
             "expected_yield": round(yield_score * 100, 1),
             "expected_market_price": round(price_score * 100, 1),
             "weather_suitability": round(weather_score * 100, 1),
@@ -317,14 +421,22 @@ def generate_crop_recommendations_legacy(
     # 8. Sort crops by recommendation score
     # ---------------------------------------------------------
     candidates.sort(
-        key=lambda x: x["recommendation_score"],
-        reverse=True
+        key=lambda x: (
+            x["expected_profit"] is not None,
+            x["expected_profit"] if x["expected_profit"] is not None else float("-inf"),
+            x["recommendation_score"],
+        ),
+        reverse=True,
     )
 
     # ---------------------------------------------------------
     # 9. Keep TOP 5 so farmers can compare more than one viable crop.
     # ---------------------------------------------------------
     top_crops = candidates[:5]
+    has_profitable_crop = any(
+        item["expected_profit"] is not None and item["expected_profit"] > 0
+        for item in candidates
+    )
 
     # ---------------------------------------------------------
     # 10. Save TOP 3 recommendations
@@ -360,6 +472,13 @@ def generate_crop_recommendations_legacy(
             ),
             "score_factors": item["score_factors"],
             "market_price_source": item["market_price_source"],
+            "area_acres": item["area_acres"],
+            "expected_yield_quintals": item["expected_yield_quintals"],
+            "expected_price_per_quintal": item["expected_price_per_quintal"],
+            "expected_revenue": item["expected_revenue"],
+            "estimated_expenses": item["estimated_expenses"],
+            "expense_breakdown": item["expense_breakdown"],
+            "expected_profit": item["expected_profit"],
         })
 
     db.commit()
@@ -381,6 +500,8 @@ def generate_crop_recommendations_legacy(
             else "yield_only"
         ),
         "scoring_model": "weighted_decision_support",
+        "profitability_model": "yield_price_minus_estimated_costs",
+        "has_profitable_crop": has_profitable_crop,
         "score_weights": {key: round(value * 100) for key, value in SCORING_WEIGHTS.items()},
         "score_factor_labels": SCORE_FACTOR_LABELS,
         "recommendations": saved_recommendations
@@ -389,6 +510,7 @@ def generate_crop_recommendations_legacy(
 
 @router.post("/recommend")
 def generate_historical_crop_recommendations(
+    area_acres: float = Query(default=1.0, gt=0),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -429,17 +551,20 @@ def generate_historical_crop_recommendations(
     prices = [item["historical_average_price"] for item in candidates]
     stability = [item["yield_stability"] for item in candidates]
     coverage = [item["historical_districts"] for item in candidates]
-    profitability = [
-        (
-            item["historical_yield"] * item["historical_average_price"]
-            if item["historical_average_price"] is not None
-            else None
+    profitability = []
+    for item in candidates:
+        estimate = _profitability_estimate(
+            item["crop_name"],
+            item["historical_yield"],
+            item["historical_average_price"],
+            area_acres,
         )
-        for item in candidates
-    ]
+        item.update(estimate)
+        profitability.append(item["expected_profit"])
 
     for item, price, profit in zip(candidates, prices, profitability):
         factors = {
+            "expected_profit": round(_min_max(profit, profitability) * 100, 1),
             "expected_yield": round(_min_max(item["historical_yield"], yields) * 100, 1),
             "expected_market_price": round(_min_max(price, prices) * 100, 1),
             "weather_suitability": round(item["yield_stability"] * 100, 1),
@@ -452,8 +577,19 @@ def generate_historical_crop_recommendations(
         )
         item["score_factors"] = factors
 
-    candidates.sort(key=lambda item: item["recommendation_score"], reverse=True)
+    candidates.sort(
+        key=lambda item: (
+            item["expected_profit"] is not None,
+            item["expected_profit"] if item["expected_profit"] is not None else float("-inf"),
+            item["recommendation_score"],
+        ),
+        reverse=True,
+    )
     recommendations = []
+    has_profitable_crop = any(
+        item["expected_profit"] is not None and item["expected_profit"] > 0
+        for item in candidates
+    )
     recommendation_date = datetime.now()
     for rank, item in enumerate(candidates[:5], start=1):
         db.add(CropRecommendation(
@@ -470,6 +606,13 @@ def generate_historical_crop_recommendations(
             "crop_name": item["crop_name"],
             "recommendation_score": round(item["recommendation_score"], 1),
             "score_factors": item["score_factors"],
+            "area_acres": item["area_acres"],
+            "expected_yield_quintals": item["expected_yield_quintals"],
+            "expected_price_per_quintal": item["expected_price_per_quintal"],
+            "expected_revenue": item["expected_revenue"],
+            "estimated_expenses": item["estimated_expenses"],
+            "expense_breakdown": item["expense_breakdown"],
+            "expected_profit": item["expected_profit"],
             "historical_observations": item["historical_observations"],
         })
     db.commit()
@@ -477,6 +620,9 @@ def generate_historical_crop_recommendations(
     return {
         "message": "Historical crop recommendations generated successfully",
         "recommendation_basis": "historical_yield_and_market_data",
+        "area_acres": area_acres,
+        "profitability_model": "historical_yield_price_minus_estimated_costs",
+        "has_profitable_crop": has_profitable_crop,
         "scoring_model": "historical_weighted_decision_support",
         "score_weights": {key: round(value * 100) for key, value in SCORING_WEIGHTS.items()},
         "score_factor_labels": SCORE_FACTOR_LABELS,

@@ -7,12 +7,20 @@
 
 .venv/
 **/.venv/
+
 __pycache__/
 **/__pycache__/
 *.py[cod]
+
 ml/mlflow.db
 ml/mlflow.db-*
 ml/mlartifacts/
 ml/artifacts/
 ml/saved_models/*_latest.json
-/karnataka_historical_mandi_prices.csv
+
+# Large datasets
+*.csv
+*.zip
+
+# Editor settings
+.vscode/

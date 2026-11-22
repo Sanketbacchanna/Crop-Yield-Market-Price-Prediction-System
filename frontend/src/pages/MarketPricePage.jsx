@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import NearestMandi from "../components/NearestMandi";
+import { API_BASE_URL } from "../services/api";
 
 function MarketPricePage({ initialFilters, liveLocation }) {
   const prefill = initialFilters || {};
@@ -86,7 +87,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
     const fetchStates = async () => {
       try {
         const response = await fetch(
-          "http://127.0.0.1:8000/market-price/states"
+          `${API_BASE_URL}/market-price/states`
         );
 
         if (!response.ok) {
@@ -134,7 +135,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
         }
 
         const response = await fetch(
-          `http://127.0.0.1:8000/market-price/history/filters?${params.toString()}`
+          `${API_BASE_URL}/market-price/history/filters?${params.toString()}`
         );
 
         if (!response.ok) {
@@ -196,7 +197,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
         params.append("limit", liveLimit);
 
         const response = await fetch(
-          `http://127.0.0.1:8000/market-price/live?${params.toString()}`
+          `${API_BASE_URL}/market-price/live?${params.toString()}`
         );
 
         if (!response.ok) {
@@ -263,7 +264,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
         params.append("limit", historicalLimit);
 
         const response = await fetch(
-          `http://127.0.0.1:8000/market-price/history?${params.toString()}`
+          `${API_BASE_URL}/market-price/history?${params.toString()}`
         );
 
         if (!response.ok) {
@@ -301,7 +302,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
           if (apiKey && value) params.append(apiKey, value);
         });
         const response = await fetch(
-          `http://127.0.0.1:8000/market-price/summary?${params.toString()}`
+          `${API_BASE_URL}/market-price/summary?${params.toString()}`
         );
         if (!response.ok) throw new Error("Failed to fetch price summary");
         setPriceSummary(await response.json());
@@ -338,7 +339,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
       });
 
       const response = await fetch(
-        `http://127.0.0.1:8000/price-prediction/market-insight?${params.toString()}`
+        `${API_BASE_URL}/price-prediction/market-insight?${params.toString()}`
       );
 
       const data = await response.json();
