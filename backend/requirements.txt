@@ -6,7 +6,6 @@ python-dotenv
 pyjwt
 bcrypt
 pytest
-httpx2
 numpy>=1.26,<3
 pandas>=2.1,<4
 scikit-learn>=1.5,<2
