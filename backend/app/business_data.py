@@ -3,6 +3,7 @@ import math
 import re
 from collections import defaultdict
 from pathlib import Path
+from statistics import mean, pstdev
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -133,4 +134,50 @@ def get_historical_yield(
             "observations": values["observations"],
         }
         for year, values in sorted(totals.items())
+    ]
+
+
+def get_historical_crop_summaries(
+    dataset_path: Path = YIELD_DATASET_PATH,
+) -> list[dict]:
+    """Aggregate Karnataka yield history without requiring farmer inputs."""
+    observations = defaultdict(list)
+    districts = defaultdict(set)
+
+    with dataset_path.open(encoding="utf-8-sig", newline="") as dataset:
+        for row in csv.DictReader(dataset):
+            crop_name = (row.get("crop") or "").strip()
+            try:
+                crop_yield = float(row["yield"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if not crop_name or not math.isfinite(crop_yield) or crop_yield < 0:
+                continue
+
+            key = crop_name.casefold()
+            observations[key].append((crop_yield, crop_name))
+            district = (row.get("district") or "").strip().casefold()
+            if district:
+                districts[key].add(district)
+
+    return [
+        {
+            "crop_name": values[0][1] if values else key.title(),
+            "historical_yield": round(mean([value[0] for value in values]), 4),
+            "yield_stability": round(
+                1 / (
+                    1
+                    + (
+                        pstdev([value[0] for value in values])
+                        / mean([value[0] for value in values])
+                        if mean([value[0] for value in values])
+                        else 0
+                    )
+                ),
+                4,
+            ),
+            "historical_observations": len(values),
+            "historical_districts": len(districts[key]),
+        }
+        for key, values in observations.items()
     ]

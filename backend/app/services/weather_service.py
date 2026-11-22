@@ -271,6 +271,10 @@ def _open_meteo_forecast(latitude: float, longitude: float) -> dict:
         {
             "latitude": latitude,
             "longitude": longitude,
+            "hourly": (
+                "temperature_2m,relative_humidity_2m,precipitation,"
+                "precipitation_probability,weather_code"
+            ),
             "daily": (
                 "precipitation_sum,precipitation_probability_max,"
                 "temperature_2m_max,temperature_2m_min"
@@ -451,6 +455,17 @@ def get_weather_outlook(
         logger.warning("IMD forecast unavailable; using Open-Meteo: %s", error)
         forecast = _open_meteo_forecast(latitude, longitude)
         forecast_error = str(error)
+
+    # IMD station forecasts are daily. Keep that official forecast as the
+    # primary source, but supplement the short-range hourly cards when IMD
+    # does not expose an hourly series for the selected farm point.
+    if not forecast.get("hourly"):
+        try:
+            hourly_forecast = _open_meteo_forecast(latitude, longitude)
+            if hourly_forecast.get("hourly"):
+                forecast = {**forecast, "hourly": hourly_forecast["hourly"]}
+        except WeatherProviderError as error:
+            logger.info("Hourly forecast supplement unavailable: %s", error)
 
     warnings = None
     nowcast = None
