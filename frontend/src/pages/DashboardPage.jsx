@@ -37,6 +37,16 @@ function DashboardPage({
     farmArea !== "" && Number.isFinite(parsedFarmArea) && parsedFarmArea >= 0
       ? `${parsedFarmArea.toFixed(2).replace(/\.00$/, "")} acres`
       : "Enter area in the yield form";
+  const rawYield = Number(yieldResult?.predicted_yield);
+  const yieldAreaAcres = Number(farmArea || yieldResult?.area_acres);
+  const yieldUnit = "quintals";
+  const perAcreYield = Number.isFinite(rawYield)
+    ? rawYield * 0.404686 * 10
+    : null;
+  const totalYield =
+    perAcreYield !== null && Number.isFinite(yieldAreaAcres) && yieldAreaAcres > 0
+      ? perAcreYield * yieldAreaAcres
+      : null;
 
   return (
     <div id="dashboard" className="dashboard-page">
@@ -99,15 +109,19 @@ function DashboardPage({
         />
         <SummaryCard
           icon="🌱"
-          label="Predicted Yield"
+          label="Expected Yield"
           value={
-            yieldResult?.predicted_yield != null
-              ? Number(yieldResult.predicted_yield).toFixed(2)
+            totalYield !== null
+              ? `${totalYield.toLocaleString("en-IN", { maximumFractionDigits: 2 })} ${yieldUnit}`
               : "—"
           }
           description={
             yieldResult?.crop_name
-              ? `${yieldResult.crop_name} • Random Forest`
+              ? `${yieldResult.crop_name} • ${
+                  perAcreYield !== null
+                    ? `${perAcreYield.toLocaleString("en-IN", { maximumFractionDigits: 2 })} ${yieldUnit}/acre`
+                    : "Per-acre estimate unavailable"
+                }`
               : "Generate a yield prediction"
           }
           accent="blue"

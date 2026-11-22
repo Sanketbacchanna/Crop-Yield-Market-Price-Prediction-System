@@ -5,6 +5,8 @@ function CropRecommendationPage({
   loading,
   error,
   result,
+  area,
+  onAreaChange,
 }) {
   return (
     <section
@@ -16,7 +18,7 @@ function CropRecommendationPage({
           <p className="section-eyebrow">SMART RECOMMENDATION</p>
           <h2>What should I plant?</h2>
           <p>
-            Compare crops using Karnataka’s historical yield and market data.
+            Compare expected revenue, estimated expenses, and profit before you plant.
           </p>
         </div>
       </div>
@@ -26,6 +28,8 @@ function CropRecommendationPage({
         loading={loading}
         error={error}
         result={result}
+        area={area}
+        onAreaChange={onAreaChange}
       />
     </section>
   );

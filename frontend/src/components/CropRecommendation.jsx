@@ -3,8 +3,11 @@ function CropRecommendation({
   loading,
   error,
   result,
+  area,
+  onAreaChange,
 }) {
   const recommendation = result?.recommendations?.[0];
+  const hasProfitableCrop = result?.has_profitable_crop ?? true;
   const additionalRecommendations = result?.recommendations?.slice(1) || [];
   const factorLabels = result?.score_factor_labels || {
     expected_yield: "Expected yield",
@@ -23,9 +26,21 @@ function CropRecommendation({
     historical_profitability: 10,
   };
   const rankingContext =
-    result?.recommendation_basis === "yield_and_forecast_price"
-      ? "Ranked using six weighted factors, including your estimated yield and saved price forecasts."
-      : "Ranked using six weighted factors; historical market prices fill in where a saved forecast is unavailable.";
+    hasProfitableCrop
+      ? "Ranked by expected profit after estimated seed, fertilizer, pesticide, labour, irrigation, and transportation costs."
+      : "All available crops currently estimate a loss after costs. The option below has the smallest estimated loss.";
+  const formatCurrency = (value) =>
+    value == null
+      ? "—"
+      : `₹${Number(value).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+  const expenseLabels = {
+    seed: "Seed",
+    fertilizer: "Fertilizer",
+    pesticide: "Pesticide",
+    labour: "Labour",
+    irrigation: "Irrigation",
+    transportation: "Transportation",
+  };
   const cropImages = {
     Rice: "/crops/Rice.png",
     Wheat: "/crops/wheat.jpg",
@@ -37,6 +52,31 @@ function CropRecommendation({
   const cropImage = recommendation
     ? cropImages[recommendation.crop_name]
     : null;
+  const recommendationFactors = recommendation?.score_factors || {};
+  const explanationReasons = recommendation
+    ? [
+        Number(recommendationFactors.expected_profit) >= 60
+          ? "Strong expected profit compared with the other crops"
+          : null,
+        Number(recommendationFactors.expected_yield) >= 60
+          ? "High predicted yield compared with the other crops"
+          : null,
+        Number(recommendationFactors.expected_market_price) >= 60
+          ? "Strong market price compared with the other crops"
+          : null,
+        Number(recommendationFactors.weather_suitability) >= 60
+          ? "Lower weather risk based on the available historical signal"
+          : null,
+        Number(recommendationFactors.soil_suitability) >= 60
+          ? "Good historical district/soil fit"
+          : null,
+        recommendation.expected_profit != null
+          ? recommendation.expected_profit > 0
+            ? `Expected profit ${formatCurrency(recommendation.expected_profit)}`
+            : `Estimated loss ${formatCurrency(Math.abs(recommendation.expected_profit))}`
+          : null,
+      ].filter(Boolean)
+    : [];
   return (
     <div className="recommendation-card">
       <div className="recommendation-form">
@@ -51,13 +91,26 @@ function CropRecommendation({
             profitability.
           </p>
 
-            <form onSubmit={onSubmit}>
+            <form onSubmit={(event) => onSubmit(event, area)}>
+              <label className="recommendation-area-field" htmlFor="recommendation-area">
+                Farm area (acres)
+                <input
+                  id="recommendation-area"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={area || ""}
+                  onChange={(event) => onAreaChange?.(event.target.value)}
+                  placeholder="e.g. 2.5"
+                  required
+                />
+              </label>
             <button
               type="submit"
               className="recommendation-button"
               disabled={loading}
             >
-              {loading ? "Analyzing historical data…" : "Show best crops"}
+              {loading ? "Calculating profitability…" : "Compare crop profits"}
             </button>
           </form>
 
@@ -69,7 +122,11 @@ function CropRecommendation({
         {recommendation ? (
           <>
             <div className="recommendation-result-header">
-              <span>TOP RECOMMENDATION</span>
+              <span className={!hasProfitableCrop ? "recommendation-loss-heading" : ""}>
+                {hasProfitableCrop
+                  ? "TOP RECOMMENDATION"
+                  : "NO PROFITABLE CROP FOUND UNDER CURRENT CONDITIONS"}
+              </span>
               <strong>#{recommendation.recommendation_rank}</strong>
             </div>
             <p className="recommendation-personalized-context">
@@ -89,9 +146,59 @@ function CropRecommendation({
               </div>
 
               <div>
-                <p>Recommended Crop</p>
+                <p>{hasProfitableCrop ? "Recommended Crop" : "Closest option (least estimated loss)"}</p>
                 <h3>{recommendation.crop_name}</h3>
               </div>
+            </div>
+
+            <div className="profitability-summary">
+              <div className="profitability-summary-heading">
+                <div>
+                  <span>BEST CROP BY EXPECTED PROFIT</span>
+                  <h4>Profit estimate for {recommendation.area_acres} acres</h4>
+                </div>
+                <strong>{formatCurrency(recommendation.expected_profit)}</strong>
+              </div>
+              <div className="profitability-stats">
+                <div>
+                  <span>Expected yield</span>
+                  <strong>{recommendation.expected_yield_quintals ?? "—"} qtl</strong>
+                </div>
+                <div>
+                  <span>Expected revenue</span>
+                  <strong>{formatCurrency(recommendation.expected_revenue)}</strong>
+                </div>
+                <div>
+                  <span>Estimated expenses</span>
+                  <strong>{formatCurrency(recommendation.estimated_expenses)}</strong>
+                </div>
+              </div>
+              <div className="profitability-expenses">
+                {Object.entries(recommendation.expense_breakdown || {}).map(([key, value]) => (
+                  <span key={key}>{expenseLabels[key] || key}: {formatCurrency(value)}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="recommendation-why-card">
+              <div className="recommendation-why-heading">
+                <div>
+                  <span>EXPLAINABLE RECOMMENDATION</span>
+                  <h4>Why recommended?</h4>
+                </div>
+                <small>Based on this prediction</small>
+              </div>
+              <ul>
+                {(explanationReasons.length > 0
+                  ? explanationReasons
+                  : ["This crop has the strongest combined score among the available options."]
+                ).map((reason) => (
+                  <li key={reason}>
+                    <span aria-hidden="true">✓</span>
+                    {reason}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <div className="recommendation-factor-breakdown">
@@ -121,8 +228,7 @@ function CropRecommendation({
                   >
                     <strong>#{item.recommendation_rank} {item.crop_name}</strong>
                     <span>
-                      Score {Number(item.recommendation_score).toFixed(1)}% · {" "}
-                      {item.historical_observations} historical records
+                      Profit {formatCurrency(item.expected_profit)} · Score {Number(item.recommendation_score).toFixed(1)}%
                     </span>
                   </div>
                 ))}

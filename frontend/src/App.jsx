@@ -888,7 +888,7 @@ function App() {
     }
   }
 
-  async function handleCropRecommendation(event) {
+  async function handleCropRecommendation(event, areaAcres) {
     event.preventDefault();
 
     setRecommendationLoading(true);
@@ -897,7 +897,7 @@ function App() {
 
     try {
       setRecommendationResult(
-        await getCropRecommendations()
+        await getCropRecommendations(areaAcres)
       );
     } catch (error) {
       setRecommendationError(
@@ -939,6 +939,7 @@ function App() {
     },
     "market-price": {
       initialFilters: marketPricePrefill,
+      liveLocation,
       cropId,
       crops: cropOptions,
       onCropChange: setCropId,
@@ -968,6 +969,8 @@ function App() {
     "crop-recommendation": {
       agriculturalRecords,
       selectedAgriculturalId,
+      area: farmArea,
+      onAreaChange: setFarmArea,
       onAgriculturalChange: setSelectedAgriculturalId,
       onSubmit: handleCropRecommendation,
       loading: recommendationLoading,

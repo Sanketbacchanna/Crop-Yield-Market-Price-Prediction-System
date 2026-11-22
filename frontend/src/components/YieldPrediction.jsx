@@ -47,11 +47,6 @@ const KARNATAKA_YIELD_CROPS = [
   "Wheat",
 ].map((crop_name, index) => ({ crop_id: index + 1, crop_name }));
 
-const YIELD_UNIT_BY_CROP = {
-  Coconut: "nuts",
-  "Cotton(lint)": "bales",
-};
-
 function YieldPrediction({
   agriculturalRecords,
   districts,
@@ -114,9 +109,9 @@ function YieldPrediction({
       : "");
   const predictedYield = Number(result?.predicted_yield);
   const areaAcres = Number(currentArea || result?.cultivated_area);
-  const yieldUnit = YIELD_UNIT_BY_CROP[result?.crop_name] || "tonnes";
+  const yieldUnit = "quintals";
   const perAcreYield = Number.isFinite(predictedYield)
-    ? predictedYield * 0.404686
+    ? predictedYield * 0.404686 * 10
     : null;
   const totalYield =
     perAcreYield !== null && Number.isFinite(areaAcres) && areaAcres > 0

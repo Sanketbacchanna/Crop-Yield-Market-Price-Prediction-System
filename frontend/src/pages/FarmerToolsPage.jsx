@@ -422,6 +422,9 @@ function FarmerToolsPage({
                 <div>
                   <strong>{item.crop_name}</strong>
                   <span>Estimated yield: {Number(item.predicted_yield).toFixed(2)}</span>
+                  {item.expected_profit != null && (
+                    <span>Expected profit: ₹{Number(item.expected_profit).toLocaleString("en-IN")}</span>
+                  )}
                 </div>
                 <div className="recommendation-price">
                   {item.forecast_price == null

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import NearestMandi from "../components/NearestMandi";
 
-function MarketPricePage({ initialFilters }) {
+function MarketPricePage({ initialFilters, liveLocation }) {
   const prefill = initialFilters || {};
   // =========================================================
   // BASIC FILTERS
@@ -474,6 +475,8 @@ function MarketPricePage({ initialFilters }) {
           </p>
         </div>
       </div>
+
+      <NearestMandi liveLocation={liveLocation} commodity={commodity} />
 
       {/* =====================================================
           MARKET FILTERS

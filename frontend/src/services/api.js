@@ -255,11 +255,23 @@ export function createYieldPrediction(agriculturalId, cropName, district, area) 
   return request(`/yield-prediction/?${params}`, { method: "POST" });
 }
 
-export function getCropRecommendations() {
-  return request("/crop-recommendation/recommend", {
+export function getNearestMandiMarkets(latitude, longitude, commodity, limit = 5) {
+  const params = new URLSearchParams({
+    latitude: String(latitude),
+    longitude: String(longitude),
+    limit: String(limit),
+  });
+  if (commodity) params.set("commodity", commodity);
+  return request(`/market-price/nearest?${params.toString()}`);
+}
+
+export function getCropRecommendations(areaAcres = 1) {
+  const params = new URLSearchParams({ area_acres: String(areaAcres || 1) });
+  return request(`/crop-recommendation/recommend?${params}`, {
     method: "POST",
   });
 }
+
 export function getWeatherData() {
   return getList(
     "/weather-data/",
