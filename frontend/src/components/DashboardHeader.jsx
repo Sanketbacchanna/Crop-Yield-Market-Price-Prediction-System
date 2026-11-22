@@ -23,8 +23,12 @@ function DashboardHeader({
         </button>
 
         <div className="top-header-brand">
-          <div className="top-header-icon">🌱</div>
-          <div>
+          <img
+            className="top-header-logo"
+            src="/crop-yield-portal-logo.png"
+            alt="Crop Yield & Market Price Prediction Portal"
+          />
+          <div className="top-header-brand-copy">
             <h1>AgriPredict</h1>
             <span>Smart Agriculture Platform</span>
           </div>

@@ -9,9 +9,9 @@
   "theme_color": "#2e7d32",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/crop-yield-portal-logo.png",
+      "sizes": "1152x768",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

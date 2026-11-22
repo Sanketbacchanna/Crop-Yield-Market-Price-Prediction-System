@@ -446,6 +446,18 @@ button {
   font-size: 28px;
 }
 
+.top-header-logo {
+  display: block;
+  width: 138px;
+  height: 58px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.top-header-brand-copy {
+  display: grid;
+}
+
 .top-header-brand h1 {
   margin: 0;
   color: var(--text);
@@ -3917,6 +3929,15 @@ button {
   color: #205a2a;
   background: #d7edc4;
   font-size: 21px;
+}
+
+.auth-brand img,
+.auth-mobile-brand img {
+  display: block;
+  width: min(290px, 100%);
+  height: 82px;
+  object-fit: contain;
+  object-position: left center;
 }
 
 .auth-visual > div:nth-child(2) {

@@ -1016,7 +1016,9 @@ function App() {
       <div className="auth-shell">
         <div className="auth-card">
           <aside className="auth-visual">
-            <div className="auth-brand"><span aria-hidden="true">✳</span> AgriPredict</div>
+            <div className="auth-brand">
+              <img src="/crop-yield-portal-logo.png" alt="Crop Yield Prediction Portal" />
+            </div>
             <div>
               <p className="auth-visual-eyebrow">GROW WITH CONFIDENCE</p>
               <h1>Better decisions<br />start at the farm.</h1>
@@ -1029,7 +1031,9 @@ function App() {
           </aside>
 
           <section className="auth-content" aria-labelledby="auth-title">
-            <div className="auth-mobile-brand"><span aria-hidden="true">✳</span> AgriPredict</div>
+            <div className="auth-mobile-brand">
+              <img src="/crop-yield-portal-logo.png" alt="Crop Yield Prediction Portal" />
+            </div>
             <p className="auth-eyebrow">
               {authMode === "register" ? "CREATE YOUR ACCOUNT" : authMode === "reset" ? "ACCOUNT RECOVERY" : "WELCOME TO AGRIPREDICT"}
             </p>
