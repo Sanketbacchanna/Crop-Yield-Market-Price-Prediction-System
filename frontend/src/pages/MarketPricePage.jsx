@@ -59,7 +59,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
 
   const [historicalPage, setHistoricalPage] = useState(1);
   const [historicalLimit] = useState(20);
-  const [historicalTotal, setHistoricalTotal] = useState(0);
+  const [historicalHasNext, setHistoricalHasNext] = useState(false);
   const [priceSummary, setPriceSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
 
@@ -274,7 +274,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
         const data = await response.json();
 
         setHistoricalPrices(data.data || []);
-        setHistoricalTotal(data.total || 0);
+        setHistoricalHasNext(data.has_next || false);
       } catch (error) {
         console.error("Historical market price error:", error);
 
@@ -283,7 +283,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
         );
 
         setHistoricalPrices([]);
-        setHistoricalTotal(0);
+        setHistoricalHasNext(false);
       } finally {
         setHistoricalLoading(false);
       }
@@ -931,20 +931,11 @@ function MarketPricePage({ initialFilters, liveLocation }) {
                   Page {historicalPage}
                 </span>
 
-                <span>
-                  {historicalTotal.toLocaleString(
-                    "en-IN"
-                  )}{" "}
-                  records
-                </span>
+
 
                 <button
                   type="button"
-                  disabled={
-                    historicalPage *
-                      historicalLimit >=
-                    historicalTotal
-                  }
+                  disabled={!historicalHasNext}
                   onClick={() =>
                     setHistoricalPage(
                       (current) => current + 1

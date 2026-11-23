@@ -416,8 +416,11 @@ def get_historical_market_prices(
     offset = (page - 1) * limit
 
     conditions = []
+
+    # Fetch one extra record so we can determine
+    # whether another page exists without COUNT(*)
     params = {
-        "limit": limit,
+        "limit": limit + 1,
         "offset": offset
     }
 
@@ -464,6 +467,7 @@ def get_historical_market_prices(
 
     # ---------------------------------------------
     # Get historical records
+    # Fetch limit + 1 to determine has_next
     # ---------------------------------------------
 
     query = text(f"""
@@ -489,31 +493,18 @@ def get_historical_market_prices(
 
     result = db.execute(query, params)
 
-    records = [
+    all_records = [
         dict(row)
         for row in result.mappings().all()
     ]
 
     # ---------------------------------------------
-    # Get total matching records
+    # Determine pagination status
     # ---------------------------------------------
 
-    count_query = text(f"""
-        SELECT COUNT(*)
-        FROM historical_market_prices
-        {where_clause}
-    """)
+    has_next = len(all_records) > limit
 
-    total_result = db.execute(
-        count_query,
-        {
-            key: value
-            for key, value in params.items()
-            if key not in ("limit", "offset")
-        }
-    )
-
-    total = total_result.scalar() or 0
+    records = all_records[:limit]
 
     # ---------------------------------------------
     # Response
@@ -523,8 +514,9 @@ def get_historical_market_prices(
         "success": True,
         "page": page,
         "limit": limit,
-        "total": total,
         "count": len(records),
+        "has_next": has_next,
+        "has_previous": page > 1,
         "filters": {
             "state": state,
             "district": district,
