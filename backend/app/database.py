@@ -40,9 +40,20 @@ DATABASE_URL = URL.create(
     database=DB_NAME
 )
 
+DB_CA_PATH = os.getenv("DB_CA_PATH")
+
+connect_args = {}
+
+if DB_CA_PATH:
+    connect_args["ssl"] = {
+        "ca": DB_CA_PATH
+    }
+
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True
+    connect_args=connect_args,
+    pool_pre_ping=True,
+    pool_recycle=300
 )
 
 SessionLocal = sessionmaker(
