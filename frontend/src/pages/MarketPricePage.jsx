@@ -62,6 +62,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
   const [historicalHasNext, setHistoricalHasNext] = useState(false);
   const [priceSummary, setPriceSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // =========================================================
   // AI MARKET INSIGHT
@@ -167,6 +168,12 @@ function MarketPricePage({ initialFilters, liveLocation }) {
 
   useEffect(() => {
     const fetchLivePrices = async () => {
+      if (!hasSearched) {
+        setLivePrices([]);
+        setLiveLoading(false);
+        return;
+      }
+
       try {
         setLiveLoading(true);
         setLiveError("");
@@ -218,7 +225,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
     };
 
     fetchLivePrices();
-  }, [appliedFilters, livePage, liveLimit]);
+  }, [appliedFilters, hasSearched, livePage, liveLimit]);
 
   // =========================================================
   // FETCH HISTORICAL MARKET PRICES
@@ -226,6 +233,13 @@ function MarketPricePage({ initialFilters, liveLocation }) {
 
   useEffect(() => {
     const fetchHistoricalPrices = async () => {
+      if (!hasSearched) {
+        setHistoricalPrices([]);
+        setHistoricalHasNext(false);
+        setHistoricalLoading(false);
+        return;
+      }
+
       try {
         setHistoricalLoading(true);
         setHistoricalError("");
@@ -290,10 +304,16 @@ function MarketPricePage({ initialFilters, liveLocation }) {
     };
 
     fetchHistoricalPrices();
-  }, [appliedFilters, historicalPage, historicalLimit]);
+  }, [appliedFilters, hasSearched, historicalPage, historicalLimit]);
 
   useEffect(() => {
     const fetchPriceSummary = async () => {
+      if (!hasSearched) {
+        setPriceSummary(null);
+        setSummaryLoading(false);
+        return;
+      }
+
       setSummaryLoading(true);
       try {
         const params = new URLSearchParams();
@@ -314,7 +334,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
       }
     };
     fetchPriceSummary();
-  }, [appliedFilters]);
+  }, [appliedFilters, hasSearched]);
 
   // =========================================================
   // FETCH MARKET INSIGHT
@@ -381,6 +401,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
     setLivePage(1);
     setHistoricalPage(1);
 
+    setHasSearched(true);
     setAppliedFilters(filters);
 
     fetchMarketInsight(filters);
@@ -624,6 +645,11 @@ function MarketPricePage({ initialFilters, liveLocation }) {
         </button>
       </div>
 
+      {!hasSearched ? (
+        <div className="market-status">
+          Search to view market prices and trends.
+        </div>
+      ) : (
       <div className="market-price-summary" aria-live="polite">
         <div className="market-summary-heading">
           <div>
@@ -652,6 +678,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
           ))}
         </div>
       </div>
+      )}
 
       {/* =====================================================
           LIVE MANDI PRICES
@@ -673,19 +700,25 @@ function MarketPricePage({ initialFilters, liveLocation }) {
           </div>
         </div>
 
-        {liveLoading && (
+        {!hasSearched && (
+          <div className="market-status">
+            Search to view live market prices.
+          </div>
+        )}
+
+        {hasSearched && liveLoading && (
           <div className="market-status">
             Loading live market prices...
           </div>
         )}
 
-        {!liveLoading && liveError && (
+        {hasSearched && !liveLoading && liveError && (
           <div className="market-status error">
             {liveError}
           </div>
         )}
 
-        {!liveLoading &&
+        {hasSearched && !liveLoading &&
           !liveError &&
           livePrices.length === 0 && (
             <div className="market-status">
@@ -693,7 +726,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
             </div>
           )}
 
-        {!liveLoading &&
+        {hasSearched && !liveLoading &&
           !liveError &&
           livePrices.length > 0 && (
             <div className="market-table-wrapper">
@@ -818,20 +851,26 @@ function MarketPricePage({ initialFilters, liveLocation }) {
           </div>
         </div>
 
-        {historicalLoading && (
+        {!hasSearched && (
+          <div className="market-status">
+            Search to view historical market prices.
+          </div>
+        )}
+
+        {hasSearched && historicalLoading && (
           <div className="market-status">
             Loading historical market prices...
           </div>
         )}
 
-        {!historicalLoading &&
+        {hasSearched && !historicalLoading &&
           historicalError && (
             <div className="market-status error">
               {historicalError}
             </div>
           )}
 
-        {!historicalLoading &&
+        {hasSearched && !historicalLoading &&
           !historicalError &&
           historicalPrices.length === 0 && (
             <div className="market-status">
@@ -840,7 +879,7 @@ function MarketPricePage({ initialFilters, liveLocation }) {
             </div>
           )}
 
-        {!historicalLoading &&
+        {hasSearched && !historicalLoading &&
           !historicalError &&
           historicalPrices.length > 0 && (
             <>

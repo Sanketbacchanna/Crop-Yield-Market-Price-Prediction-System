@@ -67,7 +67,7 @@ function NearestMandi({ liveLocation, commodity }) {
               <thead>
                 <tr>
                   <th>Market</th>
-                  <th>Distance</th>
+                  <th>Distance (straight-line)</th>
                   <th>{commodity || "Crop"} price</th>
                 </tr>
               </thead>

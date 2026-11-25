@@ -3,11 +3,15 @@ from __future__ import annotations
 from math import asin, cos, radians, sin, sqrt
 
 
-# Coordinates are the approximate public coordinates of the market town/APMC.
-# Keeping them here avoids geocoding every market request and gives farmers a
-# useful distance estimate even when the price dataset has no coordinate field.
+# Coordinates are the public coordinates of each market/APMC, rather than the
+# centre of the associated town. Keeping them here avoids geocoding every
+# market request and gives farmers a useful distance estimate even when the
+# price dataset has no coordinate field.
 KARNATAKA_MARKETS = (
-    {"name": "Mangalore APMC", "district": "Dakshina Kannada", "latitude": 12.9141, "longitude": 74.8560, "aliases": ("Mangalore APMC", "Mangalore")},
+    # Mangaluru APMC is at the Baikampady APMC yard. The old point was the
+    # centre of Mangaluru, which understated the distance from Vamanjoor by
+    # several kilometres.
+    {"name": "Mangalore APMC", "district": "Dakshina Kannada", "latitude": 12.9566755, "longitude": 74.8091050, "aliases": ("Mangalore APMC", "Mangalore")},
     {"name": "Bantwal Market", "district": "Dakshina Kannada", "latitude": 12.8906, "longitude": 75.0347, "aliases": ("Bantwal Market", "Bantwal")},
     {"name": "Puttur Market", "district": "Dakshina Kannada", "latitude": 12.7598, "longitude": 75.0067, "aliases": ("Puttur Market", "Puttur")},
     {"name": "Udupi APMC", "district": "Udupi", "latitude": 13.3409, "longitude": 74.7421, "aliases": ("Udupi APMC", "Udupi")},
