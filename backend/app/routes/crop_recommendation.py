@@ -1,5 +1,5 @@
 from datetime import datetime
-from statistics import mean, pstdev
+from statistics import mean
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -13,11 +13,7 @@ from app.models.price_prediction import PricePrediction
 from app.models.user import User
 from app.models.weather_data import WeatherData
 from app.ml.yield_predictor import predict_yield
-from app.business_data import (
-    get_historical_crop_summaries,
-    get_historical_prices,
-    get_historical_yield,
-)
+from app.business_data import get_historical_crop_summaries, get_historical_prices
 
 
 router = APIRouter(
@@ -515,9 +511,6 @@ def generate_crop_recommendations_legacy(
 @router.post("/recommend")
 def generate_historical_crop_recommendations(
     area_acres: float = Query(default=1.0, gt=0),
-    district: str | None = Query(default=None, min_length=1),
-    season: str | None = Query(default=None, min_length=1),
-    soil_type: str | None = Query(default=None, min_length=1),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -535,27 +528,6 @@ def generate_historical_crop_recommendations(
         crop = crop_by_name.get(summary["crop_name"].casefold())
         if crop is None:
             continue
-        historical_yield = summary["historical_yield"]
-        historical_stability = summary["yield_stability"]
-        historical_districts = summary["historical_districts"]
-        if district:
-            regional_yield = get_historical_yield(
-                district,
-                summary["crop_name"],
-                season=season,
-            )
-            if not regional_yield:
-                continue
-            historical_yield = mean(item["yield"] for item in regional_yield)
-            historical_stability = 1 / (
-                1 + (
-                    pstdev(item["yield"] for item in regional_yield)
-                    / historical_yield
-                    if historical_yield
-                    else 0
-                )
-            )
-            historical_districts = 1
         historical_prices = get_historical_prices(summary["crop_name"])
         average_price = (
             mean(item["modal_price"] for item in historical_prices)
@@ -565,11 +537,10 @@ def generate_historical_crop_recommendations(
         candidates.append({
             "crop_id": crop.crop_id,
             "crop_name": crop.crop_name,
-            "crop": crop,
-            "historical_yield": historical_yield,
+            "historical_yield": summary["historical_yield"],
             "historical_average_price": average_price,
-            "yield_stability": historical_stability,
-            "historical_districts": historical_districts,
+            "yield_stability": summary["yield_stability"],
+            "historical_districts": summary["historical_districts"],
             "historical_observations": summary["historical_observations"],
         })
 
@@ -579,6 +550,7 @@ def generate_historical_crop_recommendations(
     yields = [item["historical_yield"] for item in candidates]
     prices = [item["historical_average_price"] for item in candidates]
     stability = [item["yield_stability"] for item in candidates]
+    coverage = [item["historical_districts"] for item in candidates]
     profitability = []
     for item in candidates:
         estimate = _profitability_estimate(
@@ -587,7 +559,6 @@ def generate_historical_crop_recommendations(
             item["historical_average_price"],
             area_acres,
         )
-        item["soil_score"] = _soil_score(item["crop"], soil_type)
         item.update(estimate)
         profitability.append(item["expected_profit"])
 
@@ -597,7 +568,7 @@ def generate_historical_crop_recommendations(
             "expected_yield": round(_min_max(item["historical_yield"], yields) * 100, 1),
             "expected_market_price": round(_min_max(price, prices) * 100, 1),
             "weather_suitability": round(item["yield_stability"] * 100, 1),
-            "soil_suitability": round(item["soil_score"] * 100, 1),
+            "soil_suitability": round(_min_max(item["historical_districts"], coverage) * 100, 1),
             "water_requirement": 50.0,
             "historical_profitability": round(_min_max(profit, profitability) * 100, 1),
         }
@@ -650,7 +621,6 @@ def generate_historical_crop_recommendations(
         "message": "Historical crop recommendations generated successfully",
         "recommendation_basis": "historical_yield_and_market_data",
         "area_acres": area_acres,
-        "context": {"district": district, "season": season, "soil_type": soil_type},
         "profitability_model": "historical_yield_price_minus_estimated_costs",
         "has_profitable_crop": has_profitable_crop,
         "scoring_model": "historical_weighted_decision_support",

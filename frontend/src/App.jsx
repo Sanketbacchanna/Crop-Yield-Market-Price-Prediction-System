@@ -898,7 +898,7 @@ function App() {
     }
   }
 
-  async function handleCropRecommendation(event, areaAcres, agriculturalId) {
+  async function handleCropRecommendation(event, areaAcres) {
     event.preventDefault();
 
     setRecommendationLoading(true);
@@ -906,10 +906,9 @@ function App() {
     setRecommendationResult(null);
 
     try {
-      const selectedRecord = agriculturalRecords.find(
-        (record) => String(record.agricultural_id) === String(agriculturalId)
+      setRecommendationResult(
+        await getCropRecommendations(areaAcres)
       );
-      setRecommendationResult(await getCropRecommendations(areaAcres, selectedRecord));
     } catch (error) {
       setRecommendationError(
         getErrorMessage(

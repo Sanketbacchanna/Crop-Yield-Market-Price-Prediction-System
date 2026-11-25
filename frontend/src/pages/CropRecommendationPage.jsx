@@ -7,9 +7,6 @@ function CropRecommendationPage({
   result,
   area,
   onAreaChange,
-  agriculturalRecords,
-  selectedAgriculturalId,
-  onAgriculturalChange,
 }) {
   return (
     <section
@@ -33,9 +30,6 @@ function CropRecommendationPage({
         result={result}
         area={area}
         onAreaChange={onAreaChange}
-        agriculturalRecords={agriculturalRecords}
-        selectedAgriculturalId={selectedAgriculturalId}
-        onAgriculturalChange={onAgriculturalChange}
       />
     </section>
   );
