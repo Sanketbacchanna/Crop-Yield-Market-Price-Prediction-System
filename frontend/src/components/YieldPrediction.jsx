@@ -71,11 +71,10 @@ function YieldPrediction({
   const currentArea = area ?? localArea;
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(true);
-  const [locationError] = useState("");
-  const [locationName] = useState("");
+  const [locationError, setLocationError] = useState("");
   const [locationDetails, setLocationDetails] = useState(null);
   const [locationLookupLoading, setLocationLookupLoading] = useState(false);
-  const [locationLookupError] = useState("");
+  const [locationLookupError, setLocationLookupError] = useState("");
   const locationRequested = useRef(false);
   const selectedRecord = agriculturalRecords.find(
     (record) => String(record.agricultural_id) === String(selectedAgriculturalId)
@@ -126,6 +125,8 @@ function YieldPrediction({
 
     setLocationLoading(true);
     setLocationLookupLoading(false);
+    setLocationError("");
+    setLocationLookupError("");
     setCurrentLocation(null);
     setLocationDetails(null);
     navigator.geolocation.getCurrentPosition(
@@ -136,8 +137,13 @@ function YieldPrediction({
         });
         setLocationLoading(false);
       },
-      () => {
+      (error) => {
         setLocationLoading(false);
+        setLocationError(
+          error.code === 1
+            ? "Location permission was denied. Allow location access and retry."
+            : "Unable to fetch your current location. Check browser location settings and retry."
+        );
       },
       { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 }
     );
@@ -183,6 +189,13 @@ function YieldPrediction({
         setLocationDetails({
           state: address.state || "",
           countryCode: address.country_code || "",
+          name:
+            address.village ||
+            address.town ||
+            address.suburb ||
+            address.city ||
+            address.county ||
+            "Current location",
           districtCandidates: [
             address.state_district,
             address.county,
@@ -193,6 +206,7 @@ function YieldPrediction({
       } catch (error) {
         if (error.name !== "AbortError") {
           setLocationDetails(null);
+          setLocationLookupError("Unable to determine the nearby area. Select a district manually.");
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -265,7 +279,7 @@ function YieldPrediction({
                     ? "Fetching location..."
                     : locationLookupLoading
                       ? "Finding nearby area..."
-                      : locationName || locationError || "Not available"}
+                      : locationDetails?.name || locationError || "Not available"}
                 </small>
                 <small className="yield-location-note">
                   {autoDetectedDistrict

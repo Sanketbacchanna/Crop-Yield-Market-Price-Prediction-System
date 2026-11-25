@@ -30,7 +30,6 @@ import {
   getYieldHistory,
   getLiveWeather,
   getLocationDetails,
-  getWeatherData,
   loginUser,
   logoutUser,
   registerUser,
@@ -219,8 +218,7 @@ function App() {
   const [priceHistoryLoading, setPriceHistoryLoading] = useState(true);
   const [priceHistoryError, setPriceHistoryError] = useState("");
 
-  const [weatherData, setWeatherData] = useState([]);
-  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState("");
   const [liveLocation, setLiveLocation] = useState(null);
   const [liveWeather, setLiveWeather] = useState(null);
@@ -558,8 +556,12 @@ function App() {
     async function loadLiveFarmContext() {
       if (!navigator.geolocation) {
         setLiveLocationLoading(false);
+        setWeatherError("Location is not supported by this browser.");
         return;
       }
+
+      setLiveLocationLoading(true);
+      setWeatherLoading(true);
 
       navigator.geolocation.getCurrentPosition(
         async ({ coords }) => {
@@ -574,27 +576,44 @@ function App() {
           };
           setLiveLocation(currentLocation);
 
-          try {
-            const [locationDetails, weather] = await Promise.all([
-              getLocationDetails(coords.latitude, coords.longitude),
-              getLiveWeather(coords.latitude, coords.longitude),
-            ]);
+          const [locationResult, weatherResult] = await Promise.allSettled([
+            getLocationDetails(coords.latitude, coords.longitude),
+            getLiveWeather(coords.latitude, coords.longitude),
+          ]);
 
+          if (!active) return;
+
+          if (locationResult.status === "fulfilled") {
             setLiveLocation({
-              latitude: coords.latitude,
-              longitude: coords.longitude,
-              ...locationDetails,
+              ...currentLocation,
+              ...locationResult.value,
             });
-            setLiveWeather({ ...weather, location: locationDetails.name });
-          } catch {
-            setLiveLocation(currentLocation);
-          } finally {
-            setLiveLocationLoading(false);
           }
+          if (weatherResult.status === "fulfilled") {
+            const locationName =
+              locationResult.status === "fulfilled"
+                ? locationResult.value.name
+                : "Current location";
+            setLiveWeather({ ...weatherResult.value, location: locationName });
+            setWeatherError("");
+          } else {
+            setLiveWeather(null);
+            setWeatherError(getErrorMessage(weatherResult.reason, "Unable to load weather for your location."));
+          }
+          setLiveLocationLoading(false);
+          setWeatherLoading(false);
         },
-        () => {
+        (error) => {
           if (active) {
+            setLiveLocation(null);
+            setLiveWeather(null);
             setLiveLocationLoading(false);
+            setWeatherLoading(false);
+            setWeatherError(
+              error.code === 1
+                ? "Location permission was denied. Allow location access and reload the page."
+                : "Unable to fetch your current location. Check your browser location settings and try again."
+            );
           }
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
@@ -688,7 +707,6 @@ function App() {
         getPriceHistory(),
         getYieldHistory(),
         getAgriculturalRecords(),
-        getWeatherData(),
         getYieldDistricts(),
         getCropHistory(),
       ]);
@@ -737,36 +755,27 @@ function App() {
       }
 
       if (results[3].status === "fulfilled") {
-        setWeatherData(results[3].value);
-      } else {
-        setWeatherError(
-          getErrorMessage(results[3].reason, "Unable to load weather data.")
-        );
-      }
-      setWeatherLoading(false);
-
-      if (results[4].status === "fulfilled") {
-        setYieldDistricts(results[4].value);
+        setYieldDistricts(results[3].value);
       } else {
         setYieldDistrictError(
           getErrorMessage(
-            results[4].reason,
+            results[3].reason,
             "Unable to load Karnataka districts."
           )
         );
       }
 
-      if (results[5].status === "fulfilled") {
+      if (results[4].status === "fulfilled") {
         try {
           const userId = currentUser?.user_id;
           const pending = getPendingCropHistory(userId);
-          const serverHistory = results[5].value;
+          const serverHistory = results[4].value;
           setCropHistory([...pending, ...serverHistory]);
           setPendingCropHistoryCount(pending.length);
           setOfflineSyncError("");
         } catch (error) {
           setOfflineSyncError(error.message || "Unable to load saved crop records.");
-          setCropHistory(results[5].value);
+          setCropHistory(results[4].value);
         }
       } else {
         try {
@@ -927,7 +936,6 @@ function App() {
       recommendationLoading,
       priceResult,
       recommendationResult,
-      weatherData,
       weatherLoading,
       weatherError,
       yieldResult,
@@ -996,7 +1004,6 @@ function App() {
       userId: currentUser?.user_id,
     },
     weather: {
-      weatherData,
       weatherLoading,
       weatherError,
       liveLocation,

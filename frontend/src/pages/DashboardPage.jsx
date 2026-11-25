@@ -16,7 +16,6 @@ function DashboardPage({
   recommendationLoading,
   priceResult,
   recommendationResult,
-  weatherData,
   weatherLoading,
   weatherError,
   yieldResult,
@@ -29,9 +28,8 @@ function DashboardPage({
 }) {
   const firstRecord = agriculturalRecords[0];
   const firstRecommendation = recommendationResult?.recommendations?.[0];
-  const currentLocationName =
-    liveLocation?.name || firstRecord?.district || "Current location";
-  const weatherSummary = liveWeather || weatherData[0];
+  const currentLocationName = liveLocation?.name || "Current location";
+  const weatherSummary = liveWeather;
   const parsedFarmArea = Number(farmArea);
   const formattedArea =
     farmArea !== "" && Number.isFinite(parsedFarmArea) && parsedFarmArea >= 0
