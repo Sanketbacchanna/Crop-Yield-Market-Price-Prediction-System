@@ -317,6 +317,8 @@ function WeatherPage({
   const hourlyForecast = getHourlyForecast(outlook?.forecast);
   const currentHour = hourlyForecast[0];
   const todayForecast = dailyForecast[0];
+  const currentTemperature = currentWeather?.temperature ?? currentHour?.temperature;
+  const currentHumidity = currentWeather?.humidity ?? currentHour?.humidity;
   const chartForecast = forecastView === "5d"
     ? dailyForecast.slice(0, 7).map((day) => ({
         ...day,
@@ -438,7 +440,7 @@ function WeatherPage({
           </div>
           <div className="weather-current-main">
             <span className="weather-sun-icon" aria-hidden="true">{weatherIcon(currentHour)}</span>
-            <strong>{currentWeather?.temperature ?? "—"}<sup>°C</sup></strong>
+            <strong>{currentTemperature ?? "—"}<sup>°C</sup></strong>
             <div className="weather-current-rain">
               <strong>💧 {currentHour?.probability ?? "—"}%</strong>
               <span>H: {todayForecast?.maxTemperature ?? "—"}°</span>
@@ -450,7 +452,7 @@ function WeatherPage({
           <div className="weather-current-stats">
             <div><span>Feels like</span><strong>—</strong></div>
             <div><span>Wind</span><strong>—</strong></div>
-            <div><span>Humidity</span><strong>{currentWeather?.humidity ?? "—"}%</strong></div>
+            <div><span>Humidity</span><strong>{currentHumidity ?? "—"}%</strong></div>
           </div>
         </article>
 
