@@ -331,13 +331,43 @@ export async function getLocationDetails(latitude, longitude) {
   };
 }
 
-export function getLiveWeather(latitude, longitude) {
+export async function getLiveWeather(latitude, longitude) {
   const params = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
   });
 
-  return request(`/weather/current?${params}`);
+  try {
+    return await request(`/weather/current?${params}`);
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw error;
+    }
+
+    // Keep location-specific weather available when the IMD/backend provider
+    // is unavailable. These coordinates are still the detected farm location.
+    const fallbackParams = new URLSearchParams({
+      latitude: String(latitude),
+      longitude: String(longitude),
+      current: "temperature_2m,relative_humidity_2m,precipitation",
+      timezone: "Asia/Kolkata",
+    });
+    const fallback = await getWeatherProviderData(
+      "https://api.open-meteo.com/v1/forecast",
+      fallbackParams
+    );
+    const current = fallback.current || {};
+
+    return {
+      temperature: current.temperature_2m,
+      humidity: current.relative_humidity_2m,
+      rainfall: current.precipitation,
+      location: "Current farm location",
+      observedAt: current.time,
+      source: "Open-Meteo",
+      fallbackReason: error.message,
+    };
+  }
 }
 
 export async function getTalukCoordinates(taluk, district, signal) {
