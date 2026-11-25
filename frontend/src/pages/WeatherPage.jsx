@@ -86,14 +86,25 @@ function getDailyForecast(forecast) {
 function getHourlyForecast(forecast, hours = 24) {
   const hourly = forecast?.hourly;
   if (!hourly?.time) return [];
-  return hourly.time.slice(0, hours).map((time, index) => ({
-    time,
-    temperature: hourly.temperature_2m?.[index],
-    humidity: hourly.relative_humidity_2m?.[index],
-    rainfall: hourly.precipitation?.[index],
-    probability: hourly.precipitation_probability?.[index],
-    code: hourly.weather_code?.[index],
-  }));
+
+  const now = Date.now();
+  const firstCurrentIndex = hourly.time.findIndex((time) => {
+    const timestamp = new Date(time).getTime();
+    return Number.isFinite(timestamp) && timestamp >= now - 30 * 60 * 1000;
+  });
+  const startIndex = firstCurrentIndex >= 0 ? firstCurrentIndex : 0;
+
+  return hourly.time.slice(startIndex, startIndex + hours).map((time, offset) => {
+    const index = startIndex + offset;
+    return {
+      time,
+      temperature: hourly.temperature_2m?.[index],
+      humidity: hourly.relative_humidity_2m?.[index],
+      rainfall: hourly.precipitation?.[index],
+      probability: hourly.precipitation_probability?.[index],
+      code: hourly.weather_code?.[index],
+    };
+  });
 }
 
 function weatherIcon(item) {
