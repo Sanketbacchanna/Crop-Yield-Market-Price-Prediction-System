@@ -5,6 +5,9 @@ function CropRecommendation({
   result,
   area,
   onAreaChange,
+  agriculturalRecords = [],
+  selectedAgriculturalId,
+  onAgriculturalChange,
 }) {
   const recommendation = result?.recommendations?.[0];
   const hasProfitableCrop = result?.has_profitable_crop ?? true;
@@ -91,7 +94,23 @@ function CropRecommendation({
             profitability.
           </p>
 
-            <form onSubmit={(event) => onSubmit(event, area)}>
+            <form onSubmit={(event) => onSubmit(event, area, selectedAgriculturalId)}>
+              <label className="recommendation-area-field" htmlFor="recommendation-farm">
+                Farm record
+                <select
+                  id="recommendation-farm"
+                  value={selectedAgriculturalId || ""}
+                  onChange={(event) => onAgriculturalChange?.(event.target.value)}
+                  required
+                >
+                  <option value="" disabled>Select a farm record</option>
+                  {agriculturalRecords.map((record) => (
+                    <option key={record.agricultural_id} value={record.agricultural_id}>
+                      {[record.district, record.season, record.soil_type].filter(Boolean).join(" · ") || `Farm ${record.agricultural_id}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <label className="recommendation-area-field" htmlFor="recommendation-area">
                 Farm area (acres)
                 <input
