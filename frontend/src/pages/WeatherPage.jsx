@@ -102,6 +102,16 @@ function weatherIcon(item) {
   return "☁️";
 }
 
+function weatherDescription(item) {
+  if (item?.rainfall > 0 || item?.probability >= 60) return "Rain likely";
+  if (item?.code === 0) return "Sunny";
+  if (item?.code === 1) return "Mostly sunny";
+  if ([2, 3].includes(item?.code)) return "Partly cloudy";
+  if ([45, 48].includes(item?.code)) return "Foggy";
+  if ([95, 96, 99].includes(item?.code)) return "Thunderstorms";
+  return "Cloudy";
+}
+
 const WEATHER_ALERT_ICONS = {
   heavy_rain: "🌧️",
   drought_risk: "🌾",
@@ -305,6 +315,28 @@ function WeatherPage({
   const outlookLoading = Boolean(locationKey && !hasCurrentOutlook);
   const dailyForecast = getDailyForecast(outlook?.forecast);
   const hourlyForecast = getHourlyForecast(outlook?.forecast);
+  const currentHour = hourlyForecast[0];
+  const todayForecast = dailyForecast[0];
+  const chartForecast = forecastView === "5d"
+    ? dailyForecast.slice(0, 7).map((day) => ({
+        ...day,
+        time: `${day.date}T12:00:00`,
+        temperature: day.maxTemperature,
+      }))
+    : hourlyForecast.slice(0, 9);
+  const chartTemperatures = chartForecast.map((item) => Number(item.temperature)).filter(Number.isFinite);
+  const chartMinimum = chartTemperatures.length ? Math.min(...chartTemperatures) : 0;
+  const chartMaximum = chartTemperatures.length ? Math.max(...chartTemperatures) : 1;
+  const chartRange = Math.max(1, chartMaximum - chartMinimum);
+  const chartPoints = chartForecast.map((item, index) => {
+    const temperature = Number(item.temperature);
+    if (!Number.isFinite(temperature)) return null;
+    const x = chartForecast.length === 1 ? 450 : (index / (chartForecast.length - 1)) * 860 + 20;
+    const y = 168 - ((temperature - chartMinimum) / chartRange) * 110;
+    return { item, x, y };
+  }).filter(Boolean);
+  const chartLine = chartPoints.map(({ x, y }) => `${x},${y}`).join(" ");
+  const chartArea = chartLine ? `20,184 ${chartLine} 880,184` : "";
   const farmingAlerts = outlook?.alerts || [];
   const seasonal = outlook?.seasonal;
   const rainfallSignal = getRainfallSignal(seasonal, dailyForecast);
@@ -399,6 +431,50 @@ function WeatherPage({
         )}
       </div>
 
+      <section className="weather-hero" aria-label="Current weather and hourly forecast">
+        <article className="weather-current-card">
+          <div className="weather-current-card-header">
+            <strong>{locationName}</strong><span aria-hidden="true">•••</span>
+          </div>
+          <div className="weather-current-main">
+            <span className="weather-sun-icon" aria-hidden="true">{weatherIcon(currentHour)}</span>
+            <strong>{currentWeather?.temperature ?? "—"}<sup>°C</sup></strong>
+            <div className="weather-current-rain">
+              <strong>💧 {currentHour?.probability ?? "—"}%</strong>
+              <span>H: {todayForecast?.maxTemperature ?? "—"}°</span>
+              <span>L: {todayForecast?.minTemperature ?? "—"}°</span>
+            </div>
+          </div>
+          <h3>{weatherDescription(currentHour)}</h3>
+          <p>Current conditions for your detected farm area.</p>
+          <div className="weather-current-stats">
+            <div><span>Feels like</span><strong>—</strong></div>
+            <div><span>Wind</span><strong>—</strong></div>
+            <div><span>Humidity</span><strong>{currentWeather?.humidity ?? "—"}%</strong></div>
+          </div>
+        </article>
+
+        <article className="weather-chart-card">
+          <div className="weather-chart-tabs" role="tablist" aria-label="Forecast type">
+            <button className={forecastView === "5d" ? "" : "active"} onClick={() => setForecastView("24h")} role="tab">Hourly</button>
+            <button className={forecastView === "5d" ? "active" : ""} onClick={() => setForecastView("5d")} role="tab">Daily</button>
+          </div>
+          {chartPoints.length > 0 ? (
+            <div className="weather-temperature-chart">
+              <svg viewBox="0 0 900 220" role="img" aria-label="Hourly temperature forecast">
+                <defs><linearGradient id="temperatureFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#ff7777" stopOpacity="0.78" /><stop offset="100%" stopColor="#fff3e7" stopOpacity="0.2" /></linearGradient></defs>
+                <polygon points={chartArea} fill="url(#temperatureFill)" />
+                <polyline points={chartLine} fill="none" stroke="#ff7777" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                {chartPoints.map(({ item, x, y }) => <text key={item.time} x={x} y={y - 12} textAnchor="middle" className="weather-chart-temperature">{Math.round(item.temperature)}°</text>)}
+              </svg>
+              <div className="weather-chart-details">
+                {chartForecast.map((item) => <div key={item.time}><span>{forecastView === "5d" ? formatForecastDate(item.date, { weekday: "short" }) : new Intl.DateTimeFormat([], { hour: "numeric" }).format(new Date(item.time))}</span><b>{weatherIcon(item)}</b><small>💧 {item.probability ?? 0}%</small></div>)}
+              </div>
+            </div>
+          ) : <p className="weather-empty-state">Hourly forecast is unavailable for this location.</p>}
+        </article>
+      </section>
+
       <section className="weather-panel weather-location-panel" aria-labelledby="weather-location-title">
         <div className="weather-panel-heading">
           <div>
@@ -426,22 +502,6 @@ function WeatherPage({
       </section>
 
       <div className="weather-summary-grid">
-        <SummaryCard
-          icon="🌦️"
-          label="Current weather"
-          value={
-            currentWeather ? `${currentWeather.temperature ?? "—"}°C` : "—"
-          }
-          description={
-            currentWeather
-              ? `${locationName} · Rainfall ${currentWeather.rainfall ?? "—"} mm`
-              : weatherError ||
-                (weatherLoading || liveLocationLoading
-                  ? "Loading current conditions…"
-                  : "Current conditions unavailable")
-          }
-          accent="blue"
-        />
         <SummaryCard
           icon="🌧️"
           label="Next 30 days"
