@@ -1,3 +1,4 @@
+import math
 from datetime import date, datetime, timedelta
 from statistics import mean
 
@@ -44,6 +45,14 @@ SCORE_FACTOR_LABELS = {
     "soil_suitability": "Soil suitability",
     "water_requirement": "Water requirement",
     "historical_profitability": "Historical profitability",
+}
+
+DISTRICT_RECOMMENDATION_WEIGHTS = {
+    "expected_yield": 0.60,
+    "expected_profit": 0.20,
+    "expected_market_price": 0.10,
+    "weather_suitability": 0.05,
+    "soil_suitability": 0.05,
 }
 
 CROP_PROFILES = {
@@ -175,8 +184,8 @@ def _profitability_estimate(
 ) -> dict:
     """Return an acreage-aware profit estimate in INR.
 
-    The yield dataset stores yield as tonnes/hectare. One acre is 0.404686
-    hectares and one tonne is 10 quintals, while mandi prices are per quintal.
+    Yield input must be tonnes/hectare. One acre is 0.404686 hectares and one
+    tonne is 10 quintals, while mandi prices are per quintal.
     """
     costs_per_acre = CROP_COSTS_PER_ACRE.get(
         crop_name.casefold(), DEFAULT_COSTS_PER_ACRE
@@ -600,12 +609,13 @@ def generate_crop_recommendations_legacy(
 def generate_historical_crop_recommendations(
     district: str | None = Query(default=None, min_length=1, max_length=45),
     season: str | None = Query(default=None, min_length=1, max_length=45),
+    crop_year: str | None = Query(default=None, min_length=1, max_length=20),
     area_acres: float = Query(default=1.0, gt=0),
     agricultural_id: int | None = Query(default=None, gt=0),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Rank crops using historical yield and mandi prices for a district."""
+    """Rank local crops primarily by their model-predicted yield performance."""
     if agricultural_id is not None and district is None and season is None:
         return generate_crop_recommendations_legacy(
             agricultural_id,
@@ -635,6 +645,9 @@ def generate_historical_crop_recommendations(
     candidates = []
 
     for summary in summaries:
+        production_unit = (summary.get("production_unit") or "").strip()
+        if production_unit.casefold() == "mixed":
+            continue
         crop = crop_by_name.get(summary["crop_name"].casefold())
         if crop is None:
             continue
@@ -642,6 +655,8 @@ def generate_historical_crop_recommendations(
             "crop_id": crop.crop_id,
             "crop_name": crop.crop_name,
             "historical_yield": summary["historical_yield"],
+            "production_unit": production_unit,
+            "latest_crop_year": summary.get("latest_crop_year"),
             "yield_stability": summary["yield_stability"],
             "historical_years": summary["historical_years"],
             "historical_observations": summary["historical_observations"],
@@ -651,17 +666,28 @@ def generate_historical_crop_recommendations(
         raise HTTPException(
             status_code=404,
             detail=(
-                f"No historical crop yield data is available for {district} "
+                f"No unit-consistent crop yield data is available for {district} "
                 f"during the {season} season."
             ),
         )
 
+    price_compatible_crops = [
+        item["crop_name"]
+        for item in candidates
+        if item["production_unit"].casefold() == "tonnes"
+    ]
     district_prices = _get_district_market_prices(
         db,
         district,
-        [item["crop_name"] for item in candidates],
+        price_compatible_crops,
     )
     for item in candidates:
+        if item["production_unit"].casefold() != "tonnes":
+            item["historical_average_price"] = None
+            item["market_price_source"] = (
+                f"unavailable: yield unit is {item['production_unit'] or 'unknown'}"
+            )
+            continue
         district_price = district_prices.get(item["crop_name"].casefold())
         historical_prices = (
             []
@@ -684,16 +710,59 @@ def generate_historical_crop_recommendations(
             else "unavailable"
         )
 
-    yields = [item["historical_yield"] for item in candidates]
+    available_years = [
+        item["latest_crop_year"]
+        for item in candidates
+        if item["latest_crop_year"]
+    ]
+    if crop_year is None and not available_years:
+        raise HTTPException(
+            status_code=422,
+            detail="A crop year is required to predict yield for these crops.",
+        )
+    prediction_year = crop_year or max(
+        available_years,
+        key=lambda year: int(str(year)[:4]),
+    )
+    area_hectares = area_acres * 0.404686
+    for item in candidates:
+        predicted_yield = float(
+            predict_yield(
+                district=district,
+                crop=item["crop_name"],
+                crop_year=prediction_year,
+                season=season,
+                area=area_hectares,
+            )
+        )
+        if not math.isfinite(predicted_yield) or predicted_yield < 0:
+            raise HTTPException(
+                status_code=502,
+                detail=f"The yield model returned an invalid prediction for {item['crop_name']}.",
+            )
+        item["predicted_yield_per_hectare"] = round(predicted_yield, 4)
+        item["expected_yield_quantity"] = round(
+            predicted_yield * area_hectares,
+            2,
+        )
+        item["yield_unit"] = item["production_unit"] or "dataset units"
+        item["yield_performance_ratio"] = (
+            predicted_yield / item["historical_yield"]
+            if item["historical_yield"] > 0
+            else None
+        )
+
+    yield_performance = [item["yield_performance_ratio"] for item in candidates]
     prices = [item["historical_average_price"] for item in candidates]
     stability = [item["yield_stability"] for item in candidates]
     coverage = [item["historical_years"] for item in candidates]
     profitability = []
     for item in candidates:
+        tonnes_crop = item["production_unit"].casefold() == "tonnes"
         estimate = _profitability_estimate(
             item["crop_name"],
-            item["historical_yield"],
-            item["historical_average_price"],
+            item["predicted_yield_per_hectare"] if tonnes_crop else None,
+            item["historical_average_price"] if tonnes_crop else None,
             area_acres,
         )
         item.update(estimate)
@@ -701,8 +770,11 @@ def generate_historical_crop_recommendations(
 
     for item, price, profit in zip(candidates, prices, profitability):
         factors = {
+            "expected_yield": round(
+                _min_max(item["yield_performance_ratio"], yield_performance) * 100,
+                1,
+            ),
             "expected_profit": round(_min_max(profit, profitability) * 100, 1),
-            "expected_yield": round(_min_max(item["historical_yield"], yields) * 100, 1),
             "expected_market_price": round(_min_max(price, prices) * 100, 1),
             "weather_suitability": round(
                 _min_max(item["yield_stability"], stability) * 100, 1
@@ -710,19 +782,19 @@ def generate_historical_crop_recommendations(
             "soil_suitability": round(
                 _min_max(item["historical_years"], coverage) * 100, 1
             ),
-            "water_requirement": 50.0,
-            "historical_profitability": round(_min_max(profit, profitability) * 100, 1),
         }
         item["recommendation_score"] = sum(
-            factors[factor] * weight for factor, weight in SCORING_WEIGHTS.items()
+            factors[factor] * weight
+            for factor, weight in DISTRICT_RECOMMENDATION_WEIGHTS.items()
         )
         item["score_factors"] = factors
 
     candidates.sort(
         key=lambda item: (
-            item["expected_profit"] is not None,
-            item["expected_profit"] if item["expected_profit"] is not None else float("-inf"),
             item["recommendation_score"],
+            item["yield_performance_ratio"]
+            if item["yield_performance_ratio"] is not None
+            else float("-inf"),
         ),
         reverse=True,
     )
@@ -731,12 +803,15 @@ def generate_historical_crop_recommendations(
         item["expected_profit"] is not None and item["expected_profit"] > 0
         for item in candidates
     )
+    has_profit_estimate = any(
+        item["expected_profit"] is not None for item in candidates
+    )
     recommendation_date = datetime.now()
     for rank, item in enumerate(candidates[:5], start=1):
         db.add(CropRecommendation(
             user_id=current_user.user_id,
             crop_id=item["crop_id"],
-            predicted_yield=item["historical_yield"],
+            predicted_yield=item["predicted_yield_per_hectare"],
             forecast_price=None,
             recommendation_rank=rank,
             recommendation_date=recommendation_date,
@@ -748,6 +823,15 @@ def generate_historical_crop_recommendations(
             "recommendation_score": round(item["recommendation_score"], 1),
             "score_factors": item["score_factors"],
             "area_acres": item["area_acres"],
+            "predicted_yield_per_hectare": item["predicted_yield_per_hectare"],
+            "expected_yield_quantity": item["expected_yield_quantity"],
+            "yield_unit": item["yield_unit"],
+            "yield_performance_ratio": (
+                round(item["yield_performance_ratio"], 4)
+                if item["yield_performance_ratio"] is not None
+                else None
+            ),
+            "prediction_year": prediction_year,
             "expected_yield_quintals": item["expected_yield_quintals"],
             "expected_price_per_quintal": item["expected_price_per_quintal"],
             "expected_revenue": item["expected_revenue"],
@@ -755,6 +839,7 @@ def generate_historical_crop_recommendations(
             "expense_breakdown": item["expense_breakdown"],
             "expected_profit": item["expected_profit"],
             "historical_yield": item["historical_yield"],
+            "historical_yield_unit": item["production_unit"],
             "yield_stability": item["yield_stability"],
             "historical_years": item["historical_years"],
             "historical_observations": item["historical_observations"],
@@ -763,21 +848,33 @@ def generate_historical_crop_recommendations(
     db.commit()
 
     factor_labels = {
-        **SCORE_FACTOR_LABELS,
+        "expected_yield": "Predicted yield vs local history",
+        "expected_profit": "Estimated profit (where units match)",
+        "expected_market_price": "Available market price",
         "weather_suitability": "Local yield stability",
         "soil_suitability": "Local history coverage",
     }
     return {
         "message": "District crop recommendations generated successfully",
-        "recommendation_basis": "district_season_yield_and_market_history",
+        "recommendation_basis": "district_season_model_predicted_yield_and_local_history",
         "district": district,
         "season": season,
         "area_acres": area_acres,
+        "prediction_year": prediction_year,
         "market_price_basis": "district_mandi_history_with_statewide_fallback",
-        "profitability_model": "historical_yield_price_minus_estimated_costs",
+        "profitability_model": "model_predicted_yield_price_minus_estimated_costs_for_tonnes_only",
         "has_profitable_crop": has_profitable_crop,
-        "scoring_model": "district_season_weighted_decision_support",
-        "score_weights": {key: round(value * 100) for key, value in SCORING_WEIGHTS.items()},
+        "has_profit_estimate": has_profit_estimate,
+        "top_crop_is_profitable": bool(
+            recommendations
+            and recommendations[0]["expected_profit"] is not None
+            and recommendations[0]["expected_profit"] > 0
+        ),
+        "scoring_model": "model_predicted_yield_performance_first",
+        "score_weights": {
+            key: round(value * 100)
+            for key, value in DISTRICT_RECOMMENDATION_WEIGHTS.items()
+        },
         "score_factor_labels": factor_labels,
         "recommendations": recommendations,
     }

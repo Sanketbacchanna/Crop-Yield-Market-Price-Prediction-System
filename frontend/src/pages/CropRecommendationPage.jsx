@@ -23,7 +23,7 @@ function CropRecommendationPage({
           <p className="section-eyebrow">SMART RECOMMENDATION</p>
           <h2>What should I plant?</h2>
           <p>
-            Compare expected revenue, estimated expenses, and profit before you plant.
+            Compare model-predicted crop yields for your district, season, and farm area.
           </p>
         </div>
       </div>

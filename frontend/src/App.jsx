@@ -908,8 +908,17 @@ function App() {
     setRecommendationResult(null);
 
     try {
+      const selectedRecord = agriculturalRecords.find(
+        (record) =>
+          String(record.agricultural_id) === String(selectedAgriculturalId)
+      );
       setRecommendationResult(
-        await getCropRecommendations(areaAcres, district, season)
+        await getCropRecommendations(
+          areaAcres,
+          district,
+          season,
+          selectedRecord?.crop_year
+        )
       );
     } catch (error) {
       setRecommendationError(

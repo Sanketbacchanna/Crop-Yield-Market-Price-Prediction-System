@@ -14,29 +14,26 @@ function CropRecommendation({
   const recommendation = result?.recommendations?.[0];
   const hasProfitableCrop = result?.has_profitable_crop ?? true;
   const hasProfitEstimate = recommendation?.expected_profit != null;
+  const topCropIsProfitable =
+    result?.top_crop_is_profitable ?? recommendation?.expected_profit > 0;
   const additionalRecommendations = result?.recommendations?.slice(1) || [];
   const factorLabels = result?.score_factor_labels || {
-    expected_yield: "Expected yield",
+    expected_yield: "Predicted yield vs local history",
+    expected_profit: "Estimated profit (where units match)",
     expected_market_price: "Expected market price",
-    weather_suitability: "Weather suitability",
-    soil_suitability: "Soil suitability",
-    water_requirement: "Water requirement",
-    historical_profitability: "Historical profitability",
+    weather_suitability: "Local yield stability",
+    soil_suitability: "Local history coverage",
   };
   const scoreWeights = result?.score_weights || {
-    expected_yield: 25,
-    expected_market_price: 25,
-    weather_suitability: 15,
-    soil_suitability: 15,
-    water_requirement: 10,
-    historical_profitability: 10,
+    expected_yield: 60,
+    expected_profit: 20,
+    expected_market_price: 10,
+    weather_suitability: 5,
+    soil_suitability: 5,
   };
-  const rankingContext =
-    hasProfitableCrop
-      ? "Ranked by expected profit after estimated seed, fertilizer, pesticide, labour, irrigation, and transportation costs."
-      : hasProfitEstimate
-        ? "All available crops currently estimate a loss after costs. The option below has the smallest estimated loss."
-        : "There is not enough market-price data to estimate profit for the available crops.";
+  const rankingContext = result
+    ? `Ranked primarily by model-predicted yield relative to local history. The model uses crop year ${result.prediction_year}; profit is estimated only when units match and price data is available.`
+    : "";
   const formatCurrency = (value) =>
     value == null
       ? "—"
@@ -63,11 +60,12 @@ function CropRecommendation({
   const recommendationFactors = recommendation?.score_factors || {};
   const explanationReasons = recommendation
     ? [
+        recommendation.expected_profit > 0 &&
         Number(recommendationFactors.expected_profit) >= 60
           ? "Strong expected profit compared with the other crops"
           : null,
         Number(recommendationFactors.expected_yield) >= 60
-          ? "High predicted yield compared with the other crops"
+          ? "Predicted yield is strong relative to this crop's local history"
           : null,
         Number(recommendationFactors.expected_market_price) >= 60
           ? "Strong market price compared with the other crops"
@@ -94,8 +92,9 @@ function CropRecommendation({
           <h3>Get a clear planting recommendation</h3>
 
           <p>
-            Choose your district and growing season to compare local historical
-            yields, recent mandi prices, and estimated costs for your farm area.
+            Choose your district, season, and area to compare model-predicted
+            yields with local history. Profit estimates are shown only when crop
+            yield and mandi-price units are compatible.
           </p>
 
           <form onSubmit={(event) => onSubmit(event, area, district, season)}>
@@ -149,7 +148,7 @@ function CropRecommendation({
               className="recommendation-button"
               disabled={loading}
             >
-              {loading ? "Calculating profitability…" : "Compare crop profits"}
+              {loading ? "Predicting crop yields…" : "Compare crop options"}
             </button>
           </form>
 
@@ -161,18 +160,19 @@ function CropRecommendation({
         {recommendation ? (
           <>
             <div className="recommendation-result-header">
-              <span className={!hasProfitableCrop ? "recommendation-loss-heading" : ""}>
-                {hasProfitableCrop
-                  ? "TOP RECOMMENDATION"
+              <span className={!topCropIsProfitable ? "recommendation-loss-heading" : ""}>
+                {topCropIsProfitable
+                  ? "TOP YIELD-BASED OPTION · PROFIT ESTIMATE POSITIVE"
                   : hasProfitEstimate
-                    ? "NO PROFITABLE CROP FOUND UNDER CURRENT CONDITIONS"
-                    : "INSUFFICIENT MARKET DATA TO ESTIMATE PROFIT"}
+                    ? hasProfitableCrop
+                      ? "TOP YIELD-BASED OPTION · ESTIMATED LOSS"
+                      : "NO PROFITABLE OPTION IN AVAILABLE ESTIMATES"
+                    : "PROFIT NOT ESTIMATED"}
               </span>
               <strong>#{recommendation.recommendation_rank}</strong>
             </div>
             <p className="recommendation-personalized-context">
-              {rankingContext} Based on {result.district}, {result.season} historical
-              yields; recent district mandi prices are used when available.
+              {rankingContext} Location: {result.district}, {result.season}.
             </p>
 
             <div className="recommended-crop">
@@ -188,13 +188,7 @@ function CropRecommendation({
               </div>
 
               <div>
-                <p>
-                  {hasProfitableCrop
-                    ? "Recommended Crop"
-                    : hasProfitEstimate
-                      ? "Closest option (least estimated loss)"
-                      : "Best-supported option"}
-                </p>
+                <p>Top yield-based option</p>
                 <h3>{recommendation.crop_name}</h3>
               </div>
             </div>
@@ -202,15 +196,19 @@ function CropRecommendation({
             <div className="profitability-summary">
               <div className="profitability-summary-heading">
                 <div>
-                  <span>ESTIMATED PROFIT</span>
+                  <span>{hasProfitEstimate ? "ESTIMATED PROFIT" : "PROFIT NOT ESTIMATED"}</span>
                   <h4>Profit estimate for {recommendation.area_acres} acres</h4>
                 </div>
                 <strong>{formatCurrency(recommendation.expected_profit)}</strong>
               </div>
               <div className="profitability-stats">
                 <div>
-                  <span>Expected yield</span>
-                  <strong>{recommendation.expected_yield_quintals ?? "—"} qtl</strong>
+                  <span>Predicted production</span>
+                  <strong>
+                    {recommendation.expected_yield_quantity == null
+                      ? "—"
+                      : `${Number(recommendation.expected_yield_quantity).toLocaleString("en-IN", { maximumFractionDigits: 2 })} ${recommendation.yield_unit}`}
+                  </strong>
                 </div>
                 <div>
                   <span>Expected revenue</span>
@@ -222,7 +220,9 @@ function CropRecommendation({
                 </div>
               </div>
               <p>
-                Price basis: {recommendation.market_price_source}.
+                Predicted yield: {recommendation.predicted_yield_per_hectare}{" "}
+                {recommendation.yield_unit}/ha. Price basis:{" "}
+                {recommendation.market_price_source}.
               </p>
               <div className="profitability-expenses">
                 {Object.entries(recommendation.expense_breakdown || {}).map(([key, value]) => (
@@ -279,7 +279,7 @@ function CropRecommendation({
                   >
                     <strong>#{item.recommendation_rank} {item.crop_name}</strong>
                     <span>
-                      Profit {formatCurrency(item.expected_profit)} · Score {Number(item.recommendation_score).toFixed(1)}%
+                      Yield {Number(item.expected_yield_quantity).toLocaleString("en-IN", { maximumFractionDigits: 2 })} {item.yield_unit} · Profit {formatCurrency(item.expected_profit)} · Score {Number(item.recommendation_score).toFixed(1)}%
                     </span>
                   </div>
                 ))}

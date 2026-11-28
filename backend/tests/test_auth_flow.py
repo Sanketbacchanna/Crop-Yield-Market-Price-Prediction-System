@@ -1,6 +1,8 @@
 import os
 from datetime import date
 
+import pytest
+
 os.environ.setdefault("DB_HOST", "localhost")
 os.environ.setdefault("DB_USER", "test")
 os.environ.setdefault("DB_PASSWORD", "test")
@@ -556,7 +558,13 @@ def test_crop_recommendations_use_selected_district_season_and_area(monkeypatch)
 
     db = database.SessionLocal()
     try:
-        db.add_all([Crop(crop_name="Rice"), Crop(crop_name="Maize")])
+        db.add_all(
+            [
+                Crop(crop_name="Rice"),
+                Crop(crop_name="Maize"),
+                Crop(crop_name="Coconut"),
+            ]
+        )
         db.commit()
     finally:
         db.close()
@@ -568,6 +576,8 @@ def test_crop_recommendations_use_selected_district_season_and_area(monkeypatch)
             {
                 "crop_name": "Rice",
                 "historical_yield": 2.0,
+                "production_unit": "Tonnes",
+                "latest_crop_year": "2003",
                 "yield_stability": 0.8,
                 "historical_years": 4,
                 "historical_observations": 4,
@@ -575,19 +585,47 @@ def test_crop_recommendations_use_selected_district_season_and_area(monkeypatch)
             {
                 "crop_name": "Maize",
                 "historical_yield": 7.0,
+                "production_unit": "Tonnes",
+                "latest_crop_year": "2003",
                 "yield_stability": 0.9,
                 "historical_years": 3,
                 "historical_observations": 3,
             },
+            {
+                "crop_name": "Coconut",
+                "historical_yield": 4500.0,
+                "production_unit": "Nuts",
+                "latest_crop_year": "2003",
+                "yield_stability": 0.7,
+                "historical_years": 2,
+                "historical_observations": 2,
+            },
         ]
+
+    prediction_calls = []
+    predicted_yields = {"Rice": 4.0, "Maize": 3.0, "Coconut": 5000.0}
+
+    def predict_local_yield(**kwargs):
+        prediction_calls.append(kwargs)
+        return predicted_yields[kwargs["crop"]]
 
     monkeypatch.setattr(
         "app.routes.crop_recommendation.get_historical_crop_summaries_for_location",
         local_summaries,
     )
     monkeypatch.setattr(
+        "app.routes.crop_recommendation.predict_yield",
+        predict_local_yield,
+    )
+    price_crop_calls = []
+
+    def local_prices(db, district, crop_names):
+        price_crop_calls.extend(crop_names)
+        return {"rice": 2000, "maize": 3000}
+
+    monkeypatch.setattr(
         "app.routes.crop_recommendation._get_district_market_prices",
-        lambda db, district, crop_names: {"rice": 2000, "maize": 3000},
+        local_prices,
     )
 
     response = client.post(
@@ -601,10 +639,33 @@ def test_crop_recommendations_use_selected_district_season_and_area(monkeypatch)
     assert result["district"] == "Mysuru"
     assert result["season"] == "Rabi"
     assert result["area_acres"] == 2
-    assert result["recommendation_basis"] == "district_season_yield_and_market_history"
-    assert result["recommendations"][0]["crop_name"] == "Maize"
+    assert result["recommendation_basis"] == (
+        "district_season_model_predicted_yield_and_local_history"
+    )
+    assert result["prediction_year"] == "2003"
+    assert result["recommendations"][0]["crop_name"] == "Rice"
     assert result["recommendations"][0]["market_price_source"] == "district mandi history"
-    assert result["recommendations"][0]["expected_profit"] > 0
+    assert result["recommendations"][0]["predicted_yield_per_hectare"] == 4.0
+    assert result["recommendations"][0]["expected_yield_quantity"] == 3.24
+    assert result["recommendations"][0]["yield_unit"] == "Tonnes"
+    assert result["recommendations"][0]["expected_profit"] < 0
+    assert result["recommendations"][0]["score_factors"]["expected_yield"] == 100
+    assert result["has_profitable_crop"] is True
+    assert result["top_crop_is_profitable"] is False
+
+    coconut = next(
+        item for item in result["recommendations"] if item["crop_name"] == "Coconut"
+    )
+    assert coconut["expected_yield_quantity"] == 4046.86
+    assert coconut["yield_unit"] == "Nuts"
+    assert coconut["expected_yield_quintals"] is None
+    assert coconut["expected_profit"] is None
+    assert coconut["market_price_source"] == "unavailable: yield unit is Nuts"
+    assert set(price_crop_calls) == {"Rice", "Maize"}
+    assert all(call["district"] == "Mysuru" for call in prediction_calls)
+    assert all(call["season"] == "Rabi" for call in prediction_calls)
+    assert all(call["crop_year"] == "2003" for call in prediction_calls)
+    assert all(call["area"] == pytest.approx(2 * 0.404686) for call in prediction_calls)
 
 
 def test_district_market_prices_match_district_and_commodity_aliases():

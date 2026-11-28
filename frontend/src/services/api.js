@@ -265,12 +265,13 @@ export function getNearestMandiMarkets(latitude, longitude, commodity, limit = 5
   return request(`/market-price/nearest?${params.toString()}`);
 }
 
-export function getCropRecommendations(areaAcres, district, season) {
+export function getCropRecommendations(areaAcres, district, season, cropYear) {
   const params = new URLSearchParams({
     area_acres: String(areaAcres),
     district,
     season,
   });
+  if (cropYear) params.set("crop_year", cropYear);
   return request(`/crop-recommendation/recommend?${params}`, {
     method: "POST",
   });

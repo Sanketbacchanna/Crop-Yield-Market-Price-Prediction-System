@@ -155,7 +155,15 @@ def test_location_crop_summaries_use_district_season_and_area_weighted_years(tmp
     dataset = tmp_path / "yield.csv"
     _write_csv(
         dataset,
-        ["district", "crop", "crop_year", "season", "area", "yield"],
+        [
+            "district",
+            "crop",
+            "crop_year",
+            "season",
+            "area",
+            "yield",
+            "production_unit",
+        ],
         [
             {
                 "district": "MYSORE",
@@ -164,6 +172,7 @@ def test_location_crop_summaries_use_district_season_and_area_weighted_years(tmp
                 "season": "Kharif",
                 "area": "1",
                 "yield": "2",
+                "production_unit": "Tonnes",
             },
             {
                 "district": "MYSORE",
@@ -172,6 +181,7 @@ def test_location_crop_summaries_use_district_season_and_area_weighted_years(tmp
                 "season": "Kharif",
                 "area": "3",
                 "yield": "4",
+                "production_unit": "Tonnes",
             },
             {
                 "district": "MYSORE",
@@ -180,6 +190,7 @@ def test_location_crop_summaries_use_district_season_and_area_weighted_years(tmp
                 "season": "Kharif",
                 "area": "2",
                 "yield": "5",
+                "production_unit": "Tonnes",
             },
             {
                 "district": "MYSORE",
@@ -188,6 +199,7 @@ def test_location_crop_summaries_use_district_season_and_area_weighted_years(tmp
                 "season": "Rabi",
                 "area": "2",
                 "yield": "50",
+                "production_unit": "Tonnes",
             },
             {
                 "district": "BAGALKOT",
@@ -196,6 +208,7 @@ def test_location_crop_summaries_use_district_season_and_area_weighted_years(tmp
                 "season": "Kharif",
                 "area": "2",
                 "yield": "100",
+                "production_unit": "Tonnes",
             },
         ],
     )
@@ -210,6 +223,8 @@ def test_location_crop_summaries_use_district_season_and_area_weighted_years(tmp
         {
             "crop_name": "Rice",
             "historical_yield": 4.25,
+            "production_unit": "Tonnes",
+            "latest_crop_year": "2002",
             "yield_stability": 0.85,
             "historical_observations": 3,
             "historical_years": 2,

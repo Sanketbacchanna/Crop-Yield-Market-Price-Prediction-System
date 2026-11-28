@@ -201,6 +201,7 @@ def get_historical_crop_summaries_for_location(
             "production": 0.0,
             "observations": 0,
             "crop_name": "",
+            "production_unit": "",
         }
     )
     with dataset_path.open(encoding="utf-8-sig", newline="") as dataset:
@@ -232,6 +233,11 @@ def get_historical_crop_summaries_for_location(
             totals["production"] += area * crop_yield
             totals["observations"] += 1
             totals["crop_name"] = crop_name
+            production_unit = (row.get("production_unit") or "").strip()
+            if not totals["production_unit"]:
+                totals["production_unit"] = production_unit
+            elif production_unit and totals["production_unit"] != production_unit:
+                totals["production_unit"] = "Mixed"
 
     crop_years = defaultdict(list)
     for (crop_key, year), totals in annual_totals.items():
@@ -241,6 +247,7 @@ def get_historical_crop_summaries_for_location(
                 "year": year,
                 "yield": totals["production"] / totals["area"],
                 "observations": totals["observations"],
+                "production_unit": totals["production_unit"],
             }
         )
 
@@ -251,10 +258,21 @@ def get_historical_crop_summaries_for_location(
         coefficient_of_variation = (
             pstdev(yearly_yields) / average_yield if average_yield else 0
         )
+        units = {
+            item["production_unit"]
+            for item in yearly_values
+            if item["production_unit"]
+        }
+        production_unit = (
+            next(iter(units)) if len(units) == 1 else "Mixed" if units else ""
+        )
+        latest_crop_year = max(yearly_values, key=lambda item: item["year"])["year"]
         summaries.append(
             {
                 "crop_name": yearly_values[0]["crop_name"],
                 "historical_yield": round(average_yield, 4),
+                "production_unit": production_unit,
+                "latest_crop_year": latest_crop_year,
                 "yield_stability": round(1 / (1 + coefficient_of_variation), 4),
                 "historical_observations": sum(
                     item["observations"] for item in yearly_values
