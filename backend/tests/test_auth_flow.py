@@ -10,7 +10,7 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "120")
 
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -24,6 +24,7 @@ from app.models.user import User
 from app.models.yield_prediction import YieldPrediction
 from app.main import app
 from app.routes.crops import _get_dataset_crop_names
+from app.routes.crop_recommendation import _get_district_market_prices
 
 engine = create_engine(
     "sqlite:///:memory:",
@@ -540,6 +541,114 @@ def test_crop_recommendations_use_only_the_current_users_forecasts(monkeypatch):
         == "yield_and_forecast_price"
     )
     assert personalized_response.json()["recommendations"][0]["forecast_price"] == 4200
+
+
+def test_crop_recommendations_use_selected_district_season_and_area(monkeypatch):
+    farmer = client.post(
+        "/auth/register",
+        json={
+            "name": "Local Recommendation Farmer",
+            "email": "local-recommendation-farmer@example.com",
+            "password": "farmerpass123",
+        },
+    ).json()
+    headers = {"Authorization": f"Bearer {farmer['access_token']}"}
+
+    db = database.SessionLocal()
+    try:
+        db.add_all([Crop(crop_name="Rice"), Crop(crop_name="Maize")])
+        db.commit()
+    finally:
+        db.close()
+
+    def local_summaries(district, season):
+        assert district == "Mysuru"
+        assert season == "Rabi"
+        return [
+            {
+                "crop_name": "Rice",
+                "historical_yield": 2.0,
+                "yield_stability": 0.8,
+                "historical_years": 4,
+                "historical_observations": 4,
+            },
+            {
+                "crop_name": "Maize",
+                "historical_yield": 7.0,
+                "yield_stability": 0.9,
+                "historical_years": 3,
+                "historical_observations": 3,
+            },
+        ]
+
+    monkeypatch.setattr(
+        "app.routes.crop_recommendation.get_historical_crop_summaries_for_location",
+        local_summaries,
+    )
+    monkeypatch.setattr(
+        "app.routes.crop_recommendation._get_district_market_prices",
+        lambda db, district, crop_names: {"rice": 2000, "maize": 3000},
+    )
+
+    response = client.post(
+        "/crop-recommendation/recommend",
+        params={"district": "Mysuru", "season": "Rabi", "area_acres": 2},
+        headers=headers,
+    )
+
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["district"] == "Mysuru"
+    assert result["season"] == "Rabi"
+    assert result["area_acres"] == 2
+    assert result["recommendation_basis"] == "district_season_yield_and_market_history"
+    assert result["recommendations"][0]["crop_name"] == "Maize"
+    assert result["recommendations"][0]["market_price_source"] == "district mandi history"
+    assert result["recommendations"][0]["expected_profit"] > 0
+
+
+def test_district_market_prices_match_district_and_commodity_aliases():
+    market_engine = create_engine("sqlite:///:memory:")
+    with market_engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                CREATE TABLE historical_market_prices (
+                    state TEXT,
+                    district TEXT,
+                    commodity TEXT,
+                    modal_price REAL,
+                    arrival_date DATE
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO historical_market_prices
+                    (state, district, commodity, modal_price, arrival_date)
+                VALUES
+                    ('Karnataka', 'Mysore', 'Rice', 3200, :arrival_date),
+                    ('Karnataka', 'Mysore', 'Cotton', 7000, :arrival_date),
+                    ('Karnataka', 'Bagalkot', 'Rice', 9000, :arrival_date)
+                """
+            ),
+            {"arrival_date": date.today()},
+        )
+
+    market_session = sessionmaker(bind=market_engine)()
+    try:
+        prices = _get_district_market_prices(
+            market_session,
+            "Mysuru",
+            ["Rice", "Cotton(lint)"],
+        )
+    finally:
+        market_session.close()
+        market_engine.dispose()
+
+    assert prices == {"rice": 3200, "cotton(lint)": 7000}
 
 
 def test_crop_catalog_includes_all_karnataka_yield_dataset_crops():

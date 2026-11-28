@@ -3,11 +3,17 @@ function CropRecommendation({
   loading,
   error,
   result,
+  districts = [],
+  district,
+  onDistrictChange,
+  season,
+  onSeasonChange,
   area,
   onAreaChange,
 }) {
   const recommendation = result?.recommendations?.[0];
   const hasProfitableCrop = result?.has_profitable_crop ?? true;
+  const hasProfitEstimate = recommendation?.expected_profit != null;
   const additionalRecommendations = result?.recommendations?.slice(1) || [];
   const factorLabels = result?.score_factor_labels || {
     expected_yield: "Expected yield",
@@ -28,7 +34,9 @@ function CropRecommendation({
   const rankingContext =
     hasProfitableCrop
       ? "Ranked by expected profit after estimated seed, fertilizer, pesticide, labour, irrigation, and transportation costs."
-      : "All available crops currently estimate a loss after costs. The option below has the smallest estimated loss.";
+      : hasProfitEstimate
+        ? "All available crops currently estimate a loss after costs. The option below has the smallest estimated loss."
+        : "There is not enough market-price data to estimate profit for the available crops.";
   const formatCurrency = (value) =>
     value == null
       ? "—"
@@ -65,10 +73,10 @@ function CropRecommendation({
           ? "Strong market price compared with the other crops"
           : null,
         Number(recommendationFactors.weather_suitability) >= 60
-          ? "Lower weather risk based on the available historical signal"
+          ? `Stable local yields based on ${recommendation.historical_years} years of history`
           : null,
         Number(recommendationFactors.soil_suitability) >= 60
-          ? "Good historical district/soil fit"
+          ? "Strong historical coverage for this district and season"
           : null,
         recommendation.expected_profit != null
           ? recommendation.expected_profit > 0
@@ -86,25 +94,56 @@ function CropRecommendation({
           <h3>Get a clear planting recommendation</h3>
 
           <p>
-            Choose a farm record to score crops for your district and season. The
-            ranking combines yield, market price, weather, soil, water, and historical
-            profitability.
+            Choose your district and growing season to compare local historical
+            yields, recent mandi prices, and estimated costs for your farm area.
           </p>
 
-            <form onSubmit={(event) => onSubmit(event, area)}>
-              <label className="recommendation-area-field" htmlFor="recommendation-area">
-                Farm area (acres)
-                <input
-                  id="recommendation-area"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={area || ""}
-                  onChange={(event) => onAreaChange?.(event.target.value)}
-                  placeholder="e.g. 2.5"
-                  required
-                />
-              </label>
+          <form onSubmit={(event) => onSubmit(event, area, district, season)}>
+            <label htmlFor="recommendation-district">
+              District
+              <select
+                id="recommendation-district"
+                value={district || ""}
+                onChange={(event) => onDistrictChange?.(event.target.value)}
+                required
+              >
+                <option value="">Select district</option>
+                {districts.map((districtOption) => (
+                  <option key={districtOption} value={districtOption}>
+                    {districtOption}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label htmlFor="recommendation-season">
+              Season
+              <select
+                id="recommendation-season"
+                value={season || ""}
+                onChange={(event) => onSeasonChange?.(event.target.value)}
+                required
+              >
+                <option value="">Select season</option>
+                {["Kharif", "Rabi", "Summer", "Whole Year"].map((seasonOption) => (
+                  <option key={seasonOption} value={seasonOption}>
+                    {seasonOption}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="recommendation-area-field" htmlFor="recommendation-area">
+              Farm area (acres)
+              <input
+                id="recommendation-area"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={area || ""}
+                onChange={(event) => onAreaChange?.(event.target.value)}
+                placeholder="e.g. 2.5"
+                required
+              />
+            </label>
             <button
               type="submit"
               className="recommendation-button"
@@ -125,12 +164,15 @@ function CropRecommendation({
               <span className={!hasProfitableCrop ? "recommendation-loss-heading" : ""}>
                 {hasProfitableCrop
                   ? "TOP RECOMMENDATION"
-                  : "NO PROFITABLE CROP FOUND UNDER CURRENT CONDITIONS"}
+                  : hasProfitEstimate
+                    ? "NO PROFITABLE CROP FOUND UNDER CURRENT CONDITIONS"
+                    : "INSUFFICIENT MARKET DATA TO ESTIMATE PROFIT"}
               </span>
               <strong>#{recommendation.recommendation_rank}</strong>
             </div>
             <p className="recommendation-personalized-context">
-              {rankingContext}
+              {rankingContext} Based on {result.district}, {result.season} historical
+              yields; recent district mandi prices are used when available.
             </p>
 
             <div className="recommended-crop">
@@ -146,7 +188,13 @@ function CropRecommendation({
               </div>
 
               <div>
-                <p>{hasProfitableCrop ? "Recommended Crop" : "Closest option (least estimated loss)"}</p>
+                <p>
+                  {hasProfitableCrop
+                    ? "Recommended Crop"
+                    : hasProfitEstimate
+                      ? "Closest option (least estimated loss)"
+                      : "Best-supported option"}
+                </p>
                 <h3>{recommendation.crop_name}</h3>
               </div>
             </div>
@@ -154,7 +202,7 @@ function CropRecommendation({
             <div className="profitability-summary">
               <div className="profitability-summary-heading">
                 <div>
-                  <span>BEST CROP BY EXPECTED PROFIT</span>
+                  <span>ESTIMATED PROFIT</span>
                   <h4>Profit estimate for {recommendation.area_acres} acres</h4>
                 </div>
                 <strong>{formatCurrency(recommendation.expected_profit)}</strong>
@@ -173,6 +221,9 @@ function CropRecommendation({
                   <strong>{formatCurrency(recommendation.estimated_expenses)}</strong>
                 </div>
               </div>
+              <p>
+                Price basis: {recommendation.market_price_source}.
+              </p>
               <div className="profitability-expenses">
                 {Object.entries(recommendation.expense_breakdown || {}).map(([key, value]) => (
                   <span key={key}>{expenseLabels[key] || key}: {formatCurrency(value)}</span>
@@ -240,8 +291,8 @@ function CropRecommendation({
             <div>🌿</div>
             <h3>Your best crop will appear here</h3>
             <p>
-              Select a farm record and choose “Show my best crop” to see the
-              top option and alternatives.
+              Select a district, growing season, and farm area to see local
+              recommendations and alternatives.
             </p>
           </div>
         )}

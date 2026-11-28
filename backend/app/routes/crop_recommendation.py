@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from statistics import mean
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
@@ -13,7 +14,11 @@ from app.models.price_prediction import PricePrediction
 from app.models.user import User
 from app.models.weather_data import WeatherData
 from app.ml.yield_predictor import predict_yield
-from app.business_data import get_historical_crop_summaries, get_historical_prices
+from app.business_data import (
+    YIELD_DISTRICT_ALIASES,
+    get_historical_crop_summaries_for_location,
+    get_historical_prices,
+)
 
 
 router = APIRouter(
@@ -101,6 +106,15 @@ DEFAULT_COSTS_PER_ACRE = {
     "labour": 9000,
     "irrigation": 5000,
     "transportation": 6500,
+}
+MARKET_COMMODITY_ALIASES = {
+    "cotton(lint)": ("cotton",),
+    "groundnut": ("ground nut seed",),
+    "horse-gram": ("kulthi (horse gram)",),
+}
+MARKET_DISTRICT_ALIASES = {
+    "bengaluru urban": ("bangalore", "bangalore urban"),
+    "dakshina kannada": ("dakshin kannad", "mangalore (dakshin kannad)"),
 }
 
 
@@ -196,6 +210,80 @@ def _profitability_estimate(
         "expense_breakdown": expense_breakdown,
         "expected_profit": expected_profit,
     }
+
+
+def _get_district_market_prices(
+    db: Session,
+    district: str,
+    crop_names: list[str],
+) -> dict[str, float]:
+    commodity_keys = {}
+    for crop_name in crop_names:
+        normalized_name = crop_name.strip().casefold()
+        aliases = MARKET_COMMODITY_ALIASES.get(normalized_name, ())
+        for alias in (normalized_name, *aliases):
+            commodity_keys[alias] = normalized_name
+
+    if not commodity_keys:
+        return {}
+
+    district_key = district.strip().casefold()
+    district_names = {
+        district_key,
+        YIELD_DISTRICT_ALIASES.get(district_key, district_key),
+        *MARKET_DISTRICT_ALIASES.get(district_key, ()),
+    }
+    district_values = {
+        variant
+        for name in district_names
+        for variant in (name, name.title(), name.upper())
+    }
+    commodity_values = {
+        variant
+        for name in commodity_keys
+        for variant in (name, name.title(), name.upper())
+    }
+    parameters = {
+        f"commodity_{index}": name
+        for index, name in enumerate(sorted(commodity_values))
+    }
+    parameters.update(
+        {
+            f"district_{index}": name
+            for index, name in enumerate(sorted(district_values))
+        }
+    )
+    commodity_placeholders = ", ".join(
+        f":commodity_{index}" for index in range(len(commodity_values))
+    )
+    district_placeholders = ", ".join(
+        f":district_{index}" for index in range(len(district_values))
+    )
+    parameters["price_since"] = date.today() - timedelta(days=365 * 3)
+    rows = db.execute(
+        text(
+            f"""
+            SELECT commodity AS commodity_key,
+                   AVG(modal_price) AS average_price
+            FROM historical_market_prices
+            WHERE state = 'Karnataka'
+              AND district IN ({district_placeholders})
+              AND commodity IN ({commodity_placeholders})
+              AND arrival_date >= :price_since
+              AND modal_price > 0
+            GROUP BY commodity
+            """
+        ),
+        parameters,
+    ).mappings()
+
+    prices = {}
+    for row in rows:
+        crop_key = commodity_keys.get(str(row["commodity_key"]).strip().casefold())
+        average_price = row["average_price"]
+        if crop_key is not None and average_price is not None:
+            prices[crop_key] = float(average_price)
+    return prices
 
 
 @router.post("/recommend-legacy")
@@ -510,47 +598,96 @@ def generate_crop_recommendations_legacy(
 
 @router.post("/recommend")
 def generate_historical_crop_recommendations(
+    district: str | None = Query(default=None, min_length=1, max_length=45),
+    season: str | None = Query(default=None, min_length=1, max_length=45),
     area_acres: float = Query(default=1.0, gt=0),
+    agricultural_id: int | None = Query(default=None, gt=0),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Rank crops from historical Karnataka yield and mandi-price data only."""
+    """Rank crops using historical yield and mandi prices for a district."""
+    if agricultural_id is not None and district is None and season is None:
+        return generate_crop_recommendations_legacy(
+            agricultural_id,
+            db,
+            current_user,
+        )
+    if district is None or season is None:
+        raise HTTPException(
+            status_code=422,
+            detail="District and season are required.",
+        )
+    district = district.strip()
+    season = season.strip()
+    if not district or not season:
+        raise HTTPException(
+            status_code=422,
+            detail="District and season are required.",
+        )
+
     crops = db.query(Crop).all()
     crop_by_name = {
         (crop.crop_name or "").strip().casefold(): crop
         for crop in crops
         if crop.crop_name
     }
-    summaries = get_historical_crop_summaries()
+    summaries = get_historical_crop_summaries_for_location(district, season)
     candidates = []
 
     for summary in summaries:
         crop = crop_by_name.get(summary["crop_name"].casefold())
         if crop is None:
             continue
-        historical_prices = get_historical_prices(summary["crop_name"])
-        average_price = (
-            mean(item["modal_price"] for item in historical_prices)
-            if historical_prices
-            else None
-        )
         candidates.append({
             "crop_id": crop.crop_id,
             "crop_name": crop.crop_name,
             "historical_yield": summary["historical_yield"],
-            "historical_average_price": average_price,
             "yield_stability": summary["yield_stability"],
-            "historical_districts": summary["historical_districts"],
+            "historical_years": summary["historical_years"],
             "historical_observations": summary["historical_observations"],
         })
 
     if not candidates:
-        raise HTTPException(status_code=404, detail="Historical crop data is unavailable.")
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"No historical crop yield data is available for {district} "
+                f"during the {season} season."
+            ),
+        )
+
+    district_prices = _get_district_market_prices(
+        db,
+        district,
+        [item["crop_name"] for item in candidates],
+    )
+    for item in candidates:
+        district_price = district_prices.get(item["crop_name"].casefold())
+        historical_prices = (
+            []
+            if district_price is not None
+            else get_historical_prices(item["crop_name"])
+        )
+        statewide_price = (
+            mean(observation["modal_price"] for observation in historical_prices)
+            if historical_prices
+            else None
+        )
+        item["historical_average_price"] = (
+            district_price if district_price is not None else statewide_price
+        )
+        item["market_price_source"] = (
+            "district mandi history"
+            if district_price is not None
+            else "Karnataka historical average"
+            if statewide_price is not None
+            else "unavailable"
+        )
 
     yields = [item["historical_yield"] for item in candidates]
     prices = [item["historical_average_price"] for item in candidates]
     stability = [item["yield_stability"] for item in candidates]
-    coverage = [item["historical_districts"] for item in candidates]
+    coverage = [item["historical_years"] for item in candidates]
     profitability = []
     for item in candidates:
         estimate = _profitability_estimate(
@@ -567,8 +704,12 @@ def generate_historical_crop_recommendations(
             "expected_profit": round(_min_max(profit, profitability) * 100, 1),
             "expected_yield": round(_min_max(item["historical_yield"], yields) * 100, 1),
             "expected_market_price": round(_min_max(price, prices) * 100, 1),
-            "weather_suitability": round(item["yield_stability"] * 100, 1),
-            "soil_suitability": round(_min_max(item["historical_districts"], coverage) * 100, 1),
+            "weather_suitability": round(
+                _min_max(item["yield_stability"], stability) * 100, 1
+            ),
+            "soil_suitability": round(
+                _min_max(item["historical_years"], coverage) * 100, 1
+            ),
             "water_requirement": 50.0,
             "historical_profitability": round(_min_max(profit, profitability) * 100, 1),
         }
@@ -613,19 +754,31 @@ def generate_historical_crop_recommendations(
             "estimated_expenses": item["estimated_expenses"],
             "expense_breakdown": item["expense_breakdown"],
             "expected_profit": item["expected_profit"],
+            "historical_yield": item["historical_yield"],
+            "yield_stability": item["yield_stability"],
+            "historical_years": item["historical_years"],
             "historical_observations": item["historical_observations"],
+            "market_price_source": item["market_price_source"],
         })
     db.commit()
 
+    factor_labels = {
+        **SCORE_FACTOR_LABELS,
+        "weather_suitability": "Local yield stability",
+        "soil_suitability": "Local history coverage",
+    }
     return {
-        "message": "Historical crop recommendations generated successfully",
-        "recommendation_basis": "historical_yield_and_market_data",
+        "message": "District crop recommendations generated successfully",
+        "recommendation_basis": "district_season_yield_and_market_history",
+        "district": district,
+        "season": season,
         "area_acres": area_acres,
+        "market_price_basis": "district_mandi_history_with_statewide_fallback",
         "profitability_model": "historical_yield_price_minus_estimated_costs",
         "has_profitable_crop": has_profitable_crop,
-        "scoring_model": "historical_weighted_decision_support",
+        "scoring_model": "district_season_weighted_decision_support",
         "score_weights": {key: round(value * 100) for key, value in SCORING_WEIGHTS.items()},
-        "score_factor_labels": SCORE_FACTOR_LABELS,
+        "score_factor_labels": factor_labels,
         "recommendations": recommendations,
     }
 

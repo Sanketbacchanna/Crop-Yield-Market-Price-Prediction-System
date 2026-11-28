@@ -13,6 +13,7 @@ from app.business_data import (
     get_historical_price_crops,
     get_historical_prices,
     get_historical_yield,
+    get_historical_crop_summaries_for_location,
 )
 from app.main import app
 
@@ -146,6 +147,72 @@ def test_historical_yield_can_filter_by_season_and_keeps_area_weighting(tmp_path
             "yield": 3.5,
             "area": 4.0,
             "observations": 2,
+        }
+    ]
+
+
+def test_location_crop_summaries_use_district_season_and_area_weighted_years(tmp_path):
+    dataset = tmp_path / "yield.csv"
+    _write_csv(
+        dataset,
+        ["district", "crop", "crop_year", "season", "area", "yield"],
+        [
+            {
+                "district": "MYSORE",
+                "crop": "Rice",
+                "crop_year": "2001-02",
+                "season": "Kharif",
+                "area": "1",
+                "yield": "2",
+            },
+            {
+                "district": "MYSORE",
+                "crop": "Rice",
+                "crop_year": "2001-02",
+                "season": "Kharif",
+                "area": "3",
+                "yield": "4",
+            },
+            {
+                "district": "MYSORE",
+                "crop": "Rice",
+                "crop_year": "2002-03",
+                "season": "Kharif",
+                "area": "2",
+                "yield": "5",
+            },
+            {
+                "district": "MYSORE",
+                "crop": "Rice",
+                "crop_year": "2001-02",
+                "season": "Rabi",
+                "area": "2",
+                "yield": "50",
+            },
+            {
+                "district": "BAGALKOT",
+                "crop": "Rice",
+                "crop_year": "2001-02",
+                "season": "Kharif",
+                "area": "2",
+                "yield": "100",
+            },
+        ],
+    )
+
+    summaries = get_historical_crop_summaries_for_location(
+        "Mysuru",
+        "kharif",
+        dataset,
+    )
+
+    assert summaries == [
+        {
+            "crop_name": "Rice",
+            "historical_yield": 4.25,
+            "yield_stability": 0.85,
+            "historical_observations": 3,
+            "historical_years": 2,
         }
     ]
 

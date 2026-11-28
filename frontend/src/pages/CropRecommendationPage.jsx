@@ -5,6 +5,11 @@ function CropRecommendationPage({
   loading,
   error,
   result,
+  districts,
+  district,
+  onDistrictChange,
+  season,
+  onSeasonChange,
   area,
   onAreaChange,
 }) {
@@ -28,6 +33,11 @@ function CropRecommendationPage({
         loading={loading}
         error={error}
         result={result}
+        districts={districts}
+        district={district}
+        onDistrictChange={onDistrictChange}
+        season={season}
+        onSeasonChange={onSeasonChange}
         area={area}
         onAreaChange={onAreaChange}
       />

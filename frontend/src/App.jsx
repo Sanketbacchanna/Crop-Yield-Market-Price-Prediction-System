@@ -213,6 +213,8 @@ function App() {
   const [recommendationResult, setRecommendationResult] = useState(null);
   const [recommendationLoading, setRecommendationLoading] = useState(false);
   const [recommendationError, setRecommendationError] = useState("");
+  const [recommendationDistrict, setRecommendationDistrict] = useState("");
+  const [recommendationSeason, setRecommendationSeason] = useState("");
 
   const [priceHistory, setPriceHistory] = useState([]);
   const [priceHistoryLoading, setPriceHistoryLoading] = useState(true);
@@ -898,7 +900,7 @@ function App() {
     }
   }
 
-  async function handleCropRecommendation(event, areaAcres) {
+  async function handleCropRecommendation(event, areaAcres, district, season) {
     event.preventDefault();
 
     setRecommendationLoading(true);
@@ -907,7 +909,7 @@ function App() {
 
     try {
       setRecommendationResult(
-        await getCropRecommendations(areaAcres)
+        await getCropRecommendations(areaAcres, district, season)
       );
     } catch (error) {
       setRecommendationError(
@@ -976,14 +978,17 @@ function App() {
       marketPricePreviewError,
     },
     "crop-recommendation": {
-      agriculturalRecords,
-      selectedAgriculturalId,
+      districts: yieldDistricts,
+      district: recommendationDistrict,
+      onDistrictChange: setRecommendationDistrict,
+      season: recommendationSeason,
+      onSeasonChange: setRecommendationSeason,
       area: farmArea,
       onAreaChange: setFarmArea,
       onAgriculturalChange: setSelectedAgriculturalId,
       onSubmit: handleCropRecommendation,
       loading: recommendationLoading,
-      error: recommendationError || agriculturalError,
+      error: recommendationError || agriculturalError || yieldDistrictError,
       result: recommendationResult,
     },
     "farmer-tools": {
