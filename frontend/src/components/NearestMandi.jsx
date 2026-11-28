@@ -6,39 +6,53 @@ function formatPrice(value) {
 }
 
 function NearestMandi({ liveLocation, commodity }) {
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [requestState, setRequestState] = useState({
+    key: null,
+    result: null,
+    error: "",
+  });
+  const latitude =
+    liveLocation?.latitude == null ? NaN : Number(liveLocation.latitude);
+  const longitude =
+    liveLocation?.longitude == null ? NaN : Number(liveLocation.longitude);
+  const hasCoordinates =
+    Number.isFinite(latitude) && Number.isFinite(longitude);
+  const requestKey = hasCoordinates
+    ? `${latitude}:${longitude}:${commodity || ""}`
+    : null;
 
   useEffect(() => {
-    const latitude = Number(liveLocation?.latitude);
-    const longitude = Number(liveLocation?.longitude);
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-      setResult(null);
+    if (requestKey == null) {
       return undefined;
     }
 
     let cancelled = false;
-    setLoading(true);
-    setError("");
     getNearestMandiMarkets(latitude, longitude, commodity)
       .then((data) => {
-        if (!cancelled) setResult(data);
+        if (!cancelled) {
+          setRequestState({ key: requestKey, result: data, error: "" });
+        }
       })
       .catch((requestError) => {
-        if (!cancelled) setError(requestError.message || "Unable to find nearby markets.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setRequestState({
+            key: requestKey,
+            result: null,
+            error: requestError.message || "Unable to find nearby markets.",
+          });
+        }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [liveLocation?.latitude, liveLocation?.longitude, commodity]);
+  }, [latitude, longitude, commodity, requestKey]);
 
-  const markets = result?.data || [];
-  const bestMarket = result?.best_market;
+  const isCurrentRequest = requestState.key === requestKey;
+  const markets = isCurrentRequest ? requestState.result?.data || [] : [];
+  const bestMarket = isCurrentRequest ? requestState.result?.best_market : null;
+  const error = isCurrentRequest ? requestState.error : "";
+  const isLoading = requestKey != null && !isCurrentRequest;
 
   return (
     <section className="nearest-mandi-section" aria-labelledby="nearest-mandi-title">
@@ -53,14 +67,16 @@ function NearestMandi({ liveLocation, commodity }) {
         </span>
       </div>
 
-      {!liveLocation?.latitude && !loading && (
+      {!hasCoordinates && (
         <div className="market-status">
           Allow location access to find the nearest markets.
         </div>
       )}
-      {loading && <div className="market-status">Finding nearby markets…</div>}
-      {!loading && error && <div className="market-status error">{error}</div>}
-      {!loading && !error && markets.length > 0 && (
+      {isLoading && <div className="market-status">Finding nearby markets…</div>}
+      {!isLoading && hasCoordinates && error && (
+        <div className="market-status error">{error}</div>
+      )}
+      {!isLoading && hasCoordinates && !error && markets.length > 0 && (
         <>
           <div className="nearest-mandi-table-wrapper">
             <table className="nearest-mandi-table">
